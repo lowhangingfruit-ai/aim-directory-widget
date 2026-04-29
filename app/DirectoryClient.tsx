@@ -669,7 +669,7 @@ function VendorCard({
                       fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 10,
                       textTransform: "uppercase", letterSpacing: "0.1em", color: "#0d8240", marginBottom: 8,
                     }}>
-                      {allMarkets[m.marketID] ?? m.market}
+                      Attending {allMarkets[m.marketID] ?? m.market}
                     </div>
                     {months.length === 0 ? (
                       <span style={{ fontSize: 12, color: "#aaa" }}>Dates TBD</span>
