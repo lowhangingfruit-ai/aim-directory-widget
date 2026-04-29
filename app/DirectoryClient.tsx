@@ -31,6 +31,19 @@ function nextDate(markets: VendorMarket[], filterMarketID?: number | null): stri
   return upcoming[0].toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
+// Returns ms timestamp of next upcoming date, or Infinity if none
+function nextDateTimestamp(vendor: Vendor, marketID: number | null): number {
+  const relevant = marketID
+    ? vendor.markets.filter((m) => m.marketID === marketID)
+    : vendor.markets;
+  const upcoming = relevant
+    .flatMap((m) => m.dates)
+    .map(parseDate)
+    .filter((d) => d >= TODAY)
+    .sort((a, b) => a.getTime() - b.getTime());
+  return upcoming.length ? upcoming[0].getTime() : Infinity;
+}
+
 function groupByMonth(dates: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
   for (const d of dates) {
@@ -83,13 +96,13 @@ const MARKET_SHORT: Record<number, string> = {
 };
 
 const MARKET_COLORS: Record<number, string> = {
-  7776: "#E0368A", // Sun Marin — magenta radish
+  7776: "#E0368A", // Sunday Marin — magenta radish
   7781: "#4A3C96", // Newark — purple eggplant
   7782: "#C83828", // Clement St. — red tomato
   7783: "#E8956A", // Stonestown — peach apple
   7784: "#5A8C38", // Hayward — avocado green
   7785: "#C8A820", // Grand Lake — golden turnip
-  7786: "#E0368A", // Thu Marin — same radish
+  7786: "#E0368A", // Thursday Marin — same radish
   7803: "#C83860", // Point Reyes — strawberry red
   8211: "#4A9CB8", // San Rafael — sky blue corn
 };
@@ -109,10 +122,12 @@ const CATEGORIES: { label: string; keywords: string[] }[] = [
   { label: "Nuts & Grains", keywords: ["nut", "almond", "walnut", "pistachio", "pecan", "hazelnut", "grain", "rice", "quinoa", "oat", "seed", "legume", "bean", "lentil"] },
 ];
 
+// Only scan description (not company name) to avoid false positives on musician/artisan names
 function autoTag(vendor: Vendor): string[] {
-  const text = `${vendor.company} ${vendor.description ?? ""}`.toLowerCase();
+  const desc = (vendor.description ?? "").toLowerCase();
+  if (!desc.trim()) return [];
   return CATEGORIES.filter((cat) =>
-    cat.keywords.some((kw) => text.includes(kw))
+    cat.keywords.filter((kw) => desc.includes(kw)).length >= 2
   ).map((cat) => cat.label);
 }
 
@@ -164,8 +179,9 @@ const LABEL_STYLE: React.CSSProperties = {
 };
 
 // ── Pill ──────────────────────────────────────────────────────────────────────
-function Pill({ label, count, active, onClick, size = "md", color }: {
-  label: string; count?: number; active: boolean; onClick: () => void; size?: "sm" | "md"; color?: string;
+function Pill({ label, count, active, onClick, size = "md", color, isNext }: {
+  label: string; count?: number; active: boolean; onClick: () => void;
+  size?: "sm" | "md"; color?: string; isNext?: boolean;
 }) {
   const activeColor = color ?? "#0d8240";
   return (
@@ -175,14 +191,15 @@ function Pill({ label, count, active, onClick, size = "md", color }: {
       fontFamily: "var(--font-body)",
       fontSize: size === "sm" ? 12 : 13,
       cursor: "pointer",
-      border: `1px solid ${active ? activeColor : color ? `${color}55` : "#d8d8d8"}`,
+      border: `1px solid ${active ? activeColor : isNext ? "#0d824055" : color ? `${color}55` : "#d8d8d8"}`,
       borderRadius: 20,
       backgroundColor: active ? activeColor : "#fff",
-      color: active ? "#fff" : color ? activeColor : "#494949",
+      color: active ? "#fff" : isNext ? "#0d8240" : color ? activeColor : "#494949",
       transition: "all 0.12s ease",
       whiteSpace: "nowrap",
-      fontWeight: active ? 600 : 400,
+      fontWeight: active || isNext ? 600 : 400,
     }}>
+      {isNext && !active && <span style={{ marginRight: 4, fontSize: 9 }}>●</span>}
       {label}
       {count !== undefined && (
         <span style={{ marginLeft: 5, fontSize: 11, opacity: active ? 0.8 : 0.5 }}>{count}</span>
@@ -236,6 +253,17 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       );
     }
     if (selectedCategory) list = list.filter((v) => autoTag(v).includes(selectedCategory));
+
+    // When a market is selected, sort by next upcoming date (no dates → end)
+    if (selectedMarket) {
+      list = [...list].sort((a, b) => {
+        const ta = nextDateTimestamp(a, selectedMarket);
+        const tb = nextDateTimestamp(b, selectedMarket);
+        if (ta !== tb) return ta - tb;
+        return a.company.localeCompare(b.company);
+      });
+    }
+
     return list;
   }, [vendors, selectedMarket, search, selectedDate, selectedCategory]);
 
@@ -255,13 +283,15 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     return CATEGORIES.filter((c) => counts[c.label]).map((c) => ({ label: c.label, count: counts[c.label] }));
   }, [vendors, selectedMarket, search, selectedDate]);
 
-  // Group filtered vendors by first letter, numeric vendors sorted to end
+  // When market selected: single flat group (sorted by date). Otherwise: letter groups.
   const grouped = useMemo(() => {
+    if (selectedMarket) {
+      return [{ letter: "_", vendors: filtered }];
+    }
     const letterGroups: { letter: string; vendors: Vendor[] }[] = [];
     const numericGroups: { letter: string; vendors: Vendor[] }[] = [];
     let currentLetter: { letter: string; vendors: Vendor[] } | null = null;
     let currentNum: { letter: string; vendors: Vendor[] } | null = null;
-
     for (const v of filtered) {
       const first = v.company[0]?.toUpperCase() || "#";
       const isNumeric = /\d/.test(first);
@@ -280,7 +310,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       }
     }
     return [...letterGroups, ...numericGroups];
-  }, [filtered]);
+  }, [filtered, selectedMarket]);
 
   const handleMarketSelect = (id: number) => {
     setSelectedMarket((prev) => (prev === id ? null : id));
@@ -301,7 +331,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     scrollbarWidth: "none",
   };
 
-  // Wraps a scroll row with a right-edge fade hint
   function FadeRow({ children }: { children: React.ReactNode }) {
     return (
       <div style={{ position: "relative" }}>
@@ -316,9 +345,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   }
 
   const hasActiveFilter = !!(selectedDate || selectedCategory || search);
-  const displayTitle = selectedMarket
-    ? (allMarkets[selectedMarket] ?? marketName ?? "Market Participants")
-    : marketName ?? "All Market Participants";
 
   return (
     <div style={{ fontFamily: "var(--font-body)" }}>
@@ -360,10 +386,11 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         {selectedMarket && dateChips.length > 0 && (!narrow || showFilters || !!selectedDate) && (
           <FadeRow>
             <span style={{ ...LABEL_STYLE, alignSelf: "center", flexShrink: 0, marginRight: 4 }}>Date</span>
-            {dateChips.map((d) => {
+            {dateChips.map((d, i) => {
               const key = dateKey(d);
               return (
                 <Pill key={key} label={fmtDateChip(d)} active={selectedDate === key} size="sm"
+                  isNext={i === 0}
                   onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }} />
               );
             })}
@@ -408,27 +435,22 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       {/* ── Body ── */}
       <div style={{ padding: `0 ${px}px 48px` }}>
 
-        {/* Title row */}
-        <div style={{ padding: "20px 0 16px", display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 20, fontWeight: 600, color: "#111", marginBottom: 3 }}>
-              {displayTitle}
-            </h2>
-            <p style={{ color: "#aaa", fontSize: 12, margin: 0 }}>
-              {filtered.length} {filtered.length === 1 ? "vendor" : "vendors"}
-              {selectedDate && ` · ${selectedDate}`}
-              {selectedCategory && ` · ${selectedCategory}`}
-              {search ? ` matching "${search}"` : ""}
-            </p>
-          </div>
+        {/* Count + clear row — market name removed (shown in active pill above) */}
+        <div style={{ padding: "16px 0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <p style={{ color: "#aaa", fontSize: 12, margin: 0 }}>
+            {selectedMarket ? null : <span style={{ color: "#111", fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600, marginRight: 8 }}>All Markets</span>}
+            {filtered.length} {filtered.length === 1 ? "vendor" : "vendors"}
+            {selectedDate && ` · ${selectedDate}`}
+            {selectedCategory && ` · ${selectedCategory}`}
+            {search ? ` matching "${search}"` : ""}
+          </p>
           {hasActiveFilter && (
             <button onClick={() => { setSelectedDate(null); setSelectedCategory(null); setSearch(""); }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline" }}>
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
               Clear filters
             </button>
           )}
         </div>
-
 
         {/* Vendor list */}
         {filtered.length === 0 ? (
@@ -447,6 +469,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                     vendor={vendor}
                     expanded={expandedID === vendor.vendorID}
                     onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
+                    onCategorySelect={(cat) => { setSelectedCategory(cat); setExpandedID(null); }}
                     selectedMarket={selectedMarket}
                     allMarkets={allMarkets}
                     cols={cols}
@@ -462,10 +485,11 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
 }
 
 // ── Vendor card ────────────────────────────────────────────────────────────────
-function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, cols }: {
+function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMarket, allMarkets, cols }: {
   vendor: Vendor;
   expanded: boolean;
   onToggle: () => void;
+  onCategorySelect: (cat: string) => void;
   selectedMarket: number | null;
   allMarkets: Record<number, string>;
   cols: number;
@@ -480,12 +504,18 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
   const phone = formatPhone(vendor.phone1);
   const location = formatCity(vendor.city, vendor.state);
   const tags = autoTag(vendor);
+  const hasNoUpcomingDate = nextDateTimestamp(vendor, selectedMarket) === Infinity;
 
   const marketBadges = vendor.markets
     .filter((m) => MARKET_SHORT[m.marketID])
     .sort((a, b) => (MARKET_SHORT[a.marketID] ?? "").localeCompare(MARKET_SHORT[b.marketID] ?? ""));
 
   const hasContact = !!(phone || vendor.website?.trim() || vendor.instagram_profile?.trim() || vendor.facebook_profile?.trim());
+
+  // Short description snippet for collapsed preview
+  const descSnippet = vendor.description?.trim()
+    ? vendor.description.trim().slice(0, 90) + (vendor.description.trim().length > 90 ? "…" : "")
+    : null;
 
   return (
     <div
@@ -502,35 +532,44 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
         transition: "box-shadow 0.15s ease, background 0.15s ease",
         boxShadow: hovered || expanded ? "0 2px 10px rgba(0,0,0,0.08)" : "none",
         fontFamily: "var(--font-body)",
+        opacity: hasNoUpcomingDate && selectedMarket && !expanded ? 0.55 : 1,
       }}
     >
       {/* ── Collapsed row ── */}
-      <div style={{ padding: "14px 14px 14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <div style={{ padding: "14px 14px 14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
             fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15,
-            color: "#111", marginBottom: 3,
+            color: hasNoUpcomingDate && selectedMarket ? "#999" : "#111",
+            marginBottom: 3,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
             {displayName(vendor.company)}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: descSnippet ? 5 : 0 }}>
             {location && <span style={{ fontSize: 12, color: "#888" }}>{location}</span>}
             {next && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
             {next && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
+            {!next && selectedMarket && <span style={{ fontSize: 12, color: "#bbb", fontStyle: "italic" }}>Dates TBD</span>}
             {tags[0] && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
             {tags[0] && (
-              <span style={{
-                fontSize: 10, padding: "2px 6px",
-                backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
-                borderRadius: 3, color: "#5a9a70",
-              }}>{tags[0]}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCategorySelect(tags[0]); }}
+                style={{
+                  fontSize: 10, padding: "2px 6px",
+                  backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
+                  borderRadius: 3, color: "#5a9a70", cursor: "pointer",
+                  fontFamily: "var(--font-body)",
+                }}>{tags[0]}</button>
             )}
           </div>
+          {descSnippet && !expanded && (
+            <p style={{ margin: 0, fontSize: 12, color: "#999", lineHeight: 1.5 }}>{descSnippet}</p>
+          )}
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round"
-          style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
+          style={{ flexShrink: 0, marginTop: 2, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
@@ -594,17 +633,18 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
               </div>
             )}
 
-            {/* Tags */}
+            {/* Tags — clickable to filter */}
             {tags.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={LABEL_STYLE}>Category</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {tags.map((tag) => (
-                    <span key={tag} style={{
+                    <button key={tag} onClick={(e) => { e.stopPropagation(); onCategorySelect(tag); }} style={{
                       fontSize: 11, padding: "3px 8px",
                       backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
-                      borderRadius: 4, color: "#0d8240",
-                    }}>{tag}</span>
+                      borderRadius: 4, color: "#0d8240", cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                    }}>{tag}</button>
                   ))}
                 </div>
               </div>
