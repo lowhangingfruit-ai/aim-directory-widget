@@ -420,7 +420,7 @@ function VendorCard({
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginBottom: 16, fontSize: 14 }}>
             {vendor.phone1 && (
               <a href={`tel:${vendor.phone1}`} style={{ color: "#0d8240", textDecoration: "none" }}>
-                {vendor.phone1}
+                Phone: {vendor.phone1}
               </a>
             )}
             {vendor.website?.trim() && (
