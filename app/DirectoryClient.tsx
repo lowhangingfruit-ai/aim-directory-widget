@@ -216,7 +216,16 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const { cols, px, narrow } = useLayout();
+
+  useEffect(() => {
+    const el = document.getElementById("aim-directory-root");
+    const onScroll = () => setShowBackToTop((el?.scrollTop ?? window.scrollY) > 400);
+    const target = el ?? window;
+    target.addEventListener("scroll", onScroll);
+    return () => target.removeEventListener("scroll", onScroll);
+  }, []);
 
   const marketOptions = useMemo(() => {
     const counts: Record<number, number> = {};
@@ -347,7 +356,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const hasActiveFilter = !!(selectedDate || selectedCategory || search);
 
   return (
-    <div style={{ fontFamily: "var(--font-body)" }}>
+    <div id="aim-directory-root" style={{ fontFamily: "var(--font-body)", position: "relative" }}>
 
       {/* ── Sticky filter header ── */}
       <div style={{
@@ -435,12 +444,13 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       {/* ── Body ── */}
       <div style={{ padding: `0 ${px}px 48px` }}>
 
-        {/* Count + clear row — market name removed (shown in active pill above) */}
+        {/* Count + clear row */}
         <div style={{ padding: "16px 0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <p style={{ color: "#aaa", fontSize: 12, margin: 0 }}>
-            {selectedMarket ? null : <span style={{ color: "#111", fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600, marginRight: 8 }}>All Markets</span>}
-            {filtered.length} {filtered.length === 1 ? "vendor" : "vendors"}
-            {selectedDate && ` · ${selectedDate}`}
+          <p style={{ fontSize: 13, margin: 0, color: "#555" }}>
+            <span style={{ fontWeight: 600, color: "#111" }}>{filtered.length}</span>
+            {" "}{filtered.length === 1 ? "vendor" : "vendors"}
+            {selectedMarket && !selectedDate && ` at ${allMarkets[selectedMarket]}`}
+            {selectedDate && ` attending ${selectedDate}`}
             {selectedCategory && ` · ${selectedCategory}`}
             {search ? ` matching "${search}"` : ""}
           </p>
@@ -461,6 +471,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
               <div key={letter} style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                alignItems: "start",
                 gap: 8,
               }}>
                 {group.map((vendor) => (
@@ -471,6 +482,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                     onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
                     onCategorySelect={(cat) => { setSelectedCategory(cat); setExpandedID(null); }}
                     selectedMarket={selectedMarket}
+                    selectedDate={selectedDate}
                     allMarkets={allMarkets}
                     cols={cols}
                   />
@@ -480,17 +492,35 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           </div>
         )}
       </div>
+
+      {/* Back to top */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          style={{
+            position: "fixed", bottom: 24, right: 24, zIndex: 50,
+            width: 36, height: 36, borderRadius: "50%",
+            backgroundColor: "#0d8240", color: "#fff",
+            border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
+            fontSize: 16, lineHeight: 1,
+          }}
+          aria-label="Back to top"
+        >↑</button>
+      )}
     </div>
   );
 }
 
 // ── Vendor card ────────────────────────────────────────────────────────────────
-function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMarket, allMarkets, cols }: {
+function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMarket, selectedDate, allMarkets, cols }: {
   vendor: Vendor;
   expanded: boolean;
   onToggle: () => void;
   onCategorySelect: (cat: string) => void;
   selectedMarket: number | null;
+  selectedDate: string | null;
   allMarkets: Record<number, string>;
   cols: number;
 }) {
@@ -548,8 +578,8 @@ function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMark
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: descSnippet ? 5 : 0 }}>
             {location && <span style={{ fontSize: 12, color: "#888" }}>{location}</span>}
-            {next && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
-            {next && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
+            {next && !selectedDate && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
+            {next && !selectedDate && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
             {!next && selectedMarket && <span style={{ fontSize: 12, color: "#bbb", fontStyle: "italic" }}>Dates TBD</span>}
             {tags[0] && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
             {tags[0] && (
@@ -574,59 +604,57 @@ function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMark
         </svg>
       </div>
 
-      {/* ── Expanded detail: two columns ── */}
+      {/* ── Expanded detail ── */}
       {expanded && (
-        <div style={{ borderTop: "1px solid #e8e8e0", display: "flex", alignItems: "stretch" }}>
+        <div style={{ borderTop: "1px solid #e8e8e0", display: "flex", alignItems: "stretch", flexDirection: vendor.description ? "row" : "column" }}>
 
-          {/* Left: description */}
-          <div style={{
-            flex: "0 0 55%",
-            padding: "16px 20px",
-            borderRight: "1px solid #e8e8e0",
-          }}>
-            <div style={{ ...LABEL_STYLE, marginBottom: 8 }}>About</div>
-            {vendor.description ? (
+          {/* Left: description — only shown when there is one */}
+          {vendor.description && (
+            <div style={{ flex: "0 0 55%", padding: "16px 20px", borderRight: "1px solid #e8e8e0" }}>
+              <div style={{ ...LABEL_STYLE, marginBottom: 8 }}>About</div>
               <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.75 }}>
                 {vendor.description}
               </p>
-            ) : (
-              <p style={{ margin: 0, fontSize: 13, color: "#bbb", fontStyle: "italic" }}>No description available.</p>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Right: meta */}
+          {/* Right (or full-width): meta */}
           <div style={{ flex: 1, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
 
-            {/* Contact */}
+            {/* Contact with icons */}
             {hasContact && (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={LABEL_STYLE}>Contact</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", alignItems: "center" }}>
                   {phone && (
                     <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                       {phone}
                     </a>
                   )}
                   {vendor.website?.trim() && vendor.website.trim() !== " " && (
                     <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
                       target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                      Website ↗
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                      Website
                     </a>
                   )}
                   {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
                     <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                      Instagram ↗
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                      Instagram
                     </a>
                   )}
                   {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
                     <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                      Facebook ↗
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                      Facebook
                     </a>
                   )}
                 </div>
