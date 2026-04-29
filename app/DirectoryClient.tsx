@@ -107,29 +107,6 @@ const MARKET_COLORS: Record<number, string> = {
   8211: "#4A9CB8", // San Rafael — sky blue corn
 };
 
-const CATEGORIES: { label: string; keywords: string[] }[] = [
-  { label: "Produce", keywords: ["vegetable", "veggie", "produce", "greens", "lettuce", "kale", "spinach", "herb", "tomato", "pepper", "squash", "onion", "garlic", "root", "seasonal", "crop", "farm fresh", "microgreen"] },
-  { label: "Fruit", keywords: ["fruit", "berry", "berries", "apple", "pear", "citrus", "strawberry", "peach", "plum", "cherry", "melon", "stone fruit", "grape", "fig", "nectarine"] },
-  { label: "Bakery", keywords: ["bread", "pastry", "bake", "bakery", "sourdough", "croissant", "muffin", "cake", "cookie", "flour", "tortilla", "bagel", "loaf", "biscuit", "scone", "pita"] },
-  { label: "Dairy & Eggs", keywords: ["cheese", "dairy", "yogurt", "milk", "butter", "cream", "chevre", "kefir", "egg", "creamery", "cheddar", "gouda", "brie"] },
-  { label: "Meat & Poultry", keywords: ["meat", "beef", "pork", "lamb", "chicken", "poultry", "turkey", "sausage", "grass-fed", "pasture", "heritage", "ranch", "salami", "charcuterie", "duck", "rabbit"] },
-  { label: "Seafood", keywords: ["fish", "seafood", "salmon", "oyster", "crab", "shrimp", "halibut", "tuna", "shellfish", "catch", "dungeness", "clam", "mussel", "anchovy", "squid"] },
-  { label: "Flowers & Plants", keywords: ["flower", "floral", "bouquet", "bloom", "plant", "succulent", "arrangement", "nursery", "botanical", "garden", "orchid", "rose", "lavender"] },
-  { label: "Honey & Preserves", keywords: ["honey", "jam", "jelly", "preserve", "pickle", "ferment", "condiment", "spread", "marmalade", "chutney", "hot sauce", "vinegar", "beeswax"] },
-  { label: "Prepared Foods", keywords: ["prepared", "ready", "meal", "sauce", "soup", "snack", "dip", "salsa", "olive", "hummus", "pesto", "tamale", "empanada", "dumpling", "jerky", "granola", "nut butter", "chocolate"] },
-  { label: "Beverages", keywords: ["coffee", "tea", "juice", "drink", "beverage", "kombucha", "cider", "brew", "roast", "chai", "smoothie", "lemonade", "shrub", "tonic"] },
-  { label: "Mushrooms", keywords: ["mushroom", "fungi", "shiitake", "oyster mushroom", "chanterelle", "porcini", "mycel"] },
-  { label: "Nuts & Grains", keywords: ["nut", "almond", "walnut", "pistachio", "pecan", "hazelnut", "grain", "rice", "quinoa", "oat", "seed", "legume", "bean", "lentil"] },
-];
-
-// Only scan description (not company name) to avoid false positives on musician/artisan names
-function autoTag(vendor: Vendor): string[] {
-  const desc = (vendor.description ?? "").toLowerCase();
-  if (!desc.trim()) return [];
-  return CATEGORIES.filter((cat) =>
-    cat.keywords.filter((kw) => desc.includes(kw)).length >= 2
-  ).map((cat) => cat.label);
-}
 
 function upcomingDatesForMarket(vendors: Vendor[], marketID: number): Date[] {
   const seen = new Set<string>();
@@ -212,7 +189,6 @@ function Pill({ label, count, active, onClick, size = "md", color, isNext }: {
 export default function DirectoryClient({ vendors, marketID, marketName, allMarkets }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -261,8 +237,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         })
       );
     }
-    if (selectedCategory) list = list.filter((v) => autoTag(v).includes(selectedCategory));
-
     // When a market is selected, sort by next upcoming date (no dates → end)
     if (selectedMarket) {
       list = [...list].sort((a, b) => {
@@ -274,22 +248,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     }
 
     return list;
-  }, [vendors, selectedMarket, search, selectedDate, selectedCategory]);
-
-  const availableCategories = useMemo(() => {
-    let list = vendors;
-    if (selectedMarket) list = list.filter((v) => v.markets.some((m) => m.marketID === selectedMarket));
-    const q = search.toLowerCase().trim();
-    if (q) list = list.filter((v) => v.company.toLowerCase().includes(q) || v.description?.toLowerCase().includes(q) || v.city?.toLowerCase().includes(q));
-    if (selectedDate) list = list.filter((v) => v.markets.some((m) => {
-      if (selectedMarket && m.marketID !== selectedMarket) return false;
-      return (m.dates ?? []).some((d) => dateKey(parseDate(d)) === selectedDate);
-    }));
-    const counts: Record<string, number> = {};
-    for (const v of list) {
-      for (const tag of autoTag(v)) counts[tag] = (counts[tag] ?? 0) + 1;
-    }
-    return CATEGORIES.filter((c) => counts[c.label]).map((c) => ({ label: c.label, count: counts[c.label] }));
   }, [vendors, selectedMarket, search, selectedDate]);
 
   // When market selected: single flat group (sorted by date). Otherwise: letter groups.
@@ -324,7 +282,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const handleMarketSelect = (id: number) => {
     setSelectedMarket((prev) => (prev === id ? null : id));
     setSelectedDate(null);
-    setSelectedCategory(null);
     setExpandedID(null);
     setSearch("");
   };
@@ -353,7 +310,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     );
   }
 
-  const hasActiveFilter = !!(selectedDate || selectedCategory || search);
+  const hasActiveFilter = !!(selectedDate || search);
 
   return (
     <div id="aim-directory-root" style={{ fontFamily: "var(--font-body)", position: "relative" }}>
@@ -378,16 +335,16 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         )}
 
         {/* Mobile refine toggle */}
-        {narrow && selectedMarket && (dateChips.length > 0 || availableCategories.length > 0) && (
+        {narrow && selectedMarket && dateChips.length > 0 && (
           <button onClick={() => setShowFilters(p => !p)} style={{
             display: "flex", alignItems: "center", gap: 4,
             background: "none", border: "1px solid #d8d8d8", borderRadius: 20,
             padding: "4px 12px", fontSize: 12, cursor: "pointer",
-            color: (selectedDate || selectedCategory) ? "#0d8240" : "#666",
+            color: selectedDate ? "#0d8240" : "#666",
             fontFamily: "var(--font-body)",
             marginBottom: 10,
           }}>
-            {showFilters ? "Hide filters ↑" : `Refine ↓${selectedDate || selectedCategory ? " ●" : ""}`}
+            {showFilters ? "Hide filters ↑" : `Filter by date ↓${selectedDate ? " ●" : ""}`}
           </button>
         )}
 
@@ -403,17 +360,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }} />
               );
             })}
-          </FadeRow>
-        )}
-
-        {/* Category chips */}
-        {availableCategories.length > 0 && (!narrow || showFilters || !!selectedCategory) && (
-          <FadeRow>
-            <span style={{ ...LABEL_STYLE, alignSelf: "center", flexShrink: 0, marginRight: 4 }}>Category</span>
-            {availableCategories.map(({ label, count }) => (
-              <Pill key={label} label={label} count={count} active={selectedCategory === label} size="sm"
-                onClick={() => { setSelectedCategory((p) => (p === label ? null : label)); setExpandedID(null); }} />
-            ))}
           </FadeRow>
         )}
 
@@ -451,11 +397,10 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             {" "}{filtered.length === 1 ? "vendor" : "vendors"}
             {selectedMarket && !selectedDate && ` at ${allMarkets[selectedMarket]}`}
             {selectedDate && ` attending ${selectedDate}`}
-            {selectedCategory && ` · ${selectedCategory}`}
             {search ? ` matching "${search}"` : ""}
           </p>
           {hasActiveFilter && (
-            <button onClick={() => { setSelectedDate(null); setSelectedCategory(null); setSearch(""); }}
+            <button onClick={() => { setSelectedDate(null); setSearch(""); }}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
               Clear filters
             </button>
@@ -480,7 +425,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                     vendor={vendor}
                     expanded={expandedID === vendor.vendorID}
                     onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
-                    onCategorySelect={(cat) => { setSelectedCategory(cat); setExpandedID(null); }}
                     selectedMarket={selectedMarket}
                     selectedDate={selectedDate}
                     allMarkets={allMarkets}
@@ -514,11 +458,10 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
 }
 
 // ── Vendor card ────────────────────────────────────────────────────────────────
-function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMarket, selectedDate, allMarkets, cols }: {
+function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, allMarkets, cols }: {
   vendor: Vendor;
   expanded: boolean;
   onToggle: () => void;
-  onCategorySelect: (cat: string) => void;
   selectedMarket: number | null;
   selectedDate: string | null;
   allMarkets: Record<number, string>;
@@ -533,7 +476,6 @@ function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMark
   const next = nextDate(vendor.markets, selectedMarket);
   const phone = formatPhone(vendor.phone1);
   const location = formatCity(vendor.city, vendor.state);
-  const tags = autoTag(vendor);
   const hasNoUpcomingDate = nextDateTimestamp(vendor, selectedMarket) === Infinity;
 
   const marketBadges = vendor.markets
@@ -581,17 +523,6 @@ function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMark
             {next && !selectedDate && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
             {next && !selectedDate && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
             {!next && selectedMarket && <span style={{ fontSize: 12, color: "#bbb", fontStyle: "italic" }}>Dates TBD</span>}
-            {tags[0] && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
-            {tags[0] && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onCategorySelect(tags[0]); }}
-                style={{
-                  fontSize: 10, padding: "2px 6px",
-                  backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
-                  borderRadius: 3, color: "#5a9a70", cursor: "pointer",
-                  fontFamily: "var(--font-body)",
-                }}>{tags[0]}</button>
-            )}
           </div>
           {descSnippet && !expanded && (
             <p style={{ margin: 0, fontSize: 12, color: "#999", lineHeight: 1.5 }}>{descSnippet}</p>
@@ -657,23 +588,6 @@ function VendorCard({ vendor, expanded, onToggle, onCategorySelect, selectedMark
                       Facebook
                     </a>
                   )}
-                </div>
-              </div>
-            )}
-
-            {/* Tags — clickable to filter */}
-            {tags.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={LABEL_STYLE}>Category</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {tags.map((tag) => (
-                    <button key={tag} onClick={(e) => { e.stopPropagation(); onCategorySelect(tag); }} style={{
-                      fontSize: 11, padding: "3px 8px",
-                      backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
-                      borderRadius: 4, color: "#0d8240", cursor: "pointer",
-                      fontFamily: "var(--font-body)",
-                    }}>{tag}</button>
-                  ))}
                 </div>
               </div>
             )}
