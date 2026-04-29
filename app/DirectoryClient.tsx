@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Vendor } from "@/lib/types";
 
 interface Props {
@@ -12,26 +12,120 @@ interface Props {
 
 export default function DirectoryClient({ vendors, marketID, marketName, allMarkets }: Props) {
   const [search, setSearch] = useState("");
+  const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Market options — only show known 2026 markets (those in allMarkets), with vendor counts
+  const marketOptions = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const v of vendors) {
+      for (const m of v.markets) {
+        if (allMarkets[m.marketID]) {
+          counts[m.marketID] = (counts[m.marketID] ?? 0) + 1;
+        }
+      }
+    }
+    return Object.entries(counts)
+      .map(([id, count]) => ({ id: Number(id), name: allMarkets[Number(id)], count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [vendors, allMarkets]);
 
   const filtered = useMemo(() => {
+    let list = vendors;
+    if (selectedMarket) {
+      list = list.filter((v) => v.markets.some((m) => m.marketID === selectedMarket));
+    }
     const q = search.toLowerCase().trim();
-    if (!q) return vendors;
-    return vendors.filter(
-      (v) =>
-        v.company.toLowerCase().includes(q) ||
-        v.description?.toLowerCase().includes(q) ||
-        v.city?.toLowerCase().includes(q) ||
-        v.type?.toLowerCase().includes(q)
-    );
-  }, [vendors, search]);
+    if (q) {
+      list = list.filter(
+        (v) =>
+          v.company.toLowerCase().includes(q) ||
+          v.description?.toLowerCase().includes(q) ||
+          v.city?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [vendors, selectedMarket, search]);
+
+  const letters = useMemo(() => {
+    const seen = new Set<string>();
+    for (const v of filtered) {
+      const l = v.company[0]?.toUpperCase();
+      if (l) seen.add(l);
+    }
+    return Array.from(seen).sort();
+  }, [filtered]);
 
   const toggle = (id: number) => setExpandedID((prev) => (prev === id ? null : id));
 
+  const jumpTo = (letter: string) => {
+    setActiveLetter(letter);
+    letterRefs.current[letter]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => setActiveLetter(null), 800);
+  };
+
+  const handleMarketSelect = (id: number) => {
+    setSelectedMarket((prev) => (prev === id ? null : id));
+    setExpandedID(null);
+    setSearch("");
+  };
+
+  const displayTitle = selectedMarket
+    ? (allMarkets[selectedMarket] ?? marketName ?? "Market Participants")
+    : marketName ?? "All Market Participants";
+
   return (
     <div style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
+
+      {/* Market filter pills — only shown in all-markets view */}
+      {!marketID && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            fontSize: 11,
+            fontFamily: "var(--font-heading)",
+            fontWeight: 500,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "#494949",
+            marginBottom: 10,
+          }}>
+            Filter by Market
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {marketOptions.map((m) => {
+              const active = selectedMarket === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleMarketSelect(m.id)}
+                  style={{
+                    padding: "6px 14px",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    border: `1px solid ${active ? "#0d8240" : "#d8d8d8"}`,
+                    borderRadius: 0,
+                    backgroundColor: active ? "#0d8240" : "#fff",
+                    color: active ? "#fff" : "#494949",
+                    transition: "all 0.12s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {m.name}
+                  <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.7 }}>
+                    {m.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Header + search */}
+      <div style={{ marginBottom: 20 }}>
         <h2 style={{
           fontFamily: "var(--font-heading)",
           fontSize: 26,
@@ -39,14 +133,12 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           color: "#000",
           marginBottom: 4,
         }}>
-          {marketName ? `${marketName} Market Participants` : "All Market Participants"}
+          {displayTitle}
         </h2>
-        <p style={{ color: "#494949", fontSize: 14, margin: "0 0 16px" }}>
+        <p style={{ color: "#494949", fontSize: 14, margin: "0 0 14px" }}>
           {filtered.length} {filtered.length === 1 ? "vendor" : "vendors"}
           {search ? ` matching "${search}"` : ""}
         </p>
-
-        {/* Search */}
         <input
           type="text"
           placeholder="Search vendors, products, city…"
@@ -66,6 +158,41 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         />
       </div>
 
+      {/* A–Z jump nav — only for long lists */}
+      {filtered.length > 20 && letters.length > 1 && (
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2,
+          marginBottom: 16,
+          borderBottom: "1px solid #d8d8d8",
+          paddingBottom: 12,
+        }}>
+          {letters.map((l) => (
+            <button
+              key={l}
+              onClick={() => jumpTo(l)}
+              style={{
+                width: 28,
+                height: 28,
+                fontFamily: "var(--font-heading)",
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: "pointer",
+                border: "none",
+                borderRadius: 0,
+                backgroundColor: activeLetter === l ? "#0d8240" : "transparent",
+                color: activeLetter === l ? "#fff" : "#0d8240",
+                transition: "all 0.12s ease",
+                padding: 0,
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Vendor list */}
       <div>
         {filtered.length === 0 && (
@@ -73,16 +200,40 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             No vendors found.
           </p>
         )}
-        {filtered.map((vendor) => (
-          <VendorCard
-            key={vendor.vendorID}
-            vendor={vendor}
-            expanded={expandedID === vendor.vendorID}
-            onToggle={() => toggle(vendor.vendorID)}
-            marketID={marketID}
-            allMarkets={allMarkets}
-          />
-        ))}
+        {filtered.map((vendor, i) => {
+          const letter = vendor.company[0]?.toUpperCase();
+          const prevLetter = i > 0 ? filtered[i - 1].company[0]?.toUpperCase() : null;
+          const isNewLetter = letter !== prevLetter;
+
+          return (
+            <div key={vendor.vendorID}>
+              {isNewLetter && letter && (
+                <div
+                  ref={(el) => { letterRefs.current[letter] = el; }}
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 500,
+                    fontSize: 13,
+                    color: "#afada9",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    padding: "10px 0 4px",
+                    scrollMarginTop: 8,
+                  }}
+                >
+                  {letter}
+                </div>
+              )}
+              <VendorCard
+                vendor={vendor}
+                expanded={expandedID === vendor.vendorID}
+                onToggle={() => toggle(vendor.vendorID)}
+                selectedMarket={selectedMarket}
+                allMarkets={allMarkets}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -92,28 +243,25 @@ function VendorCard({
   vendor,
   expanded,
   onToggle,
-  marketID,
+  selectedMarket,
   allMarkets,
 }: {
   vendor: Vendor;
   expanded: boolean;
   onToggle: () => void;
-  marketID?: number;
+  selectedMarket: number | null;
   allMarkets: Record<number, string>;
 }) {
-  const relevantMarkets = marketID
-    ? vendor.markets.filter((m) => m.marketID === marketID)
+  const relevantMarkets = selectedMarket
+    ? vendor.markets.filter((m) => m.marketID === selectedMarket)
     : vendor.markets;
 
   return (
-    <div
-      style={{
-        borderBottom: "1px solid #d8d8d8",
-        backgroundColor: expanded ? "#fff" : "transparent",
-        transition: "background-color 0.15s ease",
-      }}
-    >
-      {/* Row — always visible */}
+    <div style={{
+      borderBottom: "1px solid #d8d8d8",
+      backgroundColor: expanded ? "#fff" : "transparent",
+      transition: "background-color 0.15s ease",
+    }}>
       <button
         onClick={onToggle}
         style={{
@@ -130,39 +278,21 @@ function VendorCard({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-          {/* Photo */}
           {vendor.photo ? (
             <img
               src={vendor.photo}
               alt={vendor.company}
-              style={{
-                width: 48,
-                height: 48,
-                objectFit: "cover",
-                borderRadius: 0,
-                flexShrink: 0,
-                border: "1px solid #d8d8d8",
-              }}
+              style={{ width: 48, height: 48, objectFit: "cover", flexShrink: 0, border: "1px solid #d8d8d8" }}
             />
           ) : (
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                backgroundColor: "#f2f2f2",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid #d8d8d8",
-              }}
-            >
-              <span style={{ fontSize: 18, color: "#afada9" }}>
-                {vendor.company.charAt(0)}
-              </span>
+            <div style={{
+              width: 48, height: 48, backgroundColor: "#f2f2f2", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "1px solid #d8d8d8",
+            }}>
+              <span style={{ fontSize: 18, color: "#afada9" }}>{vendor.company.charAt(0)}</span>
             </div>
           )}
-
           <div style={{ minWidth: 0 }}>
             <div style={{
               fontFamily: "var(--font-heading)",
@@ -175,32 +305,20 @@ function VendorCard({
             }}>
               {vendor.company}
             </div>
-            <div style={{ fontSize: 13, color: "#494949", marginTop: 2 }}>
-              {vendor.city && <span>{vendor.city}</span>}
-              {vendor.type && vendor.city && <span style={{ margin: "0 6px", color: "#d8d8d8" }}>·</span>}
-              {vendor.type && <span>{vendor.type}</span>}
-            </div>
+            {vendor.city && (
+              <div style={{ fontSize: 13, color: "#494949", marginTop: 2 }}>{vendor.city}</div>
+            )}
           </div>
         </div>
-
-        {/* Toggle icon */}
         <span style={{
-          flexShrink: 0,
-          width: 24,
-          height: 24,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#0d8240",
-          fontSize: 20,
-          fontFamily: "var(--font-body)",
-          lineHeight: 1,
+          flexShrink: 0, width: 24, height: 24,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#0d8240", fontSize: 20, lineHeight: 1,
         }}>
           {expanded ? "−" : "+"}
         </span>
       </button>
 
-      {/* Expanded content */}
       {expanded && (
         <div style={{ padding: "0 0 20px 62px" }}>
           {vendor.description && (
@@ -208,47 +326,34 @@ function VendorCard({
               {vendor.description}
             </p>
           )}
-
-          {/* Contact row */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginBottom: 16, fontSize: 14 }}>
             {vendor.phone1 && (
               <a href={`tel:${vendor.phone1}`} style={{ color: "#0d8240", textDecoration: "none" }}>
                 {vendor.phone1}
               </a>
             )}
-            {vendor.website && (
+            {vendor.website?.trim() && (
               <a
                 href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 style={{ color: "#0d8240", textDecoration: "none" }}
               >
                 Website
               </a>
             )}
-            {vendor.instagram_profile && (
-              <a
-                href={vendor.instagram_profile}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#0d8240", textDecoration: "none" }}
-              >
+            {vendor.instagram_profile?.trim() && (
+              <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
+                style={{ color: "#0d8240", textDecoration: "none" }}>
                 Instagram
               </a>
             )}
-            {vendor.facebook_profile && (
-              <a
-                href={vendor.facebook_profile}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#0d8240", textDecoration: "none" }}
-              >
+            {vendor.facebook_profile?.trim() && (
+              <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
+                style={{ color: "#0d8240", textDecoration: "none" }}>
                 Facebook
               </a>
             )}
           </div>
-
-          {/* Market dates */}
           {relevantMarkets.length > 0 && (
             <div>
               {relevantMarkets.map((m) => (
@@ -256,28 +361,23 @@ function VendorCard({
                   <div style={{
                     fontFamily: "var(--font-heading)",
                     fontWeight: 500,
-                    fontSize: 13,
+                    fontSize: 12,
                     textTransform: "uppercase",
-                    letterSpacing: "0.06em",
+                    letterSpacing: "0.08em",
                     color: "#494949",
                     marginBottom: 6,
                   }}>
                     {allMarkets[m.marketID] ?? m.market}
                   </div>
-                  {m.dates && m.dates.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {m.dates?.length > 0 ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                       {m.dates.map((d) => (
-                        <span
-                          key={d}
-                          style={{
-                            fontSize: 12,
-                            padding: "3px 8px",
-                            backgroundColor: "#f2f2f2",
-                            border: "1px solid #d8d8d8",
-                            color: "#494949",
-                            fontFamily: "var(--font-body)",
-                          }}
-                        >
+                        <span key={d} style={{
+                          fontSize: 12, padding: "3px 8px",
+                          backgroundColor: "#f2f2f2",
+                          border: "1px solid #d8d8d8",
+                          color: "#494949",
+                        }}>
                           {d}
                         </span>
                       ))}
