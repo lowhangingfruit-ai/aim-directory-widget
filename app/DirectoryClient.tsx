@@ -179,7 +179,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
-  const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const { cols, px } = useLayout();
 
@@ -251,14 +250,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     }
     return groups;
   }, [filtered]);
-
-  const letters = useMemo(() => grouped.map((g) => g.letter), [grouped]);
-
-  const jumpTo = (letter: string) => {
-    setActiveLetter(letter);
-    letterRefs.current[letter]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => setActiveLetter(null), 800);
-  };
 
   const handleMarketSelect = (id: number) => {
     setSelectedMarket((prev) => (prev === id ? null : id));
@@ -378,21 +369,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           )}
         </div>
 
-        {/* A–Z jump nav */}
-        {filtered.length > 24 && letters.length > 1 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 2, marginBottom: 16, borderBottom: "1px solid #e8e8e0", paddingBottom: 12 }}>
-            {letters.map((l) => (
-              <button key={l} onClick={() => jumpTo(l)} style={{
-                width: 26, height: 26,
-                fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 11,
-                cursor: "pointer", border: "none", borderRadius: 4,
-                backgroundColor: activeLetter === l ? "#0d8240" : "transparent",
-                color: activeLetter === l ? "#fff" : "#0d8240",
-                transition: "all 0.1s ease", padding: 0,
-              }}>{l}</button>
-            ))}
-          </div>
-        )}
 
         {/* Vendor list */}
         {filtered.length === 0 ? (
