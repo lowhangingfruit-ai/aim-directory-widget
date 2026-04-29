@@ -430,6 +430,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                       onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
                       selectedMarket={selectedMarket}
                       allMarkets={allMarkets}
+                      cols={cols}
                     />
                   ))}
                 </div>
@@ -443,12 +444,13 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
 }
 
 // ── Vendor card ────────────────────────────────────────────────────────────────
-function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets }: {
+function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, cols }: {
   vendor: Vendor;
   expanded: boolean;
   onToggle: () => void;
   selectedMarket: number | null;
   allMarkets: Record<number, string>;
+  cols: number;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -465,12 +467,15 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets }: 
     .filter((m) => MARKET_SHORT[m.marketID])
     .sort((a, b) => (MARKET_SHORT[a.marketID] ?? "").localeCompare(MARKET_SHORT[b.marketID] ?? ""));
 
+  const hasContact = !!(phone || vendor.website?.trim() || vendor.instagram_profile?.trim() || vendor.facebook_profile?.trim());
+
   return (
     <div
       onClick={onToggle}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
+        gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
         background: expanded ? "#fafaf8" : hovered ? "#fafaf8" : "#fff",
         borderTop: "1px solid #e8e8e0",
         borderRight: "1px solid #e8e8e0",
@@ -494,132 +499,141 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets }: 
             {vendor.company}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            {location && (
-              <span style={{ fontSize: 12, color: "#888" }}>{location}</span>
-            )}
-            {location && next && (
-              <span style={{ fontSize: 10, color: "#ddd" }}>·</span>
-            )}
-            {next && (
-              <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>
-            )}
+            {location && <span style={{ fontSize: 12, color: "#888" }}>{location}</span>}
+            {location && next && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
+            {next && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
           </div>
         </div>
-
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round" style={{
-            flexShrink: 0,
-            transform: expanded ? "rotate(180deg)" : "none",
-            transition: "transform 0.2s ease",
-          }}>
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
 
-      {/* ── Expanded detail ── */}
+      {/* ── Expanded detail: two columns ── */}
       {expanded && (
-        <div style={{ borderTop: "1px solid #e8e8e0" }}>
+        <div style={{ borderTop: "1px solid #e8e8e0", display: "flex", alignItems: "stretch" }}>
 
-          {/* Description */}
-          {vendor.description && (
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid #e8e8e0" }}>
-              <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.7 }}>
+          {/* Left: description */}
+          <div style={{
+            flex: "0 0 55%",
+            padding: "16px 20px",
+            borderRight: "1px solid #e8e8e0",
+          }}>
+            {vendor.description ? (
+              <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.75 }}>
                 {vendor.description}
               </p>
-            </div>
-          )}
+            ) : (
+              <p style={{ margin: 0, fontSize: 13, color: "#bbb", fontStyle: "italic" }}>No description available.</p>
+            )}
+          </div>
 
-          {/* Contact */}
-          {(phone || vendor.website?.trim() || vendor.instagram_profile?.trim() || vendor.facebook_profile?.trim()) && (
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid #e8e8e0", display: "flex", flexWrap: "wrap", gap: "6px 20px" }}>
-              {phone && (
-                <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                  {phone}
-                </a>
-              )}
-              {vendor.website?.trim() && vendor.website.trim() !== " " && (
-                <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
-                  target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                  Website ↗
-                </a>
-              )}
-              {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
-                <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                  Instagram ↗
-                </a>
-              )}
-              {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
-                <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
-                  Facebook ↗
-                </a>
-              )}
-            </div>
-          )}
+          {/* Right: meta */}
+          <div style={{ flex: 1, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
 
-          {/* Category tags */}
-          {tags.length > 0 && (
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #e8e8e0", display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {tags.map((tag) => (
-                <span key={tag} style={{
-                  fontSize: 11, padding: "3px 8px",
-                  backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
-                  borderRadius: 4, color: "#0d8240",
-                }}>{tag}</span>
-              ))}
-            </div>
-          )}
+            {/* Contact */}
+            {hasContact && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={LABEL_STYLE}>Contact</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                  {phone && (
+                    <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
+                      {phone}
+                    </a>
+                  )}
+                  {vendor.website?.trim() && vendor.website.trim() !== " " && (
+                    <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
+                      target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
+                      Website ↗
+                    </a>
+                  )}
+                  {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
+                    <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
+                      Instagram ↗
+                    </a>
+                  )}
+                  {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
+                    <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500 }}>
+                      Facebook ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
-          {/* Market badges (all-markets view) */}
-          {!selectedMarket && marketBadges.length > 0 && (
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #e8e8e0", display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {marketBadges.map((m) => (
-                <span key={m.marketID} style={{
-                  fontSize: 11, padding: "3px 8px",
-                  backgroundColor: "#f6f5ea", border: "1px solid #dddcd3",
-                  borderRadius: 4, color: "#666",
-                }}>{MARKET_SHORT[m.marketID]}</span>
-              ))}
-            </div>
-          )}
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={LABEL_STYLE}>Category</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {tags.map((tag) => (
+                    <span key={tag} style={{
+                      fontSize: 11, padding: "3px 8px",
+                      backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
+                      borderRadius: 4, color: "#0d8240",
+                    }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {/* Market dates */}
-          {relevantMarkets.length > 0 && (
-            <div style={{ padding: "14px 16px" }}>
-              {relevantMarkets.map((m) => {
-                const grouped = groupByMonth(m.dates ?? []);
-                const months = Object.entries(grouped);
-                return (
-                  <div key={m.marketID} style={{ marginBottom: 12 }}>
-                    <div style={{ ...LABEL_STYLE, color: "#0d8240", marginBottom: 8 }}>
-                      Attending {allMarkets[m.marketID] ?? m.market}
-                    </div>
-                    {months.length === 0 ? (
-                      <span style={{ fontSize: 12, color: "#aaa" }}>Dates TBD</span>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                        {months.map(([month, days]) => (
-                          <div key={month} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                            <span style={{ fontSize: 11, color: "#888", fontWeight: 600, minWidth: 60, flexShrink: 0 }}>
-                              {month.replace(/\s*\d{4}$/, "")}
-                            </span>
-                            <span style={{ fontSize: 12, color: "#333", lineHeight: 1.7 }}>
-                              {days.join(" · ")}
-                            </span>
-                          </div>
-                        ))}
+            {/* Market badges (all-markets view) */}
+            {!selectedMarket && marketBadges.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={LABEL_STYLE}>Markets</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {marketBadges.map((m) => (
+                    <span key={m.marketID} style={{
+                      fontSize: 11, padding: "3px 8px",
+                      backgroundColor: "#f6f5ea", border: "1px solid #dddcd3",
+                      borderRadius: 4, color: "#666",
+                    }}>{MARKET_SHORT[m.marketID]}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Market dates */}
+            {relevantMarkets.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {relevantMarkets.map((m) => {
+                  const grouped = groupByMonth(m.dates ?? []);
+                  const months = Object.entries(grouped);
+                  return (
+                    <div key={m.marketID}>
+                      <div style={{ ...LABEL_STYLE, color: "#0d8240", marginBottom: 6 }}>
+                        Attending {allMarkets[m.marketID] ?? m.market}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      {months.length === 0 ? (
+                        <span style={{ fontSize: 12, color: "#aaa" }}>Dates TBD</span>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {months.map(([month, days]) => (
+                            <div key={month} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+                              <span style={{ fontSize: 11, color: "#888", fontWeight: 600, minWidth: 52, flexShrink: 0 }}>
+                                {month.replace(/\s*\d{4}$/, "")}
+                              </span>
+                              <span style={{ fontSize: 12, color: "#333", lineHeight: 1.6 }}>
+                                {days.join(" · ")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
