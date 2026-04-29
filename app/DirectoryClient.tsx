@@ -521,6 +521,7 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
             padding: "16px 20px",
             borderRight: "1px solid #e8e8e0",
           }}>
+            <div style={{ ...LABEL_STYLE, marginBottom: 8 }}>About</div>
             {vendor.description ? (
               <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.75 }}>
                 {vendor.description}
