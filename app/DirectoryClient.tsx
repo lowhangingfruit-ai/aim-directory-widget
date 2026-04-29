@@ -77,6 +77,18 @@ const MARKET_SHORT: Record<number, string> = {
   8211: "San Rafael",
 };
 
+const MARKET_COLORS: Record<number, string> = {
+  7776: "#E0368A", // Sun Marin — magenta radish
+  7781: "#4A3C96", // Newark — purple eggplant
+  7782: "#C83828", // Clement St. — red tomato
+  7783: "#E8956A", // Stonestown — peach apple
+  7784: "#5A8C38", // Hayward — avocado green
+  7785: "#C8A820", // Grand Lake — golden turnip
+  7786: "#E0368A", // Thu Marin — same radish
+  7803: "#C83860", // Point Reyes — strawberry red
+  8211: "#4A9CB8", // San Rafael — sky blue corn
+};
+
 const CATEGORIES: { label: string; keywords: string[] }[] = [
   { label: "Produce", keywords: ["vegetable", "veggie", "produce", "greens", "lettuce", "kale", "spinach", "herb", "tomato", "pepper", "squash", "onion", "garlic", "root", "seasonal", "crop", "farm fresh", "microgreen"] },
   { label: "Fruit", keywords: ["fruit", "berry", "berries", "apple", "pear", "citrus", "strawberry", "peach", "plum", "cherry", "melon", "stone fruit", "grape", "fig", "nectarine"] },
@@ -147,9 +159,10 @@ const LABEL_STYLE: React.CSSProperties = {
 };
 
 // ── Pill ──────────────────────────────────────────────────────────────────────
-function Pill({ label, count, active, onClick, size = "md" }: {
-  label: string; count?: number; active: boolean; onClick: () => void; size?: "sm" | "md";
+function Pill({ label, count, active, onClick, size = "md", color }: {
+  label: string; count?: number; active: boolean; onClick: () => void; size?: "sm" | "md"; color?: string;
 }) {
+  const activeColor = color ?? "#0d8240";
   return (
     <button onClick={onClick} style={{
       flexShrink: 0,
@@ -157,12 +170,13 @@ function Pill({ label, count, active, onClick, size = "md" }: {
       fontFamily: "var(--font-body)",
       fontSize: size === "sm" ? 12 : 13,
       cursor: "pointer",
-      border: `1px solid ${active ? "#0d8240" : "#d8d8d8"}`,
+      border: `1px solid ${active ? activeColor : color ? `${color}55` : "#d8d8d8"}`,
       borderRadius: 20,
-      backgroundColor: active ? "#0d8240" : "#fff",
-      color: active ? "#fff" : "#494949",
+      backgroundColor: active ? activeColor : "#fff",
+      color: active ? "#fff" : color ? activeColor : "#494949",
       transition: "all 0.12s ease",
       whiteSpace: "nowrap",
+      fontWeight: active ? 600 : 400,
     }}>
       {label}
       {count !== undefined && (
@@ -303,7 +317,8 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           <div style={scrollRowStyle}>
             {marketOptions.map((m) => (
               <Pill key={m.id} label={m.name} count={m.count}
-                active={selectedMarket === m.id} onClick={() => handleMarketSelect(m.id)} />
+                active={selectedMarket === m.id} onClick={() => handleMarketSelect(m.id)}
+                color={MARKET_COLORS[m.id]} />
             ))}
           </div>
         )}
