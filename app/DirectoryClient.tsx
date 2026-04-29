@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { Vendor } from "@/lib/types";
+import { Vendor, VendorMarket } from "@/lib/types";
 
 interface Props {
   vendors: Vendor[];
@@ -10,6 +10,51 @@ interface Props {
   allMarkets: Record<number, string>;
 }
 
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
+
+function parseDate(s: string): Date {
+  const [m, d, y] = s.split("/").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function nextDate(markets: VendorMarket[], filterMarketID?: number | null): string | null {
+  const relevant = filterMarketID
+    ? markets.filter((m) => m.marketID === filterMarketID)
+    : markets;
+  const upcoming = relevant
+    .flatMap((m) => m.dates)
+    .map(parseDate)
+    .filter((d) => d >= TODAY)
+    .sort((a, b) => a.getTime() - b.getTime());
+  if (!upcoming.length) return null;
+  return upcoming[0].toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function groupByMonth(dates: string[]): Record<string, string[]> {
+  const groups: Record<string, string[]> = {};
+  for (const d of dates) {
+    const dt = parseDate(d);
+    if (dt < TODAY) continue;
+    const key = dt.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(dt.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+  }
+  return groups;
+}
+
+const MARKET_SHORT: Record<number, string> = {
+  7776: "Sun Marin",
+  7781: "Newark",
+  7782: "Clement St.",
+  7783: "Stonestown",
+  7784: "Hayward",
+  7785: "Grand Lake",
+  7786: "Thu Marin",
+  7803: "Point Reyes",
+  8211: "San Rafael",
+};
+
 export default function DirectoryClient({ vendors, marketID, marketName, allMarkets }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
@@ -17,7 +62,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Market options — only show known 2026 markets (those in allMarkets), with vendor counts
   const marketOptions = useMemo(() => {
     const counts: Record<number, number> = {};
     for (const v of vendors) {
@@ -77,9 +121,9 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     : marketName ?? "All Market Participants";
 
   return (
-    <div style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ padding: "24px 16px", maxWidth: 900, margin: "0 auto" }}>
 
-      {/* Market filter pills — only shown in all-markets view */}
+      {/* Market filter — horizontal scroll on mobile */}
       {!marketID && (
         <div style={{ marginBottom: 20 }}>
           <div style={{
@@ -93,7 +137,14 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           }}>
             Filter by Market
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <div style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            paddingBottom: 4,
+            WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+            scrollbarWidth: "none" as React.CSSProperties["scrollbarWidth"],
+          }}>
             {marketOptions.map((m) => {
               const active = selectedMarket === m.id;
               return (
@@ -101,6 +152,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   key={m.id}
                   onClick={() => handleMarketSelect(m.id)}
                   style={{
+                    flexShrink: 0,
                     padding: "6px 14px",
                     fontFamily: "var(--font-body)",
                     fontSize: 13,
@@ -114,9 +166,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   }}
                 >
                   {m.name}
-                  <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.7 }}>
-                    {m.count}
-                  </span>
+                  <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.7 }}>{m.count}</span>
                 </button>
               );
             })}
@@ -158,7 +208,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         />
       </div>
 
-      {/* A–Z jump nav — only for long lists */}
+      {/* A–Z jump nav */}
       {filtered.length > 20 && letters.length > 1 && (
         <div style={{
           display: "flex",
@@ -204,7 +254,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           const letter = vendor.company[0]?.toUpperCase();
           const prevLetter = i > 0 ? filtered[i - 1].company[0]?.toUpperCase() : null;
           const isNewLetter = letter !== prevLetter;
-
           return (
             <div key={vendor.vendorID}>
               {isNewLetter && letter && (
@@ -254,7 +303,14 @@ function VendorCard({
 }) {
   const relevantMarkets = selectedMarket
     ? vendor.markets.filter((m) => m.marketID === selectedMarket)
-    : vendor.markets;
+    : vendor.markets.filter((m) => allMarkets[m.marketID]);
+
+  const next = nextDate(vendor.markets, selectedMarket);
+
+  // Market badges: only known 2026 markets, sorted
+  const marketBadges = vendor.markets
+    .filter((m) => MARKET_SHORT[m.marketID])
+    .sort((a, b) => (MARKET_SHORT[a.marketID] ?? "").localeCompare(MARKET_SHORT[b.marketID] ?? ""));
 
   return (
     <div style={{
@@ -293,7 +349,8 @@ function VendorCard({
               <span style={{ fontSize: 18, color: "#afada9" }}>{vendor.company.charAt(0)}</span>
             </div>
           )}
-          <div style={{ minWidth: 0 }}>
+
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
               fontFamily: "var(--font-heading)",
               fontWeight: 500,
@@ -305,11 +362,43 @@ function VendorCard({
             }}>
               {vendor.company}
             </div>
-            {vendor.city && (
-              <div style={{ fontSize: 13, color: "#494949", marginTop: 2 }}>{vendor.city}</div>
+
+            {/* City + next date on same row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+              {vendor.city && (
+                <span style={{ fontSize: 13, color: "#494949" }}>{vendor.city}</span>
+              )}
+              {next && (
+                <>
+                  {vendor.city && <span style={{ fontSize: 11, color: "#d8d8d8" }}>·</span>}
+                  <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 500 }}>
+                    Next: {next}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Market badges */}
+            {!selectedMarket && marketBadges.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                {marketBadges.map((m) => (
+                  <span key={m.marketID} style={{
+                    fontSize: 11,
+                    padding: "2px 7px",
+                    backgroundColor: "#f2f2f2",
+                    border: "1px solid #e0e0e0",
+                    color: "#494949",
+                    fontFamily: "var(--font-body)",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {MARKET_SHORT[m.marketID]}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>
+
         <span style={{
           flexShrink: 0, width: 24, height: 24,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -326,6 +415,8 @@ function VendorCard({
               {vendor.description}
             </p>
           )}
+
+          {/* Contact links */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginBottom: 16, fontSize: 14 }}>
             {vendor.phone1 && (
               <a href={`tel:${vendor.phone1}`} style={{ color: "#0d8240", textDecoration: "none" }}>
@@ -354,39 +445,51 @@ function VendorCard({
               </a>
             )}
           </div>
+
+          {/* Dates grouped by month */}
           {relevantMarkets.length > 0 && (
             <div>
-              {relevantMarkets.map((m) => (
-                <div key={m.marketID} style={{ marginBottom: 12 }}>
-                  <div style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 500,
-                    fontSize: 12,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "#494949",
-                    marginBottom: 6,
-                  }}>
-                    {allMarkets[m.marketID] ?? m.market}
-                  </div>
-                  {m.dates?.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {m.dates.map((d) => (
-                        <span key={d} style={{
-                          fontSize: 12, padding: "3px 8px",
-                          backgroundColor: "#f2f2f2",
-                          border: "1px solid #d8d8d8",
-                          color: "#494949",
-                        }}>
-                          {d}
-                        </span>
-                      ))}
+              {relevantMarkets.map((m) => {
+                const grouped = groupByMonth(m.dates ?? []);
+                const months = Object.entries(grouped);
+                return (
+                  <div key={m.marketID} style={{ marginBottom: 14 }}>
+                    <div style={{
+                      fontFamily: "var(--font-heading)",
+                      fontWeight: 500,
+                      fontSize: 12,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#494949",
+                      marginBottom: 8,
+                    }}>
+                      {allMarkets[m.marketID] ?? m.market}
                     </div>
-                  ) : (
-                    <span style={{ fontSize: 13, color: "#afada9" }}>Dates TBD</span>
-                  )}
-                </div>
-              ))}
+                    {months.length === 0 ? (
+                      <span style={{ fontSize: 13, color: "#afada9" }}>Dates TBD</span>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {months.map(([month, days]) => (
+                          <div key={month} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+                            <span style={{
+                              fontSize: 12,
+                              color: "#494949",
+                              fontWeight: 500,
+                              minWidth: 80,
+                              flexShrink: 0,
+                            }}>
+                              {month.replace(/\s*\d{4}$/, "")}
+                            </span>
+                            <span style={{ fontSize: 13, color: "#000" }}>
+                              {days.join(" · ")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
