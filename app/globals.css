@@ -7,7 +7,6 @@
   --text: #000000;
   --text-muted: #494949;
   --border: #d8d8d8;
-  --tag-bg: #f2f2f2;
   --white: #ffffff;
   --font-body: 'Asap', sans-serif;
   --font-heading: 'Ek Mukta', sans-serif;
@@ -20,7 +19,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg);
+  background-color: #e0dfd4;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 15px;
