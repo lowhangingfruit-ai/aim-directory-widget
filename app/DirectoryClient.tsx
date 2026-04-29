@@ -236,19 +236,31 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     return CATEGORIES.filter((c) => counts[c.label]).map((c) => ({ label: c.label, count: counts[c.label] }));
   }, [vendors, selectedMarket, search, selectedDate]);
 
-  // Group filtered vendors by first letter
+  // Group filtered vendors by first letter, numeric vendors sorted to end
   const grouped = useMemo(() => {
-    const groups: { letter: string; vendors: Vendor[] }[] = [];
-    let current: { letter: string; vendors: Vendor[] } | null = null;
+    const letterGroups: { letter: string; vendors: Vendor[] }[] = [];
+    const numericGroups: { letter: string; vendors: Vendor[] }[] = [];
+    let currentLetter: { letter: string; vendors: Vendor[] } | null = null;
+    let currentNum: { letter: string; vendors: Vendor[] } | null = null;
+
     for (const v of filtered) {
-      const letter = v.company[0]?.toUpperCase() || "#";
-      if (!current || current.letter !== letter) {
-        current = { letter, vendors: [] };
-        groups.push(current);
+      const first = v.company[0]?.toUpperCase() || "#";
+      const isNumeric = /\d/.test(first);
+      if (isNumeric) {
+        if (!currentNum || currentNum.letter !== first) {
+          currentNum = { letter: first, vendors: [] };
+          numericGroups.push(currentNum);
+        }
+        currentNum.vendors.push(v);
+      } else {
+        if (!currentLetter || currentLetter.letter !== first) {
+          currentLetter = { letter: first, vendors: [] };
+          letterGroups.push(currentLetter);
+        }
+        currentLetter.vendors.push(v);
       }
-      current.vendors.push(v);
     }
-    return groups;
+    return [...letterGroups, ...numericGroups];
   }, [filtered]);
 
   const handleMarketSelect = (id: number) => {
