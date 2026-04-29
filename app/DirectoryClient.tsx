@@ -465,10 +465,7 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
       style={{
         gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
         background: expanded ? "#fafaf8" : hovered ? "#fafaf8" : "#fff",
-        borderTop: "1px solid #e8e8e0",
-        borderRight: "1px solid #e8e8e0",
-        borderBottom: "1px solid #e8e8e0",
-        borderLeft: `3px solid ${expanded ? "#0d8240" : hovered ? "#4db448" : "#dddcd3"}`,
+        border: "1px solid #e8e8e0",
         borderRadius: 6,
         cursor: "pointer",
         overflow: "hidden",
