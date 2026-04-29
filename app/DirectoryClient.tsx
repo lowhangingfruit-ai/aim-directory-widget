@@ -77,9 +77,65 @@ const MARKET_SHORT: Record<number, string> = {
   8211: "San Rafael",
 };
 
+// ── Autotag ──────────────────────────────────────────────────────────────────
+
+const CATEGORIES: { label: string; keywords: string[] }[] = [
+  { label: "Produce", keywords: ["vegetable", "veggie", "produce", "greens", "lettuce", "kale", "spinach", "herb", "tomato", "pepper", "squash", "onion", "garlic", "root", "seasonal", "crop", "farm fresh", "microgreen"] },
+  { label: "Fruit", keywords: ["fruit", "berry", "berries", "apple", "pear", "citrus", "strawberry", "peach", "plum", "cherry", "melon", "stone fruit", "grape", "fig", "nectarine"] },
+  { label: "Bakery", keywords: ["bread", "pastry", "bake", "bakery", "sourdough", "croissant", "muffin", "cake", "cookie", "flour", "tortilla", "bagel", "loaf", "biscuit", "scone", "pita"] },
+  { label: "Dairy & Eggs", keywords: ["cheese", "dairy", "yogurt", "milk", "butter", "cream", "chevre", "kefir", "egg", "creamery", "cheddar", "gouda", "brie"] },
+  { label: "Meat & Poultry", keywords: ["meat", "beef", "pork", "lamb", "chicken", "poultry", "turkey", "sausage", "grass-fed", "pasture", "heritage", "ranch", "salami", "charcuterie", "duck", "rabbit"] },
+  { label: "Seafood", keywords: ["fish", "seafood", "salmon", "oyster", "crab", "shrimp", "halibut", "tuna", "shellfish", "catch", "dungeness", "clam", "mussel", "anchovy", "squid"] },
+  { label: "Flowers & Plants", keywords: ["flower", "floral", "bouquet", "bloom", "plant", "succulent", "arrangement", "nursery", "botanical", "garden", "orchid", "rose", "lavender"] },
+  { label: "Honey & Preserves", keywords: ["honey", "jam", "jelly", "preserve", "pickle", "ferment", "condiment", "spread", "marmalade", "chutney", "hot sauce", "vinegar", "beeswax"] },
+  { label: "Prepared Foods", keywords: ["prepared", "ready", "meal", "sauce", "soup", "snack", "dip", "salsa", "olive", "hummus", "pesto", "tamale", "empanada", "dumpling", "jerky", "granola", "nut butter", "chocolate"] },
+  { label: "Beverages", keywords: ["coffee", "tea", "juice", "drink", "beverage", "kombucha", "cider", "brew", "roast", "chai", "smoothie", "lemonade", "shrub", "tonic"] },
+  { label: "Mushrooms", keywords: ["mushroom", "fungi", "shiitake", "oyster mushroom", "chanterelle", "porcini", "mycel"] },
+  { label: "Nuts & Grains", keywords: ["nut", "almond", "walnut", "pistachio", "pecan", "hazelnut", "grain", "rice", "quinoa", "oat", "seed", "legume", "bean", "lentil"] },
+];
+
+function autoTag(vendor: Vendor): string[] {
+  const text = `${vendor.company} ${vendor.description ?? ""}`.toLowerCase();
+  return CATEGORIES.filter((cat) =>
+    cat.keywords.some((kw) => text.includes(kw))
+  ).map((cat) => cat.label);
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+function upcomingDatesForMarket(vendors: Vendor[], marketID: number): Date[] {
+  const seen = new Set<string>();
+  const dates: Date[] = [];
+  for (const v of vendors) {
+    for (const m of v.markets) {
+      if (m.marketID !== marketID) continue;
+      for (const d of m.dates ?? []) {
+        const dt = parseDate(d);
+        if (dt >= TODAY && !seen.has(d)) {
+          seen.add(d);
+          dates.push(dt);
+        }
+      }
+    }
+  }
+  return dates.sort((a, b) => a.getTime() - b.getTime()).slice(0, 8);
+}
+
+function fmtDateChip(d: Date): string {
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function dateKey(d: Date): string {
+  return d.toLocaleDateString("en-US");
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function DirectoryClient({ vendors, marketID, marketName, allMarkets }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -98,11 +154,20 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [vendors, allMarkets]);
 
+  // Date chips — computed from the full vendor list for the selected market
+  const dateChips = useMemo(() => {
+    if (!selectedMarket) return [];
+    return upcomingDatesForMarket(vendors, selectedMarket);
+  }, [vendors, selectedMarket]);
+
+  // Vendors after market + search + date + category
   const filtered = useMemo(() => {
     let list = vendors;
+
     if (selectedMarket) {
       list = list.filter((v) => v.markets.some((m) => m.marketID === selectedMarket));
     }
+
     const q = search.toLowerCase().trim();
     if (q) {
       list = list.filter(
@@ -112,8 +177,48 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           v.city?.toLowerCase().includes(q)
       );
     }
+
+    if (selectedDate) {
+      list = list.filter((v) =>
+        v.markets.some((m) => {
+          if (selectedMarket && m.marketID !== selectedMarket) return false;
+          return (m.dates ?? []).some((d) => {
+            const dt = parseDate(d);
+            return dateKey(dt) === selectedDate;
+          });
+        })
+      );
+    }
+
+    if (selectedCategory) {
+      list = list.filter((v) => autoTag(v).includes(selectedCategory));
+    }
+
     return list;
-  }, [vendors, selectedMarket, search]);
+  }, [vendors, selectedMarket, search, selectedDate, selectedCategory]);
+
+  // Available categories — computed after market+search+date (before category filter)
+  const availableCategories = useMemo(() => {
+    let list = vendors;
+    if (selectedMarket) list = list.filter((v) => v.markets.some((m) => m.marketID === selectedMarket));
+    const q = search.toLowerCase().trim();
+    if (q) list = list.filter((v) => v.company.toLowerCase().includes(q) || v.description?.toLowerCase().includes(q) || v.city?.toLowerCase().includes(q));
+    if (selectedDate) {
+      list = list.filter((v) =>
+        v.markets.some((m) => {
+          if (selectedMarket && m.marketID !== selectedMarket) return false;
+          return (m.dates ?? []).some((d) => dateKey(parseDate(d)) === selectedDate);
+        })
+      );
+    }
+    const counts: Record<string, number> = {};
+    for (const v of list) {
+      for (const tag of autoTag(v)) {
+        counts[tag] = (counts[tag] ?? 0) + 1;
+      }
+    }
+    return CATEGORIES.filter((c) => counts[c.label]).map((c) => ({ label: c.label, count: counts[c.label] }));
+  }, [vendors, selectedMarket, search, selectedDate]);
 
   const letters = useMemo(() => {
     const seen = new Set<string>();
@@ -134,13 +239,27 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
 
   const handleMarketSelect = (id: number) => {
     setSelectedMarket((prev) => (prev === id ? null : id));
+    setSelectedDate(null);
+    setSelectedCategory(null);
     setExpandedID(null);
     setSearch("");
+  };
+
+  const handleDateSelect = (key: string) => {
+    setSelectedDate((prev) => (prev === key ? null : key));
+    setExpandedID(null);
+  };
+
+  const handleCategorySelect = (label: string) => {
+    setSelectedCategory((prev) => (prev === label ? null : label));
+    setExpandedID(null);
   };
 
   const displayTitle = selectedMarket
     ? (allMarkets[selectedMarket] ?? marketName ?? "Market Participants")
     : marketName ?? "All Market Participants";
+
+  const hasActiveFilter = !!(selectedDate || selectedCategory || search);
 
   return (
     <div style={{ fontFamily: "var(--font-body)" }}>
@@ -156,6 +275,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         padding: "14px 20px 12px",
       }}>
+
         {/* Market pills */}
         {!marketID && (
           <div style={{
@@ -190,6 +310,92 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                 >
                   {m.name}
                   <span style={{ marginLeft: 5, fontSize: 11, opacity: 0.65 }}>{m.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Date chips — only when a market is selected */}
+        {selectedMarket && dateChips.length > 0 && (
+          <div style={{
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            paddingBottom: 10,
+            marginBottom: 10,
+            borderBottom: "1px solid #e8e8e0",
+            WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+            scrollbarWidth: "none" as React.CSSProperties["scrollbarWidth"],
+          }}>
+            <span style={{ fontSize: 11, color: "#afada9", alignSelf: "center", flexShrink: 0, marginRight: 2 }}>
+              Date
+            </span>
+            {dateChips.map((d) => {
+              const key = dateKey(d);
+              const active = selectedDate === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleDateSelect(key)}
+                  style={{
+                    flexShrink: 0,
+                    padding: "5px 12px",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    border: `1px solid ${active ? "#0d8240" : "#d8d8d8"}`,
+                    borderRadius: 20,
+                    backgroundColor: active ? "#0d8240" : "#fff",
+                    color: active ? "#fff" : "#494949",
+                    transition: "all 0.12s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {fmtDateChip(d)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Category chips */}
+        {availableCategories.length > 0 && (
+          <div style={{
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            paddingBottom: 10,
+            marginBottom: 10,
+            borderBottom: "1px solid #e8e8e0",
+            WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+            scrollbarWidth: "none" as React.CSSProperties["scrollbarWidth"],
+          }}>
+            <span style={{ fontSize: 11, color: "#afada9", alignSelf: "center", flexShrink: 0, marginRight: 2 }}>
+              Category
+            </span>
+            {availableCategories.map(({ label, count }) => {
+              const active = selectedCategory === label;
+              return (
+                <button
+                  key={label}
+                  onClick={() => handleCategorySelect(label)}
+                  style={{
+                    flexShrink: 0,
+                    padding: "5px 12px",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    border: `1px solid ${active ? "#0d8240" : "#d8d8d8"}`,
+                    borderRadius: 20,
+                    backgroundColor: active ? "#0d8240" : "transparent",
+                    color: active ? "#fff" : "#494949",
+                    transition: "all 0.12s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {label}
+                  <span style={{ marginLeft: 5, fontSize: 11, opacity: 0.65 }}>{count}</span>
                 </button>
               );
             })}
@@ -238,7 +444,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       {/* ── Scrollable body ── */}
       <div style={{ padding: "0 20px 32px" }}>
 
-        {/* Title + count */}
+        {/* Title + count + active filter summary */}
         <div style={{ padding: "16px 0 4px" }}>
           <h2 style={{
             fontFamily: "var(--font-heading)",
@@ -251,8 +457,27 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           </h2>
           <p style={{ color: "#afada9", fontSize: 13, margin: 0 }}>
             {filtered.length} {filtered.length === 1 ? "vendor" : "vendors"}
+            {selectedDate && ` · ${selectedDate}`}
+            {selectedCategory && ` · ${selectedCategory}`}
             {search ? ` matching "${search}"` : ""}
           </p>
+          {hasActiveFilter && (
+            <button
+              onClick={() => { setSelectedDate(null); setSelectedCategory(null); setSearch(""); }}
+              style={{
+                marginTop: 6,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#0d8240",
+                fontSize: 12,
+                padding: 0,
+                textDecoration: "underline",
+              }}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
         {/* A–Z jump nav */}
@@ -356,15 +581,14 @@ function VendorCard({
   const next = nextDate(vendor.markets, selectedMarket);
   const phone = formatPhone(vendor.phone1);
   const location = formatCity(vendor.city, vendor.state);
+  const tags = autoTag(vendor);
 
   const marketBadges = vendor.markets
     .filter((m) => MARKET_SHORT[m.marketID])
     .sort((a, b) => (MARKET_SHORT[a.marketID] ?? "").localeCompare(MARKET_SHORT[b.marketID] ?? ""));
 
   return (
-    <div style={{
-      borderBottom: "1px solid #e8e8e0",
-    }}>
+    <div style={{ borderBottom: "1px solid #e8e8e0" }}>
       {/* Collapsed row */}
       <button
         onClick={onToggle}
@@ -428,9 +652,28 @@ function VendorCard({
               )}
             </div>
 
+            {/* Category tags */}
+            {tags.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
+                {tags.map((tag) => (
+                  <span key={tag} style={{
+                    fontSize: 11,
+                    padding: "2px 7px",
+                    backgroundColor: "#f0f5f1",
+                    border: "1px solid #c8dece",
+                    borderRadius: 10,
+                    color: "#0d8240",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Market badges — only in all-markets view */}
             {!selectedMarket && marketBadges.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
                 {marketBadges.map((m) => (
                   <span key={m.marketID} style={{
                     fontSize: 11,
