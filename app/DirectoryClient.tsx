@@ -13,6 +13,31 @@ interface Props {
 const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
 
+function formatPhone(raw: string): string | null {
+  const s = raw.trim();
+  if (!s || s === "N/A" || s === " ") return null;
+  const digits = s.replace(/\D/g, "");
+  // Drop leading country code 1
+  const normalized = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (normalized.length !== 10) return null;
+  return `(${normalized.slice(0, 3)}) ${normalized.slice(3, 6)}-${normalized.slice(6)}`;
+}
+
+function titleCase(s: string): string {
+  if (!s) return s;
+  return s
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatCity(city: string, state: string): string {
+  const c = titleCase(city.trim());
+  const st = state.trim();
+  const validState = st && st !== "0" && /^[A-Z]{2}$/.test(st);
+  if (!c) return "";
+  return validState ? `${c}, ${st}` : c;
+}
+
 function parseDate(s: string): Date {
   const [m, d, y] = s.split("/").map(Number);
   return new Date(y, m - 1, d);
@@ -366,7 +391,7 @@ function VendorCard({
             {/* City + next date on same row */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
               {vendor.city && (
-                <span style={{ fontSize: 13, color: "#494949" }}>{vendor.city}</span>
+                <span style={{ fontSize: 13, color: "#494949" }}>{formatCity(vendor.city, vendor.state)}</span>
               )}
               {next && (
                 <>
@@ -418,9 +443,9 @@ function VendorCard({
 
           {/* Contact links */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginBottom: 16, fontSize: 14 }}>
-            {vendor.phone1 && (
+            {formatPhone(vendor.phone1) && (
               <a href={`tel:${vendor.phone1}`} style={{ color: "#0d8240", textDecoration: "none" }}>
-                Phone: {vendor.phone1}
+                Phone: {formatPhone(vendor.phone1)}
               </a>
             )}
             {vendor.website?.trim() && (
