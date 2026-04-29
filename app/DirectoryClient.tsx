@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Vendor, VendorMarket } from "@/lib/types";
 
 interface Props {
@@ -28,7 +28,7 @@ function nextDate(markets: VendorMarket[], filterMarketID?: number | null): stri
     .filter((d) => d >= TODAY)
     .sort((a, b) => a.getTime() - b.getTime());
   if (!upcoming.length) return null;
-  return upcoming[0].toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return upcoming[0].toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function groupByMonth(dates: string[]): Record<string, string[]> {
@@ -57,6 +57,11 @@ function titleCase(s: string): string {
   return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const LEGAL_SUFFIXES = /[\s,]+(LLC|Inc\.?|Corp\.?|Co\.?|Ltd\.?|L\.L\.C\.?)$/i;
+function displayName(company: string): string {
+  return company.replace(LEGAL_SUFFIXES, "").trim();
+}
+
 function formatCity(city: string, state: string): string {
   const c = titleCase(city.trim());
   const st = state.trim();
@@ -66,15 +71,15 @@ function formatCity(city: string, state: string): string {
 }
 
 const MARKET_SHORT: Record<number, string> = {
-  7776: "Sun Marin",
+  7776: "Sunday Marin",
   7781: "Newark",
   7782: "Clement St.",
   7783: "Stonestown",
   7784: "Hayward",
   7785: "Grand Lake",
-  7786: "Thu Marin",
+  7786: "Thursday Marin",
   7803: "Point Reyes",
-  8211: "San Rafael",
+  8211: "San Rafael Summer",
 };
 
 const MARKET_COLORS: Record<number, string> = {
@@ -145,7 +150,7 @@ function useLayout() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return { cols: narrow ? 1 : 2, px: narrow ? 20 : 32 };
+  return { cols: narrow ? 1 : 2, px: narrow ? 20 : 32, narrow };
 }
 
 // ── Shared label style ─────────────────────────────────────────────────────────
@@ -193,8 +198,8 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedID, setExpandedID] = useState<number | null>(null);
-  const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const { cols, px } = useLayout();
+  const [showFilters, setShowFilters] = useState(false);
+  const { cols, px, narrow } = useLayout();
 
   const marketOptions = useMemo(() => {
     const counts: Record<number, number> = {};
@@ -296,6 +301,20 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     scrollbarWidth: "none",
   };
 
+  // Wraps a scroll row with a right-edge fade hint
+  function FadeRow({ children }: { children: React.ReactNode }) {
+    return (
+      <div style={{ position: "relative" }}>
+        <div style={scrollRowStyle}>{children}</div>
+        <div style={{
+          position: "absolute", right: 0, top: 0, bottom: 10,
+          width: 40, pointerEvents: "none",
+          background: "linear-gradient(to right, transparent, #f6f5ea)",
+        }} />
+      </div>
+    );
+  }
+
   const hasActiveFilter = !!(selectedDate || selectedCategory || search);
   const displayTitle = selectedMarket
     ? (allMarkets[selectedMarket] ?? marketName ?? "Market Participants")
@@ -314,18 +333,32 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       }}>
         {/* Market pills */}
         {!marketID && (
-          <div style={scrollRowStyle}>
+          <FadeRow>
             {marketOptions.map((m) => (
               <Pill key={m.id} label={m.name} count={m.count}
                 active={selectedMarket === m.id} onClick={() => handleMarketSelect(m.id)}
                 color={MARKET_COLORS[m.id]} />
             ))}
-          </div>
+          </FadeRow>
+        )}
+
+        {/* Mobile refine toggle */}
+        {narrow && selectedMarket && (dateChips.length > 0 || availableCategories.length > 0) && (
+          <button onClick={() => setShowFilters(p => !p)} style={{
+            display: "flex", alignItems: "center", gap: 4,
+            background: "none", border: "1px solid #d8d8d8", borderRadius: 20,
+            padding: "4px 12px", fontSize: 12, cursor: "pointer",
+            color: (selectedDate || selectedCategory) ? "#0d8240" : "#666",
+            fontFamily: "var(--font-body)",
+            marginBottom: 10,
+          }}>
+            {showFilters ? "Hide filters ↑" : `Refine ↓${selectedDate || selectedCategory ? " ●" : ""}`}
+          </button>
         )}
 
         {/* Date chips */}
-        {selectedMarket && dateChips.length > 0 && (
-          <div style={scrollRowStyle}>
+        {selectedMarket && dateChips.length > 0 && (!narrow || showFilters || !!selectedDate) && (
+          <FadeRow>
             <span style={{ ...LABEL_STYLE, alignSelf: "center", flexShrink: 0, marginRight: 4 }}>Date</span>
             {dateChips.map((d) => {
               const key = dateKey(d);
@@ -334,18 +367,18 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }} />
               );
             })}
-          </div>
+          </FadeRow>
         )}
 
         {/* Category chips */}
-        {availableCategories.length > 0 && (
-          <div style={scrollRowStyle}>
+        {availableCategories.length > 0 && (!narrow || showFilters || !!selectedCategory) && (
+          <FadeRow>
             <span style={{ ...LABEL_STYLE, alignSelf: "center", flexShrink: 0, marginRight: 4 }}>Category</span>
             {availableCategories.map(({ label, count }) => (
               <Pill key={label} label={label} count={count} active={selectedCategory === label} size="sm"
                 onClick={() => { setSelectedCategory((p) => (p === label ? null : label)); setExpandedID(null); }} />
             ))}
-          </div>
+          </FadeRow>
         )}
 
         {/* Search */}
@@ -403,40 +436,22 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {grouped.map(({ letter, vendors: group }) => (
-              <div key={letter}>
-                {/* Letter header */}
-                <div
-                  ref={(el) => { letterRefs.current[letter] = el; }}
-                  style={{
-                    ...LABEL_STYLE,
-                    color: "#bbb",
-                    padding: "0 0 8px",
-                    marginBottom: 4,
-                    borderBottom: "1px solid #e8e8e0",
-                    scrollMarginTop: 120,
-                  }}
-                >
-                  {letter}
-                </div>
-
-                {/* Cards grid */}
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                  gap: 8,
-                }}>
-                  {group.map((vendor) => (
-                    <VendorCard
-                      key={vendor.vendorID}
-                      vendor={vendor}
-                      expanded={expandedID === vendor.vendorID}
-                      onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
-                      selectedMarket={selectedMarket}
-                      allMarkets={allMarkets}
-                      cols={cols}
-                    />
-                  ))}
-                </div>
+              <div key={letter} style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                gap: 8,
+              }}>
+                {group.map((vendor) => (
+                  <VendorCard
+                    key={vendor.vendorID}
+                    vendor={vendor}
+                    expanded={expandedID === vendor.vendorID}
+                    onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
+                    selectedMarket={selectedMarket}
+                    allMarkets={allMarkets}
+                    cols={cols}
+                  />
+                ))}
               </div>
             ))}
           </div>
@@ -479,12 +494,13 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
       onMouseLeave={() => setHovered(false)}
       style={{
         gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
-        background: expanded ? "#fafaf8" : hovered ? "#fafaf8" : "#fff",
+        background: expanded ? "#fafaf8" : "#fff",
         border: "1px solid #e8e8e0",
         borderRadius: 6,
         cursor: "pointer",
         overflow: "hidden",
-        transition: "border-left-color 0.15s ease, background 0.15s ease",
+        transition: "box-shadow 0.15s ease, background 0.15s ease",
+        boxShadow: hovered || expanded ? "0 2px 10px rgba(0,0,0,0.08)" : "none",
         fontFamily: "var(--font-body)",
       }}
     >
@@ -496,12 +512,20 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, allMarkets, co
             color: "#111", marginBottom: 3,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
-            {vendor.company}
+            {displayName(vendor.company)}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             {location && <span style={{ fontSize: 12, color: "#888" }}>{location}</span>}
-            {location && next && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
+            {next && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
             {next && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
+            {tags[0] && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
+            {tags[0] && (
+              <span style={{
+                fontSize: 10, padding: "2px 6px",
+                backgroundColor: "#f0f8f3", border: "1px solid #c8dece",
+                borderRadius: 3, color: "#5a9a70",
+              }}>{tags[0]}</span>
+            )}
           </div>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"
