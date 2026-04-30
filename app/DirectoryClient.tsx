@@ -362,11 +362,10 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                 >
                   <div style={{
                     width: 80, height: 80,
-                    outline: active ? `2px solid ${color}` : hovered ? "2px solid #ccc" : "2px solid transparent",
-                    outlineOffset: 2,
+                    border: active ? `2px solid ${color}` : hovered ? "2px solid #bbb" : "2px solid transparent",
                     overflow: "hidden",
                     opacity: selectedMarket && !active ? 0.45 : 1,
-                    transition: "outline 0.12s ease, opacity 0.12s ease",
+                    transition: "border-color 0.12s ease, opacity 0.12s ease",
                   }}>
                     {MARKET_LOGOS[m.id] ? (
                       <img src={MARKET_LOGOS[m.id]} alt={m.name}
