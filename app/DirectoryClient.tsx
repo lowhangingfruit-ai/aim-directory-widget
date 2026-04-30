@@ -185,7 +185,7 @@ function Pill({ label, count, active, onClick, size = "md", color, isNext }: {
       fontSize: size === "sm" ? 12 : 13,
       cursor: "pointer",
       border: `1px solid ${active ? activeColor : isNext ? "#0d824055" : color ? `${color}55` : "#d8d8d8"}`,
-      borderRadius: 20,
+      borderRadius: 0,
       backgroundColor: active ? activeColor : "#fff",
       color: active ? "#fff" : isNext ? "#0d8240" : color ? activeColor : "#494949",
       transition: "all 0.12s ease",
@@ -341,40 +341,50 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
         padding: `14px ${px}px 12px`,
       }}>
-        {/* Option B: selected market badge */}
-        {selectedMarket && !marketID && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            {MARKET_LOGOS[selectedMarket] && (
-              <img
-                src={MARKET_LOGOS[selectedMarket]}
-                alt={allMarkets[selectedMarket]}
-                style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
-              />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {allMarkets[selectedMarket]}
-              </div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>Farmers Market</div>
-            </div>
-            <button onClick={() => handleMarketSelect(selectedMarket)} style={{
-              flexShrink: 0, background: "none", border: "1px solid #d8d8d8",
-              borderRadius: 20, padding: "4px 10px", fontSize: 12, cursor: "pointer",
-              color: "#666", fontFamily: "var(--font-body)",
-            }}>
-              ✕ All markets
-            </button>
-          </div>
-        )}
-
-        {/* Market pills (shown only when no market selected) */}
-        {!marketID && !selectedMarket && (
+        {/* Branded market logo scroll row */}
+        {!marketID && (
           <FadeRow>
-            {marketOptions.map((m) => (
-              <Pill key={m.id} label={m.name} count={m.count}
-                active={selectedMarket === m.id} onClick={() => handleMarketSelect(m.id)}
-                color={MARKET_COLORS[m.id]} />
-            ))}
+            {marketOptions.map((m) => {
+              const active = selectedMarket === m.id;
+              const hovered = hoveredMarket === m.id;
+              const color = MARKET_COLORS[m.id] ?? "#0d8240";
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleMarketSelect(m.id)}
+                  onMouseEnter={() => setHoveredMarket(m.id)}
+                  onMouseLeave={() => setHoveredMarket(null)}
+                  style={{
+                    flexShrink: 0, border: "none", background: "none",
+                    cursor: "pointer", padding: "0 2px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                  }}
+                >
+                  <div style={{
+                    width: 52, height: 52,
+                    outline: active ? `2px solid ${color}` : hovered ? "2px solid #ccc" : "2px solid transparent",
+                    outlineOffset: 2,
+                    overflow: "hidden",
+                    opacity: selectedMarket && !active ? 0.5 : 1,
+                    transition: "outline 0.12s ease, opacity 0.12s ease",
+                  }}>
+                    {MARKET_LOGOS[m.id] ? (
+                      <img src={MARKET_LOGOS[m.id]} alt={m.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", background: color }} />
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontFamily: "var(--font-body)", lineHeight: 1.2,
+                    textAlign: "center", maxWidth: 60, whiteSpace: "nowrap",
+                    overflow: "hidden", textOverflow: "ellipsis",
+                    color: active ? color : "#555",
+                    fontWeight: active ? 700 : 400,
+                  }}>{m.name}</span>
+                </button>
+              );
+            })}
           </FadeRow>
         )}
 
@@ -382,7 +392,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         {narrow && selectedMarket && dateChips.length > 0 && (
           <button onClick={() => setShowFilters(p => !p)} style={{
             display: "flex", alignItems: "center", gap: 4,
-            background: "none", border: "1px solid #d8d8d8", borderRadius: 20,
+            background: "none", border: "1px solid #d8d8d8", borderRadius: 0,
             padding: "4px 12px", fontSize: 12, cursor: "pointer",
             color: selectedDate ? "#0d8240" : "#666",
             fontFamily: "var(--font-body)",
@@ -418,7 +428,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             style={{
               width: "100%", padding: "9px 36px",
               fontFamily: "var(--font-body)", fontSize: 14,
-              border: "1px solid #d8d8d8", borderRadius: 6,
+              border: "1px solid #d8d8d8", borderRadius: 0,
               backgroundColor: "#fff", color: "#000",
               outline: "none", boxSizing: "border-box",
             }} />
@@ -451,7 +461,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
               </button>
             )}
             {/* List / Map toggle */}
-            <div style={{ display: "flex", border: "1px solid #d8d8d8", borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ display: "flex", border: "1px solid #d8d8d8", borderRadius: 0, overflow: "hidden", flexShrink: 0 }}>
               {(["list", "map"] as const).map((v) => (
                 <button key={v} onClick={() => setView(v)} style={{
                   padding: "5px 12px", fontSize: 12, cursor: "pointer",
@@ -467,56 +477,6 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             </div>
           </div>
         </div>
-
-        {/* Option C: Market logo grid (no market selected, no search) */}
-        {!selectedMarket && !search && !marketID && (
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ ...LABEL_STYLE, marginBottom: 12 }}>Browse by market</div>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${narrow ? 3 : 3}, 1fr)`,
-              gap: narrow ? 10 : 14,
-            }}>
-              {marketOptions.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => handleMarketSelect(m.id)}
-                  onMouseEnter={() => setHoveredMarket(m.id)}
-                  onMouseLeave={() => setHoveredMarket(null)}
-                  style={{
-                    border: "none", background: "none", cursor: "pointer", padding: 0,
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{
-                    width: "100%", aspectRatio: "1 / 1",
-                    borderRadius: narrow ? 10 : 14, overflow: "hidden",
-                    boxShadow: hoveredMarket === m.id
-                      ? "0 6px 20px rgba(0,0,0,0.15)"
-                      : "0 2px 8px rgba(0,0,0,0.07)",
-                    transform: hoveredMarket === m.id ? "scale(1.04)" : "scale(1)",
-                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                  }}>
-                    {MARKET_LOGOS[m.id] ? (
-                      <img
-                        src={MARKET_LOGOS[m.id]}
-                        alt={m.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", background: MARKET_COLORS[m.id] ?? "#0d8240" }} />
-                    )}
-                  </div>
-                  <div style={{ fontSize: narrow ? 10 : 11, fontFamily: "var(--font-body)", color: "#444", lineHeight: 1.3 }}>
-                    {m.name}
-                    <span style={{ display: "block", fontSize: 10, color: "#aaa" }}>{m.count} vendors</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Map view */}
         {view === "map" && (
@@ -564,7 +524,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
             position: "fixed", bottom: 24, right: 24, zIndex: 50,
-            width: 36, height: 36, borderRadius: "50%",
+            width: 36, height: 36, borderRadius: 0,
             backgroundColor: "#0d8240", color: "#fff",
             border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -619,7 +579,7 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
         gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
         background: expanded ? "#fafaf8" : "#fff",
         border: "1px solid #e8e8e0",
-        borderRadius: 6,
+        borderRadius: 0,
         cursor: "pointer",
         overflow: "hidden",
         transition: "box-shadow 0.15s ease, background 0.15s ease",
@@ -722,7 +682,7 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
                     <span key={m.marketID} style={{
                       fontSize: 11, padding: "3px 8px",
                       backgroundColor: "#f6f5ea", border: "1px solid #dddcd3",
-                      borderRadius: 4, color: "#666",
+                      borderRadius: 0, color: "#666",
                     }}>{MARKET_SHORT[m.marketID]}</span>
                   ))}
                 </div>
