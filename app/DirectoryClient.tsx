@@ -421,7 +421,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input type="text" placeholder="Search vendors, products, city…" value={search}
+          <input type="text" placeholder="Search market participants, products, city…" value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: "100%", padding: "9px 36px",
@@ -446,7 +446,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         <div style={{ padding: "16px 0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <p style={{ fontSize: 13, margin: 0, color: "#555" }}>
             <span style={{ fontWeight: 600, color: "#111" }}>{filtered.length}</span>
-            {" "}{filtered.length === 1 ? "vendor" : "vendors"}
+            {" "}{filtered.length === 1 ? "market participant" : "market participants"}
             {selectedMarket && !selectedDate && ` at ${allMarkets[selectedMarket]}`}
             {selectedDate && ` attending ${selectedDate}`}
             {search ? ` matching "${search}"` : ""}
@@ -488,7 +488,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
 
         {/* Vendor list */}
         {view === "list" && (filtered.length === 0 ? (
-          <p style={{ color: "#aaa", textAlign: "center", padding: "64px 0" }}>No vendors found.</p>
+          <p style={{ color: "#aaa", textAlign: "center", padding: "64px 0" }}>No market participants found.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {grouped.map(({ letter, vendors: group }) => (
