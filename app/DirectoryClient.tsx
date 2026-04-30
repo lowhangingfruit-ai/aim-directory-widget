@@ -356,16 +356,14 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   onMouseLeave={() => setHoveredMarket(null)}
                   style={{
                     flexShrink: 0, border: "none", background: "none",
-                    cursor: "pointer", padding: "0 2px",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                    cursor: "pointer", padding: "0 6px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
                   }}
                 >
                   <div style={{
-                    width: 110, height: 110,
-                    border: active ? `2px solid ${color}` : hovered ? "2px solid #bbb" : "2px solid transparent",
-                    overflow: "hidden",
-                    opacity: selectedMarket && !active ? 0.45 : 1,
-                    transition: "border-color 0.12s ease, opacity 0.12s ease",
+                    width: 110, height: 110, overflow: "hidden",
+                    opacity: selectedMarket && !active ? 0.35 : 1,
+                    transition: "opacity 0.15s ease",
                   }}>
                     {MARKET_LOGOS[m.id] ? (
                       <img src={MARKET_LOGOS[m.id]} alt={m.name}
@@ -377,8 +375,11 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   <span style={{
                     fontSize: 11, fontFamily: "var(--font-body)", lineHeight: 1.3,
                     textAlign: "center", maxWidth: 110,
-                    color: active ? color : "#555",
+                    color: active ? "#111" : hovered ? "#333" : "#666",
                     fontWeight: active ? 700 : 400,
+                    borderBottom: active ? `2px solid ${color}` : "2px solid transparent",
+                    paddingBottom: 2,
+                    transition: "color 0.12s ease",
                   }}>{m.name}</span>
                 </button>
               );
@@ -403,13 +404,24 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         {/* Date chips */}
         {selectedMarket && dateChips.length > 0 && (!narrow || showFilters || !!selectedDate) && (
           <FadeRow>
-            <span style={{ ...LABEL_STYLE, alignSelf: "center", flexShrink: 0, marginRight: 4 }}>Date</span>
             {dateChips.map((d, i) => {
               const key = dateKey(d);
+              const active = selectedDate === key;
               return (
-                <Pill key={key} label={fmtDateChip(d)} active={selectedDate === key} size="sm"
-                  isNext={i === 0}
-                  onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }} />
+                <button key={key}
+                  onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }}
+                  style={{
+                    flexShrink: 0, background: "none", border: "none", cursor: "pointer",
+                    padding: "2px 0", marginRight: 20,
+                    fontFamily: "var(--font-body)", fontSize: 13,
+                    color: active ? "#111" : "#666",
+                    fontWeight: active ? 700 : 400,
+                    borderBottom: active ? "2px solid #0d8240" : "2px solid transparent",
+                    whiteSpace: "nowrap",
+                  }}>
+                  {i === 0 && !active && <span style={{ color: "#0d8240", marginRight: 5, fontSize: 8 }}>●</span>}
+                  {fmtDateChip(d)}
+                </button>
               );
             })}
           </FadeRow>
@@ -588,29 +600,29 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
       }}
     >
       {/* ── Collapsed row ── */}
-      <div style={{ padding: "14px 14px 14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+      <div style={{ padding: "20px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
-            fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15,
-            color: hasNoUpcomingDate && selectedMarket ? "#999" : "#111",
-            marginBottom: 3,
+            fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 17,
+            color: hasNoUpcomingDate && selectedMarket ? "#aaa" : "#111",
+            marginBottom: 4,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
             {displayName(vendor.company)}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: descSnippet ? 5 : 0 }}>
-            {location && <span style={{ fontSize: 12, color: "#888" }}>{location}</span>}
-            {next && !selectedDate && <span style={{ fontSize: 10, color: "#ddd" }}>·</span>}
-            {next && !selectedDate && <span style={{ fontSize: 12, color: "#0d8240", fontWeight: 600 }}>Next: {next}</span>}
-            {!next && selectedMarket && <span style={{ fontSize: 12, color: "#bbb", fontStyle: "italic" }}>Dates TBD</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: descSnippet ? 6 : 0 }}>
+            {location && <span style={{ fontSize: 13, color: "#888" }}>{location}</span>}
+            {next && !selectedDate && <span style={{ fontSize: 11, color: "#ccc" }}>·</span>}
+            {next && !selectedDate && <span style={{ fontSize: 13, color: "#0d8240", fontWeight: 600 }}>{next}</span>}
+            {!next && selectedMarket && <span style={{ fontSize: 13, color: "#bbb" }}>Dates TBD</span>}
           </div>
           {descSnippet && !expanded && (
-            <p style={{ margin: 0, fontSize: 12, color: "#999", lineHeight: 1.5 }}>{descSnippet}</p>
+            <p style={{ margin: 0, fontSize: 13, color: "#999", lineHeight: 1.55 }}>{descSnippet}</p>
           )}
         </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2"
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round"
-          style={{ flexShrink: 0, marginTop: 2, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
+          style={{ flexShrink: 0, marginTop: 4, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
@@ -619,96 +631,90 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
       {expanded && (
         <div style={{ borderTop: "1px solid #dddcd3", display: "flex", alignItems: "stretch", flexDirection: vendor.description ? "row" : "column" }}>
 
-          {/* Left: description — only shown when there is one */}
+          {/* Left: description */}
           {vendor.description && (
-            <div style={{ flex: "0 0 55%", padding: "16px 20px", borderRight: "1px solid #dddcd3" }}>
-              <div style={{ ...LABEL_STYLE, marginBottom: 8 }}>About</div>
-              <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.75 }}>
+            <div style={{ flex: "0 0 55%", padding: "24px 24px", borderRight: "1px solid #dddcd3" }}>
+              <p style={{ margin: 0, fontSize: 14, color: "#333", lineHeight: 1.8 }}>
                 {vendor.description}
               </p>
             </div>
           )}
 
           {/* Right (or full-width): meta */}
-          <div style={{ flex: 1, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+          <div style={{ flex: 1, padding: "24px 24px", display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
 
-            {/* Contact with icons */}
+            {/* Contact */}
             {hasContact && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={LABEL_STYLE}>Contact</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", alignItems: "center" }}>
-                  {phone && (
-                    <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                      {phone}
-                    </a>
-                  )}
-                  {vendor.website?.trim() && vendor.website.trim() !== " " && (
-                    <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
-                      target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                      Website
-                    </a>
-                  )}
-                  {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
-                    <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                      Instagram
-                    </a>
-                  )}
-                  {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
-                    <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: 12, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                      Facebook
-                    </a>
-                  )}
-                </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", alignItems: "center" }}>
+                {phone && (
+                  <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
+                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    {phone}
+                  </a>
+                )}
+                {vendor.website?.trim() && vendor.website.trim() !== " " && (
+                  <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
+                    target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Website
+                  </a>
+                )}
+                {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
+                  <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                    Instagram
+                  </a>
+                )}
+                {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
+                  <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                    Facebook
+                  </a>
+                )}
               </div>
             )}
 
             {/* Market badges (all-markets view) */}
             {!selectedMarket && marketBadges.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={LABEL_STYLE}>Markets</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {marketBadges.map((m) => (
-                    <span key={m.marketID} style={{
-                      fontSize: 11, padding: "3px 8px",
-                      backgroundColor: "#f6f5ea", border: "1px solid #dddcd3",
-                      borderRadius: 0, color: "#666",
-                    }}>{MARKET_SHORT[m.marketID]}</span>
-                  ))}
-                </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {marketBadges.map((m) => (
+                  <span key={m.marketID} style={{
+                    fontSize: 12, padding: "4px 10px",
+                    backgroundColor: "#ebe9d4", borderRadius: 0, color: "#555",
+                  }}>{MARKET_SHORT[m.marketID]}</span>
+                ))}
               </div>
             )}
 
             {/* Market dates */}
             {relevantMarkets.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {relevantMarkets.map((m) => {
                   const grouped = groupByMonth(m.dates ?? []);
                   const months = Object.entries(grouped);
                   return (
                     <div key={m.marketID}>
-                      <div style={{ ...LABEL_STYLE, color: "#0d8240", marginBottom: 6 }}>
-                        Attending {allMarkets[m.marketID] ?? m.market}
-                      </div>
+                      {relevantMarkets.length > 1 && (
+                        <div style={{ fontSize: 12, color: "#888", marginBottom: 6, fontWeight: 600 }}>
+                          {allMarkets[m.marketID] ?? m.market}
+                        </div>
+                      )}
                       {months.length === 0 ? (
-                        <span style={{ fontSize: 12, color: "#aaa" }}>Dates TBD</span>
+                        <span style={{ fontSize: 13, color: "#aaa" }}>Dates TBD</span>
                       ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           {months.map(([month, days]) => (
-                            <div key={month} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                              <span style={{ fontSize: 11, color: "#888", fontWeight: 600, minWidth: 52, flexShrink: 0 }}>
+                            <div key={month} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+                              <span style={{ fontSize: 12, color: "#999", minWidth: 48, flexShrink: 0 }}>
                                 {month.replace(/\s*\d{4}$/, "")}
                               </span>
-                              <span style={{ fontSize: 12, color: "#333", lineHeight: 1.6 }}>
+                              <span style={{ fontSize: 13, color: "#333", lineHeight: 1.7 }}>
                                 {days.join(" · ")}
                               </span>
                             </div>
