@@ -682,12 +682,19 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
 
             {/* Market badges (all-markets view) */}
             {!selectedMarket && marketBadges.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {marketBadges.map((m) => (
-                  <span key={m.marketID} style={{
-                    fontSize: 12, padding: "4px 10px",
-                    backgroundColor: "#ebe9d4", borderRadius: 0, color: "#555",
-                  }}>{MARKET_SHORT[m.marketID]}</span>
+                  <div key={m.marketID} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                    {MARKET_LOGOS[m.marketID] ? (
+                      <img src={MARKET_LOGOS[m.marketID]} alt={MARKET_SHORT[m.marketID]}
+                        style={{ width: 52, height: 52, objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div style={{ width: 52, height: 52, background: MARKET_COLORS[m.marketID] ?? "#0d8240" }} />
+                    )}
+                    <span style={{ fontSize: 10, color: "#666", textAlign: "center", maxWidth: 56, lineHeight: 1.3 }}>
+                      {MARKET_SHORT[m.marketID]}
+                    </span>
+                  </div>
                 ))}
               </div>
             )}
@@ -701,8 +708,14 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
                   return (
                     <div key={m.marketID}>
                       {relevantMarkets.length > 1 && (
-                        <div style={{ fontSize: 12, color: "#888", marginBottom: 6, fontWeight: 600 }}>
-                          {allMarkets[m.marketID] ?? m.market}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                          {MARKET_LOGOS[m.marketID] && (
+                            <img src={MARKET_LOGOS[m.marketID]} alt=""
+                              style={{ width: 32, height: 32, objectFit: "cover", display: "block", flexShrink: 0 }} />
+                          )}
+                          <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>
+                            {allMarkets[m.marketID] ?? m.market}
+                          </span>
                         </div>
                       )}
                       {months.length === 0 ? (
