@@ -361,7 +361,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   }}
                 >
                   <div style={{
-                    width: 80, height: 80,
+                    width: 110, height: 110,
                     border: active ? `2px solid ${color}` : hovered ? "2px solid #bbb" : "2px solid transparent",
                     overflow: "hidden",
                     opacity: selectedMarket && !active ? 0.45 : 1,
@@ -376,7 +376,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   </div>
                   <span style={{
                     fontSize: 11, fontFamily: "var(--font-body)", lineHeight: 1.3,
-                    textAlign: "center", maxWidth: 84,
+                    textAlign: "center", maxWidth: 110,
                     color: active ? color : "#555",
                     fontWeight: active ? 700 : 400,
                   }}>{m.name}</span>
