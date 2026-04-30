@@ -490,13 +490,13 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         {view === "list" && (filtered.length === 0 ? (
           <p style={{ color: "#aaa", textAlign: "center", padding: "64px 0" }}>No vendors found.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {grouped.map(({ letter, vendors: group }) => (
               <div key={letter} style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${cols}, 1fr)`,
                 alignItems: "start",
-                gap: 8,
+                gap: 0,
               }}>
                 {group.map((vendor) => (
                   <VendorCard
@@ -575,13 +575,14 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
       onMouseLeave={() => setHovered(false)}
       style={{
         gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
-        background: expanded ? "#fafaf8" : "#fff",
-        border: "1px solid #e8e8e0",
+        background: expanded ? "#edebd6" : hovered ? "rgba(0,0,0,0.025)" : "transparent",
+        border: "none",
+        borderBottom: "1px solid #dddcd3",
         borderRadius: 0,
         cursor: "pointer",
         overflow: "hidden",
-        transition: "box-shadow 0.15s ease, background 0.15s ease",
-        boxShadow: hovered || expanded ? "0 2px 10px rgba(0,0,0,0.08)" : "none",
+        transition: "background 0.15s ease",
+        boxShadow: "none",
         fontFamily: "var(--font-body)",
         opacity: hasNoUpcomingDate && selectedMarket && !expanded ? 0.55 : 1,
       }}
@@ -616,11 +617,11 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
 
       {/* ── Expanded detail ── */}
       {expanded && (
-        <div style={{ borderTop: "1px solid #e8e8e0", display: "flex", alignItems: "stretch", flexDirection: vendor.description ? "row" : "column" }}>
+        <div style={{ borderTop: "1px solid #dddcd3", display: "flex", alignItems: "stretch", flexDirection: vendor.description ? "row" : "column" }}>
 
           {/* Left: description — only shown when there is one */}
           {vendor.description && (
-            <div style={{ flex: "0 0 55%", padding: "16px 20px", borderRight: "1px solid #e8e8e0" }}>
+            <div style={{ flex: "0 0 55%", padding: "16px 20px", borderRight: "1px solid #dddcd3" }}>
               <div style={{ ...LABEL_STYLE, marginBottom: 8 }}>About</div>
               <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.75 }}>
                 {vendor.description}
