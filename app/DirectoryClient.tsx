@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Vendor, VendorMarket } from "@/lib/types";
+
+const VendorMap = dynamic(() => import("./VendorMap"), { ssr: false });
 
 interface Props {
   vendors: Vendor[];
@@ -193,6 +196,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [expandedID, setExpandedID] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [view, setView] = useState<"list" | "map">("list");
   const { cols, px, narrow } = useLayout();
 
   useEffect(() => {
@@ -390,7 +394,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       {/* ── Body ── */}
       <div style={{ padding: `0 ${px}px 48px` }}>
 
-        {/* Count + clear row */}
+        {/* Count + toggle row */}
         <div style={{ padding: "16px 0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <p style={{ fontSize: 13, margin: 0, color: "#555" }}>
             <span style={{ fontWeight: 600, color: "#111" }}>{filtered.length}</span>
@@ -399,16 +403,43 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             {selectedDate && ` attending ${selectedDate}`}
             {search ? ` matching "${search}"` : ""}
           </p>
-          {hasActiveFilter && (
-            <button onClick={() => { setSelectedDate(null); setSearch(""); }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
-              Clear filters
-            </button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {hasActiveFilter && (
+              <button onClick={() => { setSelectedDate(null); setSearch(""); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
+                Clear filters
+              </button>
+            )}
+            {/* List / Map toggle */}
+            <div style={{ display: "flex", border: "1px solid #d8d8d8", borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+              {(["list", "map"] as const).map((v) => (
+                <button key={v} onClick={() => setView(v)} style={{
+                  padding: "5px 12px", fontSize: 12, cursor: "pointer",
+                  fontFamily: "var(--font-body)", border: "none", borderRadius: 0,
+                  backgroundColor: view === v ? "#0d8240" : "#fff",
+                  color: view === v ? "#fff" : "#666",
+                  fontWeight: view === v ? 600 : 400,
+                  transition: "background 0.12s ease, color 0.12s ease",
+                }}>
+                  {v === "list" ? "List" : "Map"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
+        {/* Map view */}
+        {view === "map" && (
+          <VendorMap
+            vendors={filtered}
+            selectedMarket={selectedMarket}
+            allMarkets={allMarkets}
+            marketColor={selectedMarket ? MARKET_COLORS[selectedMarket] : "#0d8240"}
+          />
+        )}
+
         {/* Vendor list */}
-        {filtered.length === 0 ? (
+        {view === "list" && (filtered.length === 0 ? (
           <p style={{ color: "#aaa", textAlign: "center", padding: "64px 0" }}>No vendors found.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -434,7 +465,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
               </div>
             ))}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Back to top */}
