@@ -110,6 +110,19 @@ const MARKET_COLORS: Record<number, string> = {
   8211: "#4A9CB8", // San Rafael — sky blue corn
 };
 
+const BASE = "https://images.squarespace-cdn.com/content/v1/5fd7b5e8b59b81291926f482";
+const MARKET_LOGOS: Record<number, string> = {
+  7776: `${BASE}/10074cb7-fd6e-4c7c-8629-4fb8a71fa9ea/marin.logo_on_yellow.jpg`,
+  7781: `${BASE}/1607976531072-1VE3CAJJSAIRAFFE65Z7/newark.logo_on_peach.jpg`,
+  7782: `${BASE}/4b2c106f-4eda-4004-b832-a213b950eccd/clement.logo_on_yellow.jpg`,
+  7783: `${BASE}/1607976598459-TZZWCTC8QDCHJ7AS6L7T/stonestown.logo_on_green.jpg`,
+  7784: `${BASE}/9f0695f7-5bbf-497a-afec-e04e45870cda/hayward.logo_on_pink.jpg`,
+  7785: `${BASE}/1607976402789-E45K4WYYS5OCMOE24XG4/grandlake.logo_on_green.jpg`,
+  7786: `${BASE}/10074cb7-fd6e-4c7c-8629-4fb8a71fa9ea/marin.logo_on_yellow.jpg`,
+  7803: `${BASE}/040d3d2e-68cb-4196-be5e-b06e6090b108/pointreyes.logo_on_blue.jpg`,
+  8211: `${BASE}/1607976583988-S19RDA6H1M7KI7F2WBGB/sanrafael.logo_on_blue.jpg`,
+};
+
 
 function upcomingDatesForMarket(vendors: Vendor[], marketID: number): Date[] {
   const seen = new Set<string>();
@@ -197,6 +210,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   const [showFilters, setShowFilters] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
+  const [hoveredMarket, setHoveredMarket] = useState<number | null>(null);
   const { cols, px, narrow } = useLayout();
 
   useEffect(() => {
@@ -327,8 +341,34 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
         padding: `14px ${px}px 12px`,
       }}>
-        {/* Market pills */}
-        {!marketID && (
+        {/* Option B: selected market badge */}
+        {selectedMarket && !marketID && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            {MARKET_LOGOS[selectedMarket] && (
+              <img
+                src={MARKET_LOGOS[selectedMarket]}
+                alt={allMarkets[selectedMarket]}
+                style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+              />
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {allMarkets[selectedMarket]}
+              </div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>Farmers Market</div>
+            </div>
+            <button onClick={() => handleMarketSelect(selectedMarket)} style={{
+              flexShrink: 0, background: "none", border: "1px solid #d8d8d8",
+              borderRadius: 20, padding: "4px 10px", fontSize: 12, cursor: "pointer",
+              color: "#666", fontFamily: "var(--font-body)",
+            }}>
+              ✕ All markets
+            </button>
+          </div>
+        )}
+
+        {/* Market pills (shown only when no market selected) */}
+        {!marketID && !selectedMarket && (
           <FadeRow>
             {marketOptions.map((m) => (
               <Pill key={m.id} label={m.name} count={m.count}
@@ -427,6 +467,56 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
             </div>
           </div>
         </div>
+
+        {/* Option C: Market logo grid (no market selected, no search) */}
+        {!selectedMarket && !search && !marketID && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ ...LABEL_STYLE, marginBottom: 12 }}>Browse by market</div>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${narrow ? 3 : 3}, 1fr)`,
+              gap: narrow ? 10 : 14,
+            }}>
+              {marketOptions.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => handleMarketSelect(m.id)}
+                  onMouseEnter={() => setHoveredMarket(m.id)}
+                  onMouseLeave={() => setHoveredMarket(null)}
+                  style={{
+                    border: "none", background: "none", cursor: "pointer", padding: 0,
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{
+                    width: "100%", aspectRatio: "1 / 1",
+                    borderRadius: narrow ? 10 : 14, overflow: "hidden",
+                    boxShadow: hoveredMarket === m.id
+                      ? "0 6px 20px rgba(0,0,0,0.15)"
+                      : "0 2px 8px rgba(0,0,0,0.07)",
+                    transform: hoveredMarket === m.id ? "scale(1.04)" : "scale(1)",
+                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  }}>
+                    {MARKET_LOGOS[m.id] ? (
+                      <img
+                        src={MARKET_LOGOS[m.id]}
+                        alt={m.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", background: MARKET_COLORS[m.id] ?? "#0d8240" }} />
+                    )}
+                  </div>
+                  <div style={{ fontSize: narrow ? 10 : 11, fontFamily: "var(--font-body)", color: "#444", lineHeight: 1.3 }}>
+                    {m.name}
+                    <span style={{ display: "block", fontSize: 10, color: "#aaa" }}>{m.count} vendors</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Map view */}
         {view === "map" && (
