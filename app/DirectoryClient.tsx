@@ -361,11 +361,11 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   }}
                 >
                   <div style={{
-                    width: 52, height: 52,
+                    width: 80, height: 80,
                     outline: active ? `2px solid ${color}` : hovered ? "2px solid #ccc" : "2px solid transparent",
                     outlineOffset: 2,
                     overflow: "hidden",
-                    opacity: selectedMarket && !active ? 0.5 : 1,
+                    opacity: selectedMarket && !active ? 0.45 : 1,
                     transition: "outline 0.12s ease, opacity 0.12s ease",
                   }}>
                     {MARKET_LOGOS[m.id] ? (
@@ -376,9 +376,8 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                     )}
                   </div>
                   <span style={{
-                    fontSize: 10, fontFamily: "var(--font-body)", lineHeight: 1.2,
-                    textAlign: "center", maxWidth: 60, whiteSpace: "nowrap",
-                    overflow: "hidden", textOverflow: "ellipsis",
+                    fontSize: 11, fontFamily: "var(--font-body)", lineHeight: 1.3,
+                    textAlign: "center", maxWidth: 84,
                     color: active ? color : "#555",
                     fontWeight: active ? 700 : 400,
                   }}>{m.name}</span>
