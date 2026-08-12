@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ORG_ID } from "@/lib/types";
+import { parseVendorFeed } from "@/lib/vendors";
 
 export async function GET(request: NextRequest) {
   const marketID = request.nextUrl.searchParams.get("marketID");
@@ -20,10 +21,7 @@ export async function GET(request: NextRequest) {
     if (!res.ok) return NextResponse.json([], { status: 502 });
 
     const text = await res.text();
-    const match = text.match(/var mmmVendors = (\[[\s\S]*?\]);/);
-    if (!match) return NextResponse.json([]);
-
-    const data = JSON.parse(match[1]);
+    const data = parseVendorFeed(text);
     return NextResponse.json(data, {
       headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
     });

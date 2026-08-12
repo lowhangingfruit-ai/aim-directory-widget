@@ -1,4 +1,5 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
+import { parseVendorFeed } from "@/lib/vendors";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -16,9 +17,7 @@ async function getVendors(marketID?: string): Promise<Vendor[]> {
     });
     if (!res.ok) return [];
     const text = await res.text();
-    const match = text.match(/var mmmVendors = (\[[\s\S]*?\]);/);
-    if (!match) return [];
-    return JSON.parse(match[1]);
+    return parseVendorFeed(text);
   } catch {
     return [];
   }

@@ -8,10 +8,7 @@ export interface Vendor {
   vendorID: number;
   company: string;
   type: string;
-  email: string;
   phone1: string;
-  addr1: string;
-  addr2: string;
   city: string;
   state: string;
   description: string;
