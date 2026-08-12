@@ -311,9 +311,7 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
             <p style={{ margin: 0, fontSize: 14.5, color: "#222", lineHeight: 1.75 }}>{story}</p>
           ) : (
             <p style={{ margin: 0, fontSize: 14.5, color: "#8a8878", lineHeight: 1.75, fontStyle: "italic" }}>
-              This participant&rsquo;s story will be added through the intake form — a five-minute
-              questionnaire covering their background, what they make or grow, and what market
-              customers should know.
+              Their full profile is coming soon.
             </p>
           )}
 
@@ -513,8 +511,8 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                       Program Alumni
                     </h3>
                     <p style={{ margin: "0 auto 18px", fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.6 }}>
-                      Every cohort stays part of the story. When a new class begins, the outgoing
-                      class moves here with its year — nothing gets rebuilt.
+                      Businesses that got their start through the Market Access Fund.
+                      Many still sell at AIM markets today.
                     </p>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: narrow ? 22 : 30 }}>
                       <PillButton label="All years" active={!alumYear} color={AIM_GREEN} textOnColor="#fff" onClick={() => setAlumYear(null)} />
@@ -545,8 +543,8 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                     Program Graduates
                   </h3>
                   <p style={{ margin: "0 auto 20px", fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.6 }}>
-                    {FARMER_GRADUATES.length} farms have launched through the Incubator Booth.
-                    Cohort years and photos join the archive as graduates complete the intake form.
+                    {FARMER_GRADUATES.length} farms have launched through the Incubator Booth,
+                    many moving on to permanent booths at AIM markets.
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 760, margin: "0 auto" }}>
                     {FARMER_GRADUATES.map((farm) => (
@@ -573,11 +571,10 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                   <div style={{
                     fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 22, color: "#000", marginBottom: 8,
                   }}>
-                    Five food makers join summer 2026
+                    Five food makers join the markets this summer
                   </div>
                   <p style={{ margin: "0 0 18px", fontSize: 14, color: "#333", lineHeight: 1.65 }}>
-                    Their profiles publish here as each participant completes the five-minute
-                    intake form — no page-building needed from AIM staff.
+                    Meet the newest cohort here soon.
                   </p>
                   <a href="/showcase/intake" style={{
                     display: "inline-block", padding: "10px 26px", borderRadius: 300,
@@ -585,7 +582,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                     fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14, letterSpacing: "0.02em",
                     textDecoration: "none",
                   }}>
-                    Preview the intake form
+                    Participants: add your profile
                   </a>
                 </div>
               )}
@@ -616,19 +613,22 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
         <div style={{ ...sectionInner, textAlign: "center" }}>
           <h2 style={{
             fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 28 : 36, color: "#000", marginBottom: narrow ? 26 : 36,
+            fontSize: narrow ? 28 : 36, color: "#000", marginBottom: 12,
           }}>
-            Built to Onboard Every Future Cohort
+            Are You a Program Participant?
           </h2>
+          <p style={{ margin: `0 auto ${narrow ? 26 : 36}px`, fontSize: 15, color: "#333", maxWidth: 520, lineHeight: 1.65 }}>
+            Add your business to the showcase. It takes about five minutes.
+          </p>
           <div style={{
             display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(3, 1fr)",
             gap: narrow ? 22 : 34, maxWidth: 940, margin: "0 auto",
             textAlign: "center",
           }}>
             {[
-              { n: "1", title: "Participants submit", body: "A five-minute intake form collects each participant's photo, story, products, markets, and links — in their own words." },
-              { n: "2", title: "AIM approves", body: "Staff review each submission before anything publishes. No manual page-building, no copying between systems." },
-              { n: "3", title: "The profile goes live", body: "Each maker gets a page they're proud to share from their booth — and AIM gets a lasting showcase for every cohort." },
+              { n: "1", title: "Share your story", body: "Tell us about your business in your own words: your photo, your story, what you sell, and where to find you." },
+              { n: "2", title: "AIM reviews it", body: "Program staff look over every submission before it publishes." },
+              { n: "3", title: "Your profile goes live", body: "Your business joins your cohort here, with a profile you can share right from your booth." },
             ].map((step) => (
               <div key={step.n}>
                 <div style={{
@@ -646,17 +646,14 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
               </div>
             ))}
           </div>
-          <p style={{ margin: `${narrow ? 26 : 34}px auto 18px`, fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.65 }}>
-            When a new season begins, the outgoing class moves to the program&rsquo;s alumni
-            archive with its cohort year — the current cohort always sits up top.
-          </p>
           <a href="/showcase/intake" style={{
-            display: "inline-block", padding: "11px 28px", borderRadius: 300,
+            display: "inline-block", marginTop: narrow ? 26 : 34,
+            padding: "11px 28px", borderRadius: 300,
             backgroundColor: AIM_GREEN, color: "#fff",
             fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14.5, letterSpacing: "0.02em",
             textDecoration: "none",
           }}>
-            Preview the intake form
+            Add your profile
           </a>
         </div>
       </div>
