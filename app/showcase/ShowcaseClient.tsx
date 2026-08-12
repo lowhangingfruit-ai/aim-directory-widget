@@ -608,53 +608,74 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
         </div>
       </div>
 
-      {/* ── How profiles stay current (cream) ── */}
-      <div style={{ backgroundColor: CREAM, padding: `${narrow ? 44 : 64}px 0 ${narrow ? 48 : 68}px` }}>
-        <div style={{ ...sectionInner, textAlign: "center" }}>
-          <h2 style={{
-            fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 28 : 36, color: "#000", marginBottom: 12,
-          }}>
-            Are You a Program Participant?
-          </h2>
-          <p style={{ margin: `0 auto ${narrow ? 26 : 36}px`, fontSize: 15, color: "#333", maxWidth: 520, lineHeight: 1.65 }}>
-            Add your business to the showcase. It takes about five minutes.
-          </p>
+      {/* ── Intake walkthrough: review annotation, not final page content ── */}
+      <div style={{ backgroundColor: CREAM, padding: `${narrow ? 40 : 56}px 0 ${narrow ? 48 : 64}px` }}>
+        <div style={{ ...sectionInner }}>
           <div style={{
-            display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(3, 1fr)",
-            gap: narrow ? 22 : 34, maxWidth: 940, margin: "0 auto",
+            maxWidth: 960, margin: "0 auto",
+            border: "1.5px dashed #a8a593", backgroundColor: "#fffef8",
+            padding: narrow ? "24px 20px 30px" : "32px 36px 40px",
             textAlign: "center",
           }}>
-            {[
-              { n: "1", title: "Share your story", body: "Tell us about your business in your own words: your photo, your story, what you sell, and where to find you." },
-              { n: "2", title: "AIM reviews it", body: "Program staff look over every submission before it publishes." },
-              { n: "3", title: "Your profile goes live", body: "Your business joins your cohort here, with a profile you can share right from your booth." },
-            ].map((step) => (
-              <div key={step.n}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 300, margin: "0 auto 14px",
-                  backgroundColor: AIM_GREEN, color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 19,
-                }}>
-                  {step.n}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+              <span style={{
+                padding: "4px 14px", borderRadius: 300,
+                backgroundColor: "#2e2c24", color: "#f6f5ea",
+                fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 11.5,
+              }}>
+                Mockup note
+              </span>
+              <span style={{ fontSize: 13, color: "#6f6d5f" }}>
+                This walkthrough is for review and is not part of the final page.
+              </span>
+            </div>
+            <h2 style={{
+              fontFamily: "var(--font-heading)", fontWeight: 500,
+              fontSize: narrow ? 24 : 30, color: "#000", marginBottom: narrow ? 22 : 30,
+            }}>
+              How participant intake would work
+            </h2>
+            <div style={{
+              display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(3, 1fr)",
+              gap: narrow ? 22 : 30,
+              textAlign: "center",
+            }}>
+              {[
+                { n: "1", title: "Participants submit", body: "A five-minute form collects each participant's photo, story, products, markets, and links, in their own words." },
+                { n: "2", title: "AIM approves", body: "Staff review each submission before it publishes." },
+                { n: "3", title: "The profile goes live", body: "The participant joins their cohort at the top of the page. When a new season starts, the outgoing class moves to the alumni archive with its year." },
+              ].map((step) => (
+                <div key={step.n}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 300, margin: "0 auto 12px",
+                    backgroundColor: AIM_GREEN, color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 17,
+                  }}>
+                    {step.n}
+                  </div>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 18, color: "#000", marginBottom: 6 }}>
+                    {step.title}
+                  </h3>
+                  <p style={{ margin: "0 auto", fontSize: 13.5, color: "#333", lineHeight: 1.6, maxWidth: 290 }}>{step.body}</p>
                 </div>
-                <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 20, color: "#000", marginBottom: 6 }}>
-                  {step.title}
-                </h3>
-                <p style={{ margin: "0 auto", fontSize: 14, color: "#333", lineHeight: 1.65, maxWidth: 300 }}>{step.body}</p>
-              </div>
-            ))}
+              ))}
+            </div>
+            <a href="/showcase/intake" style={{
+              display: "inline-block", marginTop: narrow ? 24 : 30,
+              padding: "11px 28px", borderRadius: 300,
+              backgroundColor: AIM_GREEN, color: "#fff",
+              fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14.5, letterSpacing: "0.02em",
+              textDecoration: "none",
+            }}>
+              Preview the intake form
+            </a>
+            <p style={{ margin: "16px auto 0", fontSize: 13, color: "#6f6d5f", maxWidth: 540, lineHeight: 1.6 }}>
+              The full build also includes an admin panel for AIM staff to edit profiles,
+              manage cohorts, and backfill past cohorts, since alumni won&rsquo;t fill out
+              the intake form.
+            </p>
           </div>
-          <a href="/showcase/intake" style={{
-            display: "inline-block", marginTop: narrow ? 26 : 34,
-            padding: "11px 28px", borderRadius: 300,
-            backgroundColor: AIM_GREEN, color: "#fff",
-            fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14.5, letterSpacing: "0.02em",
-            textDecoration: "none",
-          }}>
-            Add your profile
-          </a>
         </div>
       </div>
 
