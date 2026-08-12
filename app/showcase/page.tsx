@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
-import { buildProfiles } from "@/lib/showcase";
+import { buildProfiles, ALUMNI } from "@/lib/showcase";
 import ShowcaseClient from "./ShowcaseClient";
 
 export const metadata: Metadata = {
@@ -33,6 +33,7 @@ async function getVendors(): Promise<Vendor[]> {
 export default async function ShowcasePage() {
   const vendors = await getVendors();
   const profiles = buildProfiles(vendors);
+  const alumni = buildProfiles(vendors, ALUMNI);
 
-  return <ShowcaseClient profiles={profiles} allMarkets={MARKETS} />;
+  return <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} />;
 }
