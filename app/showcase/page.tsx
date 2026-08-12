@@ -5,7 +5,7 @@ import { buildProfiles, ALUMNI } from "@/lib/showcase";
 import ShowcaseClient from "./ShowcaseClient";
 
 export const metadata: Metadata = {
-  title: "Meet the Makers — AIM Farm & Food Business Programs",
+  title: "Growing the Next Generation — AIM Farm & Food Business Programs",
   description:
     "The 2026 cohorts of AIM's Market Access Fund, Farmer Incubator, and Food Maker Incubator programs.",
 };

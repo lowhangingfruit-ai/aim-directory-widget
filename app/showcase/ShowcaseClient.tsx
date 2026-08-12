@@ -378,10 +378,10 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
         <div style={{ ...sectionInner, textAlign: "center" }}>
           <h1 style={{
             fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 34 : 45, lineHeight: 1.15, color: AIM_GREEN,
-            margin: "0 0 16px",
+            fontSize: narrow ? 32 : 45, lineHeight: 1.15, color: AIM_GREEN,
+            margin: "0 auto 16px", maxWidth: 700,
           }}>
-            Meet the People Behind the Booths
+            Growing the Next Generation of Farmers and Food&nbsp;Makers
           </h1>
           <p style={{
             margin: "0 auto", fontSize: narrow ? 15 : 16.5, color: "#000",
