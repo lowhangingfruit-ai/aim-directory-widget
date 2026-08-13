@@ -66,6 +66,33 @@ function bestPhoto(profile: Profile): string | null {
   return profile.aimPhoto ?? profile.vendor?.photo?.trim() ?? null;
 }
 
+// Vendor-uploaded feed images are often wordmarks or logos. When one is far
+// from square, contain-fit it on the program tint instead of cropping it.
+// Curated AIM portraits (detect=false) always crop to fill.
+function SmartImg({ src, alt, tint, detect, style }: {
+  src: string; alt: string; tint: string; detect: boolean; style?: React.CSSProperties;
+}) {
+  const [contain, setContain] = useState(false);
+  return (
+    <img src={src} alt={alt}
+      onLoad={(e) => {
+        if (!detect) return;
+        const img = e.currentTarget;
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const r = img.naturalWidth / img.naturalHeight;
+        if (r > 1.35 || r < 0.72) setContain(true);
+      }}
+      style={{
+        width: "100%", height: "100%", display: "block",
+        objectFit: contain ? "contain" : "cover",
+        backgroundColor: contain ? tint : undefined,
+        padding: contain ? "10%" : 0,
+        boxSizing: "border-box",
+        ...style,
+      }} />
+  );
+}
+
 function useNarrow() {
   const [width, setWidth] = useState(1024);
   useEffect(() => {
@@ -177,9 +204,9 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
         marginBottom: compact ? 9 : 12,
       }}>
         {photo ? (
-          <img src={photo} alt={`${profile.person}, ${profile.business}`}
+          <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
+            tint={program.tint} detect={!profile.aimPhoto}
             style={{
-              width: "100%", height: "100%", objectFit: "cover", display: "block",
               transform: hovered ? "scale(1.04)" : "scale(1)",
               transition: "transform 0.25s ease",
             }} />
@@ -277,8 +304,9 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
           position: "relative",
         }}>
           {photo ? (
-            <img src={photo} alt={`${profile.person}, ${profile.business}`}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", position: "absolute", inset: 0 }} />
+            <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
+              tint={program.tint} detect={!profile.aimPhoto}
+              style={{ position: "absolute", inset: 0, height: "100%" }} />
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex",
@@ -352,7 +380,10 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
 
 export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) {
   const [tab, setTab] = useState<Tab>("all");
-  const [alumYear, setAlumYear] = useState<string | null>(null);
+  // Default the archive to the most recent class so it opens curated, not dense
+  const [alumYear, setAlumYear] = useState<string | null>(
+    () => [...new Set(alumni.map((a) => a.cohort))].sort().reverse()[0] ?? null
+  );
   const [openProfile, setOpenProfile] = useState<Profile | null>(null);
   const { narrow, mid } = useNarrow();
   const cols = narrow ? 2 : mid ? 3 : 4;
@@ -391,6 +422,36 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             farmers and food makers to our markets. Meet the 2026 cohorts — what they grow,
             what they make, and where to find them.
           </p>
+
+          {/* Hero photo strip: participant portraits as overlapping prints */}
+          <div style={{
+            display: "flex", justifyContent: "center", alignItems: "center",
+            marginTop: narrow ? 30 : 42, padding: "6px 0",
+          }}>
+            {(() => {
+              const picks = ["blooming maria", "salvirican", "nobunaga", "luna's good", "dangerously delicious", "maldoni"];
+              const heroProfiles = picks
+                .map((m) => profiles.find((p) => p.match === m))
+                .filter((p): p is Profile => !!p && !!bestPhoto(p))
+                .slice(0, narrow ? 4 : 6);
+              return heroProfiles.map((p, i) => (
+                <div key={p.business} style={{
+                  backgroundColor: "#fff",
+                  padding: narrow ? 4 : 6,
+                  boxShadow: "0 4px 14px rgba(30,40,25,0.18)",
+                  transform: `rotate(${i % 2 === 0 ? -2.5 : 2.5}deg) translateY(${i % 3 === 1 ? -6 : 4}px)`,
+                  marginLeft: i === 0 ? 0 : narrow ? -10 : -14,
+                  zIndex: i % 2 === 0 ? 1 : 2,
+                  flexShrink: 1, minWidth: 0,
+                }}>
+                  <img src={bestPhoto(p)!} alt={p.business} style={{
+                    width: narrow ? "20vw" : 150, maxWidth: 150, aspectRatio: "1 / 1",
+                    objectFit: "cover", display: "block",
+                  }} />
+                </div>
+              ));
+            })()}
+          </div>
 
           {/* Stats: flat, centered, green Ek Mukta numbers */}
           <div style={{
@@ -502,6 +563,9 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
               {id === "maf" && alumni.length > 0 && (() => {
                 const years = [...new Set(alumni.map((a) => a.cohort))].sort().reverse();
                 const shown = alumYear ? alumni.filter((a) => a.cohort === alumYear) : alumni;
+                // Tiles for alumni with photos; a simple name list for the rest
+                const withPhoto = shown.filter((p) => bestPhoto(p));
+                const withoutPhoto = shown.filter((p) => !bestPhoto(p));
                 return (
                   <div style={{ marginTop: narrow ? 44 : 60 }}>
                     <h3 style={{
@@ -515,21 +579,44 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                       Many still sell at AIM markets today.
                     </p>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: narrow ? 22 : 30 }}>
-                      <PillButton label="All years" active={!alumYear} color={AIM_GREEN} textOnColor="#fff" onClick={() => setAlumYear(null)} />
                       {years.map((y) => (
-                        <PillButton key={y} label={y} active={alumYear === y} color={AIM_GREEN} textOnColor="#fff"
-                          onClick={() => setAlumYear(alumYear === y ? null : y)} />
+                        <PillButton key={y}
+                          label={`${y} (${alumni.filter((a) => a.cohort === y).length})`}
+                          active={alumYear === y} color={AIM_GREEN} textOnColor="#fff"
+                          onClick={() => setAlumYear(y)} />
                       ))}
+                      <PillButton label={`All (${alumni.length})`} active={!alumYear} color={AIM_GREEN} textOnColor="#fff" onClick={() => setAlumYear(null)} />
                     </div>
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: `repeat(${narrow ? 3 : mid ? 4 : 6}, 1fr)`,
-                      gap: narrow ? "22px 12px" : "28px 20px",
-                    }}>
-                      {shown.map((p) => (
-                        <ParticipantTile key={p.business} profile={p} allMarkets={allMarkets} compact onOpen={() => setOpenProfile(p)} />
-                      ))}
-                    </div>
+                    {withPhoto.length > 0 && (
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${narrow ? 3 : mid ? 4 : 5}, 1fr)`,
+                        gap: narrow ? "22px 12px" : "28px 20px",
+                        maxWidth: 900, margin: "0 auto",
+                      }}>
+                        {withPhoto.map((p) => (
+                          <ParticipantTile key={p.business} profile={p} allMarkets={allMarkets} compact onOpen={() => setOpenProfile(p)} />
+                        ))}
+                      </div>
+                    )}
+                    {withoutPhoto.length > 0 && (
+                      <div style={{
+                        display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center",
+                        maxWidth: 760, margin: `${withPhoto.length > 0 ? (narrow ? 26 : 34) : 0}px auto 0`,
+                      }}>
+                        {withoutPhoto.map((p) => (
+                          <button key={p.business} onClick={() => setOpenProfile(p)} style={{
+                            padding: "6px 16px", borderRadius: 300, cursor: "pointer",
+                            border: "1.5px solid #b9b6a4", backgroundColor: "#fff",
+                            color: "#333", fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 13.5,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {p.business}
+                            {!alumYear && <span style={{ marginLeft: 6, fontSize: 11.5, color: "#8a8878" }}>{p.cohort}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
