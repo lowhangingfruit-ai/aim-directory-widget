@@ -418,9 +418,16 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             margin: "0 auto", fontSize: narrow ? 15 : 16.5, color: "#000",
             maxWidth: 620, lineHeight: 1.65,
           }}>
-            Every season, AIM&rsquo;s Market Access Fund and Incubator Booth programs bring new
-            farmers and food makers to our markets. Meet the 2026 cohorts — what they grow,
-            what they make, and where to find them.
+            Every season, AIM&rsquo;s{" "}
+            <span style={{ backgroundColor: "rgba(77,181,71,0.3)", padding: "1px 5px", fontWeight: 600 }}>
+              Market Access Fund
+            </span>{" "}
+            and{" "}
+            <span style={{ backgroundColor: "rgba(222,117,44,0.28)", padding: "1px 5px", fontWeight: 600 }}>
+              Incubator Booth
+            </span>{" "}
+            programs bring new farmers and food makers to our markets. Meet the 2026
+            cohorts — what they grow, what they make, and where to find them.
           </p>
 
           {/* Hero photo strip: participant portraits as overlapping prints */}
