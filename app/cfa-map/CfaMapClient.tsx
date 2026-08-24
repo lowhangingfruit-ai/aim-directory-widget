@@ -98,15 +98,25 @@ export default function CfaMapClient() {
 
   const active = selected ?? hovered;
 
+  // Measure the frame itself, not the window. The frame also changes size when
+  // the layout switches between the side-by-side and stacked arrangements and
+  // when its aspect ratio changes with it. A stale size feeds clampView the
+  // wrong bounds, which pushes the plan clean out of view.
   useEffect(() => {
-    const measure = () => {
-      setNarrow(window.innerWidth < 900);
-      const el = frameRef.current;
-      if (el) setSize({ w: el.clientWidth, h: el.clientHeight });
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    const el = frameRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() =>
+      setSize({ w: el.clientWidth, h: el.clientHeight }),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 900);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const animateTo = useCallback((from: View, target: View) => {

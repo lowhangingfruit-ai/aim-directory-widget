@@ -52,6 +52,25 @@ def marker_points(page, keys):
     return found
 
 
+def page_crop(page, source_width, source_height):
+    """The part of the base image the PDF page actually shows, in source pixels.
+
+    Canva places the plan larger than the page: it overhangs the trim on the
+    left, right and bottom. Marker coordinates are measured against the page, so
+    the exported art has to be cropped to the page frame or every marker lands
+    off by the overhang.
+    """
+    box = page.get_image_info()[0]["bbox"]
+    per_point_x = source_width / (box[2] - box[0])
+    per_point_y = source_height / (box[3] - box[1])
+    return (
+        round((page.rect.x0 - box[0]) * per_point_x),
+        round((page.rect.y0 - box[1]) * per_point_y),
+        round(page.rect.width * per_point_x),
+        round(page.rect.height * per_point_y),
+    )
+
+
 def write_base_image(doc):
     xref = doc[0].get_images(full=True)[0][0]
     image = doc.extract_image(xref)
@@ -62,18 +81,20 @@ def write_base_image(doc):
     if len(digests) > 1:
         print("! pages no longer share one base image: check the plan art", file=sys.stderr)
 
+    x, y, w, h = page_crop(doc[0], image["width"], image["height"])
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     source = OUT_DIR / "source.jpg"
     source.write_bytes(image["image"])
-    # full detail for deep zoom, plus a small first paint
-    for name, width, quality in (("site-plan.webp", 3680, 82), ("site-plan-1600.webp", 1600, 72)):
-        subprocess.run(
-            ["cwebp", "-quiet", "-q", str(quality), "-resize", str(width), "0",
-             str(source), "-o", str(OUT_DIR / name)],
-            check=True,
-        )
+    # full detail for deep zoom, plus a small first paint. cwebp crops before it
+    # resizes, so the small one is the same frame at lower resolution.
+    for name, width, quality in ((("site-plan.webp"), 0, 82), ("site-plan-1600.webp", 1600, 72)):
+        args = ["cwebp", "-quiet", "-q", str(quality), "-crop", str(x), str(y), str(w), str(h)]
+        if width:
+            args += ["-resize", str(width), "0"]
+        subprocess.run(args + [str(source), "-o", str(OUT_DIR / name)], check=True)
     source.unlink()
-    return image["width"], image["height"]
+    print(f"cropped {image['width']}x{image['height']} to {w}x{h} at ({x}, {y})")
+    return w, h
 
 
 def main():
@@ -84,7 +105,8 @@ def main():
         print(f"! expected 2 pages, got {doc.page_count}", file=sys.stderr)
 
     w, h = write_base_image(doc)
-    print(f"wrote {OUT_DIR}/site-plan.webp and site-plan-1600.webp from {w}x{h} source\n")
+    print(f"wrote {OUT_DIR}/site-plan.webp and site-plan-1600.webp at {w}x{h}")
+    print(f"set PLAN.width/height in lib/cfaMap.ts to {w}/{h}\n")
 
     for index, keys in enumerate(PHASE_KEYS[: doc.page_count]):
         found = marker_points(doc[index], keys)

@@ -3,7 +3,10 @@
 // Marker coordinates are percentages of the base site-plan image and were
 // extracted from AIM's Canva PDF ("CFA Site Map.pdf", 2 pages, one legend set
 // per page) rather than placed by eye. Both PDF pages carry a byte-identical
-// 3680x2070 base image, so the two phases are two marker sets over one plan.
+// base image, so the two phases are two marker sets over one plan.
+//
+// The percentages are relative to the PDF *page*, which is why PLAN is cropped
+// to the page frame rather than exported whole. See the note on PLAN below.
 //
 // If AIM sends a revised PDF, re-run scripts/extract-site-map.py and paste the
 // output over the PHASES coordinates instead of nudging them by hand.
@@ -150,10 +153,14 @@ export const PHASES: Phase[] = [
   },
 ]
 
-/** the base plan, shared by both phases */
+/**
+ * The base plan, shared by both phases. Cropped to the PDF page frame: Canva
+ * places the art larger than the page and it overhangs the trim, so the full
+ * export would put every marker off by the overhang.
+ */
 export const PLAN = {
   src: '/cfa/site-plan.webp',
   placeholder: '/cfa/site-plan-1600.webp',
-  width: 3680,
-  height: 2070,
+  width: 3486,
+  height: 1961,
 }
