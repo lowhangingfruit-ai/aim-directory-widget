@@ -422,12 +422,15 @@ export default function CfaMapClient() {
           borderTop: narrow ? "1px solid #e2e1d6" : "none",
         }}>
           <h2 style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: 19,
+            fontFamily: "var(--font-body)",
+            fontSize: 17,
             fontWeight: 500,
-            lineHeight: 1.2,
+            // caps at this size need the tracking to stay readable
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            lineHeight: 1.3,
             color: AIM_GREEN,
-            margin: "0 0 6px",
+            margin: "0 0 8px",
           }}>
             {phase.title}
           </h2>
