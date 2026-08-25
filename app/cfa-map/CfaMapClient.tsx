@@ -8,9 +8,33 @@ const AIM_BRIGHT = "#4db547";
 const ORANGE = "#de752c";
 const CREAM = "#f6f5ea";
 
-const MIN_SCALE = 1;
+const LEGEND_WIDTH = 330;
+const COLUMN_GAP = 22;
+const EDGE_PAD = 24;
+
 const MAX_SCALE = 6;
 const PLAN_RATIO = PLAN.height / PLAN.width;
+
+/**
+ * The legend sets the row's height, so the frame is whatever shape that leaves
+ * rather than the plan's own. The plan layer keeps its proportions inside the
+ * frame: markers sit at percentages of the layer, so letting the frame stretch
+ * the layer instead would slide every marker off its feature.
+ */
+interface Frame {
+  /** the visible window onto the plan, in px */
+  w: number;
+  h: number;
+  /** the layer's height at scale 1; its width is always the frame's */
+  lh: number;
+  /** the smallest scale that still covers the frame, so there are no gutters */
+  minScale: number;
+}
+
+function frameOf(w: number, h: number): Frame {
+  const lh = w * PLAN_RATIO;
+  return { w, h, lh, minScale: lh > 0 ? Math.max(1, h / lh) : 1 };
+}
 
 interface View {
   scale: number;
@@ -20,26 +44,25 @@ interface View {
 }
 
 /** Keep the plan covering the frame: no empty gutters at any zoom level. */
-function clampView(v: View, w: number, h: number): View {
-  const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale));
+function clampView(v: View, f: Frame): View {
+  const scale = Math.min(MAX_SCALE, Math.max(f.minScale, v.scale));
   return {
     scale,
-    tx: Math.min(0, Math.max(w * (1 - scale), v.tx)),
-    ty: Math.min(0, Math.max(h * (1 - scale), v.ty)),
+    tx: Math.min(0, Math.max(f.w * (1 - scale), v.tx)),
+    ty: Math.min(0, Math.max(f.h - f.lh * scale, v.ty)),
   };
 }
 
 /** Centre a point given as percentages of the plan. */
-function viewCentredOn(x: number, y: number, scale: number, w: number, h: number): View {
+function viewCentredOn(x: number, y: number, scale: number, f: Frame): View {
   return clampView(
-    { scale, tx: w / 2 - (x / 100) * w * scale, ty: h / 2 - (y / 100) * h * scale },
-    w,
-    h,
+    { scale, tx: f.w / 2 - (x / 100) * f.w * scale, ty: f.h / 2 - (y / 100) * f.lh * scale },
+    f,
   );
 }
 
 /** A view that frames every marker belonging to one feature. */
-function viewFramingFeature(feature: Feature, w: number, h: number): View {
+function viewFramingFeature(feature: Feature, f: Frame): View {
   const xs = feature.points.map((p) => p.x);
   const ys = feature.points.map((p) => p.y);
   const spanX = Math.max(...xs) - Math.min(...xs);
@@ -47,16 +70,18 @@ function viewFramingFeature(feature: Feature, w: number, h: number): View {
   // a single marker gets a fixed comfortable zoom; a spread-out feature gets
   // whatever zoom fits its extent plus room to see what surrounds it
   const pad = 22;
+  // a vertical extent is a share of the plan's height but has to fit the
+  // frame's, so put it in the same units as the horizontal one before comparing
+  const vertical = f.h > 0 ? ((spanY + pad) * f.lh) / f.h : spanY + pad;
   const scale =
     feature.points.length === 1
       ? 3
-      : Math.min(3.2, Math.max(1.4, 100 / Math.max(spanX + pad, (spanY + pad) / PLAN_RATIO)));
+      : Math.min(3.2, Math.max(1.4, 100 / Math.max(spanX + pad, vertical)));
   return viewCentredOn(
     (Math.min(...xs) + Math.max(...xs)) / 2,
     (Math.min(...ys) + Math.max(...ys)) / 2,
     scale,
-    w,
-    h,
+    f,
   );
 }
 
@@ -79,15 +104,16 @@ export default function CfaMapClient() {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: boolean; distance: number; scale: number } | null>(null);
 
+  const frame = useMemo(() => frameOf(size.w, size.h), [size.w, size.h]);
   const baseView = useMemo(() => {
-    if (!size.w) return { scale: 1, tx: 0, ty: 0 };
+    if (!frame.w) return { scale: 1, tx: 0, ty: 0 };
     const { x, y, scale } = phase.initialView;
-    return viewCentredOn(x, y, narrow ? scale * 1.25 : scale, size.w, size.h);
-  }, [phase, narrow, size.w, size.h]);
+    return viewCentredOn(x, y, narrow ? scale * 1.25 : scale, frame);
+  }, [phase, narrow, frame]);
   // clamped on every render so a window resize cannot leave the plan off-frame
   const view = useMemo(
-    () => (size.w ? clampView(pinned ?? baseView, size.w, size.h) : baseView),
-    [pinned, baseView, size.w, size.h],
+    () => (frame.w ? clampView(pinned ?? baseView, frame) : baseView),
+    [pinned, baseView, frame],
   );
 
   // gesture handlers update from the latest view without re-subscribing
@@ -145,8 +171,8 @@ export default function CfaMapClient() {
         return;
       }
       setSelected(feature.key);
-      if (source === "legend" && size.w) {
-        animateTo(view, viewFramingFeature(feature, size.w, size.h));
+      if (source === "legend" && frame.w) {
+        animateTo(view, viewFramingFeature(feature, frame));
       }
       if (source === "map") {
         legendRows.current
@@ -154,7 +180,7 @@ export default function CfaMapClient() {
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     },
-    [animateTo, view, size.w, size.h],
+    [animateTo, view, frame],
   );
 
   // wheel zoom has to be non-passive to stop the page scrolling underneath
@@ -167,17 +193,17 @@ export default function CfaMapClient() {
       const box = el.getBoundingClientRect();
       const px = e.clientX - box.left;
       const py = e.clientY - box.top;
+      const f = frameOf(box.width, box.height);
       setPinned((current) => {
         const v = current ?? baseRef.current;
         const next = Math.min(
           MAX_SCALE,
-          Math.max(MIN_SCALE, v.scale * Math.exp(-e.deltaY * 0.0016)),
+          Math.max(f.minScale, v.scale * Math.exp(-e.deltaY * 0.0016)),
         );
         const k = next / v.scale;
         return clampView(
           { scale: next, tx: px - (px - v.tx) * k, ty: py - (py - v.ty) * k },
-          box.width,
-          box.height,
+          f,
         );
       });
     };
@@ -241,14 +267,14 @@ export default function CfaMapClient() {
       const [a, b] = [...pointers.current.values()];
       const px = (a.x + b.x) / 2 - box.left;
       const py = (a.y + b.y) / 2 - box.top;
+      const f = frameOf(box.width, box.height);
       setPinned((current) => {
         const v = current ?? baseRef.current;
-        const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, startScale * ratio));
+        const next = Math.min(MAX_SCALE, Math.max(f.minScale, startScale * ratio));
         const k = next / v.scale;
         return clampView(
           { scale: next, tx: px - (px - v.tx) * k, ty: py - (py - v.ty) * k },
-          box.width,
-          box.height,
+          f,
         );
       });
       return;
@@ -260,7 +286,10 @@ export default function CfaMapClient() {
       if (gesture.current) gesture.current.moved = true;
       setPinned((current) => {
         const v = current ?? baseRef.current;
-        return clampView({ ...v, tx: v.tx + dx, ty: v.ty + dy }, box.width, box.height);
+        return clampView(
+          { ...v, tx: v.tx + dx, ty: v.ty + dy },
+          frameOf(box.width, box.height),
+        );
       });
     }
   };
@@ -288,23 +317,22 @@ export default function CfaMapClient() {
 
   const zoomBy = useCallback(
     (factor: number) => {
-      if (!size.w) return;
-      const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, view.scale * factor));
+      if (!frame.w) return;
+      const next = Math.min(MAX_SCALE, Math.max(frame.minScale, view.scale * factor));
       const k = next / view.scale;
       animateTo(
         view,
         clampView(
           {
             scale: next,
-            tx: size.w / 2 - (size.w / 2 - view.tx) * k,
-            ty: size.h / 2 - (size.h / 2 - view.ty) * k,
+            tx: frame.w / 2 - (frame.w / 2 - view.tx) * k,
+            ty: frame.h / 2 - (frame.h / 2 - view.ty) * k,
           },
-          size.w,
-          size.h,
+          frame,
         ),
       );
     },
-    [animateTo, view, size.w, size.h],
+    [animateTo, view, frame],
   );
 
   const resetView = useCallback(() => {
@@ -319,6 +347,11 @@ export default function CfaMapClient() {
     background: "rgba(255,255,255,0.94)",
     cursor: "pointer",
   };
+  const hint = (
+    <p style={{ fontSize: 12, color: "#6c6c64", margin: narrow ? "10px 16px 0" : "10px 0 0" }}>
+      Scroll or pinch to zoom, drag to move around the map.
+    </p>
+  );
   // the plan's dense corners put six markers inside a thumb's width on a phone,
   // so narrow screens get smaller circles and open a little further in
   const markerSize = narrow ? 25 : 28;
@@ -328,24 +361,14 @@ export default function CfaMapClient() {
     <div style={{ maxWidth: 1180, margin: "0 auto", padding: narrow ? "0 0 32px" : "0 0 48px" }}>
       {/* Phase switch */}
       <div style={{ textAlign: "center", padding: narrow ? "26px 16px 18px" : "40px 24px 24px" }}>
-        <p style={{
-          margin: "0 0 10px",
-          fontSize: 12,
-          fontWeight: 500,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: AIM_GREEN,
-        }}>
-          Center for Food and Agriculture
-        </p>
         <h1 style={{
           fontFamily: "var(--font-heading)",
           fontWeight: 500,
-          fontSize: narrow ? 26 : 36,
-          lineHeight: 1.15,
-          marginBottom: 18,
+          fontSize: narrow ? 32 : 46,
+          lineHeight: 1.12,
+          marginBottom: 20,
         }}>
-          Explore the Site Plan
+          Explore the Site Map
         </h1>
         <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
           {PHASES.map((p) => {
@@ -360,14 +383,14 @@ export default function CfaMapClient() {
                 }}
                 aria-pressed={on}
                 style={{
-                  padding: "9px 22px",
+                  padding: "12px 26px",
                   borderRadius: 300,
                   border: `1px solid ${on ? AIM_GREEN : "#c9c9c0"}`,
                   background: on ? AIM_GREEN : "transparent",
                   color: on ? "#fff" : "#000",
                   fontFamily: "var(--font-heading)",
                   fontWeight: 500,
-                  fontSize: 14,
+                  fontSize: narrow ? 15 : 16,
                   letterSpacing: "0.03em",
                   cursor: "pointer",
                 }}
@@ -382,33 +405,34 @@ export default function CfaMapClient() {
       <div style={{
         display: "flex",
         flexDirection: narrow ? "column" : "row",
-        gap: narrow ? 0 : 22,
-        alignItems: "flex-start",
-        padding: narrow ? 0 : "0 24px",
+        gap: narrow ? 0 : COLUMN_GAP,
+        // stretched, so the plan ends level with the legend instead of leaving a
+        // ragged gap under the shorter of the two
+        alignItems: narrow ? "flex-start" : "stretch",
+        padding: narrow ? 0 : `0 ${EDGE_PAD}px`,
       }}>
         {/* Legend. Beside the plan rather than above it, so selecting a row
             never pushes the thing it highlights out of view. */}
         <div style={{
           order: narrow ? 2 : 1,
-          width: narrow ? "100%" : 330,
+          width: narrow ? "100%" : LEGEND_WIDTH,
           flexShrink: 0,
           background: CREAM,
           padding: narrow ? "18px 16px 22px" : "20px 18px",
           borderTop: narrow ? "1px solid #e2e1d6" : "none",
         }}>
           <h2 style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 13,
+            fontFamily: "var(--font-heading)",
+            fontSize: 19,
             fontWeight: 500,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
+            lineHeight: 1.2,
             color: AIM_GREEN,
-            marginBottom: 4,
+            margin: "0 0 6px",
           }}>
             {phase.title}
           </h2>
           <p style={{ fontSize: 13, color: "#494949", margin: "0 0 14px" }}>
-            Select a feature to find it on the plan, or choose a marker on the plan.
+            Select a feature to find it on the site map, or choose a marker on the map.
           </p>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {phase.features.map((f) => {
@@ -469,8 +493,13 @@ export default function CfaMapClient() {
                     <span style={{ fontSize: 13.5, lineHeight: 1.3, fontWeight: on ? 600 : 400 }}>
                       {f.label}
                       {f.points.length > 1 && (
-                        <span style={{ color: "#7a7a72", fontWeight: 400 }}>
-                          {" "}({f.points.length} locations)
+                        <span style={{
+                          display: "block",
+                          color: "#7a7a72",
+                          fontWeight: 400,
+                          fontSize: 12,
+                        }}>
+                          {f.points.length} locations
                         </span>
                       )}
                     </span>
@@ -482,7 +511,14 @@ export default function CfaMapClient() {
         </div>
 
         {/* The plan */}
-        <div style={{ order: narrow ? 1 : 2, flex: 1, width: "100%", minWidth: 0 }}>
+        <div style={{
+          order: narrow ? 1 : 2,
+          flex: 1,
+          width: "100%",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}>
           <div
             ref={frameRef}
             onPointerDown={onPointerDown}
@@ -493,7 +529,11 @@ export default function CfaMapClient() {
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: narrow ? "4 / 3" : String(PLAN.width / PLAN.height),
+              // side by side, the legend sets the height and the plan fills it;
+              // stacked on a phone, the plan sets its own
+              flex: narrow ? "none" : 1,
+              minHeight: narrow ? undefined : 400,
+              aspectRatio: narrow ? "4 / 3" : undefined,
               overflow: "hidden",
               background: "#cfd3c6",
               cursor: dragging ? "grabbing" : "grab",
@@ -503,7 +543,12 @@ export default function CfaMapClient() {
           >
             <div style={{
               position: "absolute",
-              inset: 0,
+              top: 0,
+              left: 0,
+              width: "100%",
+              // the layer keeps the plan's proportions whatever shape the frame
+              // is: this is what holds every marker on its feature
+              aspectRatio: String(PLAN.width / PLAN.height),
               transformOrigin: "0 0",
               transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`,
               willChange: "transform",
@@ -511,7 +556,7 @@ export default function CfaMapClient() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={PLAN.src}
-                alt="Aerial site plan of the Center for Food and Agriculture at the Marin Civic Center campus"
+                alt="Aerial site map of the Center for Food and Agriculture at the Marin Civic Center campus"
                 draggable={false}
                 style={{
                   position: "absolute",
@@ -655,15 +700,15 @@ export default function CfaMapClient() {
             )}
           </div>
 
-          <p style={{
-            fontSize: 12,
-            color: "#6c6c64",
-            margin: narrow ? "10px 16px 0" : "10px 0 0",
-          }}>
-            Scroll or pinch to zoom, drag to move around the plan.
-          </p>
+          {narrow && hint}
         </div>
       </div>
+
+      {!narrow && (
+        <div style={{ padding: `0 ${EDGE_PAD}px`, marginLeft: LEGEND_WIDTH + COLUMN_GAP }}>
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

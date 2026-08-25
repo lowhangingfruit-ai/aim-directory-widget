@@ -14,6 +14,9 @@
 // Labels follow the PDF except where it disagrees with AIM's own published copy
 // on agriculturalinstitute.org/cfa; those cases are marked and listed in the
 // README section of scripts/extract-site-map.py.
+//
+// One house rule on top of that: AIM asked for "and" rather than "&" throughout,
+// so the PDF's ampersands are spelled out here. Keep it that way.
 
 export interface Feature {
   /** the letter or number shown in the circle, and the anchor id */
@@ -57,7 +60,7 @@ export const PHASES: Phase[] = [
       { key: 'B', label: 'Market Vendor Tents', points: [{ x: 54.73, y: 70.01 }] },
       {
         key: 'C',
-        label: 'Public Restrooms Building #1 & #2',
+        label: 'Public Restrooms Building #1 and #2',
         points: [
           { x: 44.48, y: 81.83 },
           { x: 77.54, y: 48.75 },
@@ -73,7 +76,7 @@ export const PHASES: Phase[] = [
       },
       {
         key: 'E',
-        label: 'Chef & Bulk Curbside Pickup',
+        label: 'Chef and Bulk Curbside Pickup',
         points: [
           { x: 79.6, y: 44.24 },
           { x: 71.64, y: 35.05 },
@@ -83,10 +86,10 @@ export const PHASES: Phase[] = [
       { key: 'G', label: 'EV Charging', points: [{ x: 43.37, y: 68.2 }] },
       {
         key: 'H',
-        label: 'Cheryl & Sven Pole Bicycle Parking',
+        label: 'Cheryl and Sven Pole Bicycle Parking',
         points: [{ x: 39.86, y: 67.91 }],
       },
-      { key: 'I', label: 'Cold Storage & Ice Storage', points: [{ x: 44.51, y: 87.99 }] },
+      { key: 'I', label: 'Cold Storage and Ice Storage', points: [{ x: 44.51, y: 87.99 }] },
       { key: 'J', label: 'Market Storage', points: [{ x: 46.07, y: 87.99 }] },
       { key: 'K', label: 'Recycling Center', points: [{ x: 47.56, y: 83.02 }] },
       {
@@ -109,10 +112,10 @@ export const PHASES: Phase[] = [
     // plan would show the hub at about a tenth of the frame
     initialView: { x: 29, y: 84, scale: 2.6 },
     features: [
-      { key: '1', label: 'Visitor Center & Cafe', points: [{ x: 38.06, y: 74.83 }] },
+      { key: '1', label: 'Visitor Center and Cafe', points: [{ x: 38.06, y: 74.83 }] },
       {
         key: '2',
-        label: 'AIM Offices & Community Meeting Spaces',
+        label: 'AIM Offices and Community Meeting Spaces',
         points: [
           { x: 33.64, y: 87.73 },
           { x: 38.3, y: 87.73 },
@@ -135,15 +138,15 @@ export const PHASES: Phase[] = [
       },
       {
         key: '8',
-        label: 'Kira & Bradley Haas Outdoor Classroom',
+        label: 'Kira and Bradley Haas Outdoor Classroom',
         points: [{ x: 27.3, y: 86.0 }],
       },
       { key: '9', label: 'Climate Resiliency Garden', points: [{ x: 29.8, y: 85.09 }] },
-      { key: '10', label: 'Gathering Tree & Stage', points: [{ x: 41.94, y: 81.81 }] },
+      { key: '10', label: 'Gathering Tree and Stage', points: [{ x: 41.94, y: 81.81 }] },
       {
         key: '11',
         // PDF runs these together with no conjunction
-        label: 'Public Restrooms Building #3 & Hydration Station',
+        label: 'Public Restrooms Building #3 and Hydration Station',
         points: [{ x: 34.53, y: 77.2 }],
       },
       { key: '12', label: 'Digital Kiosk #2', points: [{ x: 40.62, y: 74.83 }] },

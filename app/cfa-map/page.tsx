@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import CfaMapClient from "./CfaMapClient";
 
 export const metadata: Metadata = {
-  title: "Center for Food and Agriculture site plan",
+  title: "Center for Food and Agriculture site map",
   description:
     "Interactive site plan for AIM's Center for Food and Agriculture at the Marin Civic Center campus.",
 };
