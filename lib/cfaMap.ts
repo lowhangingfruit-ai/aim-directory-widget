@@ -169,13 +169,23 @@ export const PHASES: Phase[] = [
  * it overhangs the trim, so the full export would put every marker off by the
  * overhang. Crop is (242, 0, 8715, 4902) of the 9200px source.
  *
- * Three sizes, because one file cannot be both quick to load and sharp at full
- * zoom. `placeholder` paints first, `src` is what you look at, and `detail`
- * loads in the background and takes over once it is ready. Zoom is capped
- * against whichever of the last two is actually loaded, see sharpScale.
+ * Two files plus an inline smudge, because one file cannot be both quick to
+ * load and sharp at full zoom.
+ *
+ * `src` is what you look at, and it has to be big enough for the opening views:
+ * phase two opens at 2.3x, so a smaller base would open visibly wider than
+ * intended. `detail` is 2MB and only earns its keep for someone who zooms, so
+ * it is not fetched until the map is touched — see wantDetail in CfaMapClient.
+ * Zoom is capped against whichever of the two is actually loaded, see
+ * sharpScale.
+ *
+ * `lqip` is a 32px-wide render inlined as a data URI. It replaced a 205KB
+ * intermediate file that was measured arriving *after* the base it was meant to
+ * stand in for, so it was pure cost.
  */
 export const PLAN = {
-  placeholder: '/cfa/site-plan-1600.webp',
+  lqip:
+    'data:image/webp;base64,UklGRs4AAABXRUJQVlA4IMIAAAAwBQCdASogABMAPrVMnkmnJKKhMAgA4BaJZQDKtBTGzEuNysY/3fRxZOIw4xZwtf9lgAD+56I1JR8qt24A4HzANrETX+f5mnpq7FmLsdjMly/Gx4/Fz/P4gSPe2F2HJGZF4VFB6wAh5sSYjyi2QFZe9yB+olwFU7bFW2df/3YdPCBa+cA+8G/utvfwxc01HBlDHviOAnWVAwISIy2YK+lgl/rZZjcQRP3zlI18zqpP7cQASR1WCHEf7abCwX71LgAAAA==',
   src: '/cfa/site-plan.webp',
   width: 3486,
   height: 1961,

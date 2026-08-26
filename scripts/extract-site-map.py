@@ -28,6 +28,7 @@ website. Raise them with AIM rather than only fixing them here:
     run together with no conjunction.
 """
 
+import base64
 import hashlib
 import pathlib
 import re
@@ -80,14 +81,15 @@ def page_crop(page, source_width, source_height):
     )
 
 
-# name, target width, quality. The base is what you look at, detail loads in the
-# background for deep zoom, and 1600 paints first. Keep these in step with PLAN
-# in lib/cfaMap.ts.
+# name, target width, quality. The base is what you look at and has to cover the
+# opening views; detail is fetched only once the map is touched. Keep these in
+# step with PLAN in lib/cfaMap.ts.
 RENDITIONS = (
     ("site-plan.webp", 3486, 82),
     ("site-plan-detail.webp", 7000, 80),
-    ("site-plan-1600.webp", 1600, 72),
 )
+# the inline stand-in printed for PLAN.lqip in lib/cfaMap.ts
+LQIP = ("lqip.webp", 32, 60)
 
 
 def write_base_image(doc, hires=None):
@@ -128,9 +130,21 @@ def write_base_image(doc, hires=None):
              str(source), "-o", str(OUT_DIR / name)],
             check=True,
         )
+    # the inline preview is printed, not shipped as a file
+    name, width, quality = LQIP
+    tiny = OUT_DIR / name
+    subprocess.run(
+        ["cwebp", "-quiet", "-q", str(quality),
+         "-crop", str(x), str(y), str(w), str(h), "-resize", str(width), "0",
+         str(source), "-o", str(tiny)],
+        check=True,
+    )
+    encoded = base64.b64encode(tiny.read_bytes()).decode()
+    tiny.unlink()
     if temp:
         temp.unlink()
     print(f"cut {sw}x{sh} to {w}x{h} at ({x}, {y}) from {source.name}")
+    print(f"\nPLAN.lqip = 'data:image/webp;base64,{encoded}'\n")
     return min(RENDITIONS[0][1], w), round(min(RENDITIONS[0][1], w) * h / w)
 
 

@@ -120,6 +120,10 @@ export default function CfaMapClient() {
   // the detail render, once it has arrived: until then zoom is capped against
   // the base so nobody is offered a sharpness the loaded art cannot deliver
   const [detailReady, setDetailReady] = useState(false);
+  // the 2MB detail render is only worth its weight to someone who zooms, so it
+  // is not requested until the map is touched or the view approaches the base's
+  // own limit. Most visitors read the legend and never pay for it.
+  const [wantDetail, setWantDetail] = useState(false);
   const [narrow, setNarrow] = useState(false);
   // null means "wherever this phase opens"; any gesture pins it to a real view
   const [pinned, setPinned] = useState<View | null>(null);
@@ -196,13 +200,25 @@ export default function CfaMapClient() {
     };
   }, [measure]);
 
-  // Off the critical path: the base is already on screen, and a failed load
-  // just leaves the zoom ceiling where it is.
+  // Fetch it a little before the base runs out, so it is usually there by the
+  // time the ceiling would have stopped them. Derived rather than stored: the
+  // threshold is a fact about the current view, not a separate piece of state.
+  const baseLimit = useMemo(
+    () => frameOf(size.w, size.h, dpr, PLAN.width).sharpScale,
+    [size.w, size.h, dpr],
+  );
+  // Guarded on a measured frame: before the first measurement the frame is 0
+  // wide, which collapses baseLimit to 1 and makes any scale look like it has
+  // exhausted the base, fetching 2MB on every load.
+  const fetchDetail = wantDetail || (size.w > 0 && view.scale > baseLimit * 0.8);
+
+  // A failed load just leaves the zoom ceiling where the base put it.
   useEffect(() => {
+    if (!fetchDetail) return;
     const img = new window.Image();
     img.onload = () => setDetailReady(true);
     img.src = PLAN.detail;
-  }, []);
+  }, [fetchDetail]);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 900);
@@ -272,6 +288,7 @@ export default function CfaMapClient() {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      setWantDetail(true);
       stopAnimation();
       const box = el.getBoundingClientRect();
       const px = e.clientX - box.left;
@@ -338,6 +355,7 @@ export default function CfaMapClient() {
 
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    setWantDetail(true);
     stopAnimation();
     if (pointers.current.size === 2) {
       gesture.current = { moved: true, distance: pinchDistance(), scale: view.scale };
@@ -414,6 +432,7 @@ export default function CfaMapClient() {
 
   const zoomBy = useCallback(
     (factor: number) => {
+      setWantDetail(true);
       if (!frame.w) return;
       const next = Math.min(frame.maxScale, Math.max(frame.minScale, view.scale * factor));
       const k = next / view.scale;
@@ -675,7 +694,7 @@ export default function CfaMapClient() {
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
-                  backgroundImage: `url(${PLAN.placeholder})`,
+                  backgroundImage: `url(${PLAN.lqip})`,
                   backgroundSize: "cover",
                 }}
               />
