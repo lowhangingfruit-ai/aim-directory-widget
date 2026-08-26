@@ -302,19 +302,33 @@ export default function CfaMapClient() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // let a Squarespace code-block embed size its iframe to the content
+  // Let a Squarespace code-block embed size its iframe to the content. Posted on
+  // a few triggers rather than one: ResizeObserver is missing or silent in some
+  // webviews, and web fonts and the plan art both land after first paint and
+  // both change the height.
   useEffect(() => {
+    if (window.parent === window) return;
+    let last = -1;
     const post = () => {
-      if (window.parent === window) return;
-      window.parent.postMessage(
-        { type: "aim-cfa-map-height", height: document.body.scrollHeight },
-        "*",
-      );
+      const height = document.body.scrollHeight;
+      if (height === last) return;
+      last = height;
+      window.parent.postMessage({ type: "aim-cfa-map-height", height }, "*");
     };
     post();
-    const observer = new ResizeObserver(post);
-    observer.observe(document.body);
-    return () => observer.disconnect();
+    window.addEventListener("resize", post);
+    window.addEventListener("load", post);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(post);
+    observer?.observe(document.body);
+    // catches the settling period without polling forever
+    const timers = [100, 400, 1200, 3000].map((ms) => window.setTimeout(post, ms));
+    return () => {
+      window.removeEventListener("resize", post);
+      window.removeEventListener("load", post);
+      observer?.disconnect();
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   const pinchDistance = () => {
