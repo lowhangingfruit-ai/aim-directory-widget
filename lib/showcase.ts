@@ -63,6 +63,9 @@ export interface RosterEntry {
   // Cohort year, e.g. "2026". Current cohort vs. alumni is derived from `alum`.
   cohort: string;
   alum?: boolean;
+  // Extra program-membership tags, e.g. a MAF alum who also graduated from
+  // the Farmer Incubator. Exact years arrive with the admin-panel backfill.
+  alsoTags?: string[];
   // Portrait published on AIM's own program page, when one exists.
   aimPhoto?: string;
 }
@@ -104,12 +107,12 @@ export const ROSTER_2026: RosterEntry[] = [
 // market-access-fund page. Alumni still vending in AIM markets pick up their
 // photo and market schedule from the feed join automatically.
 export const ALUMNI: RosterEntry[] = [
-  { person: "Alberto Mendoza", business: "Ayoquezco Organic Farm", program: "maf", cohort: "2025", alum: true, match: "ayoquezco" },
+  { person: "Alberto Mendoza", business: "Ayoquezco Organic Farm", program: "maf", cohort: "2025", alum: true, match: "ayoquezco", alsoTags: ["Farmer Incubator graduate"] },
   { person: "Sheila Hilliard", business: "Boss Seasoning", program: "maf", cohort: "2025", alum: true, match: "boss seasoning" },
   { person: "Sade Adeyemi", business: "Herbal Alchemist", program: "maf", cohort: "2025", alum: true, match: "herbal alchemist" },
-  { person: "Celsa Ortega", business: "Induchucuiti Organic Farm", program: "maf", cohort: "2025", alum: true, match: "induchucuiti" },
+  { person: "Celsa Ortega", business: "Induchucuiti Organic Farm", program: "maf", cohort: "2025", alum: true, match: "induchucuiti", alsoTags: ["Farmer Incubator graduate"] },
   { person: "Curtis Aikens", business: "Marin County Cooperation Team", program: "maf", cohort: "2025", alum: true, match: "cooperation team" },
-  { person: "Baltazar Caballero", business: "Mixteco Organic Produce", program: "maf", cohort: "2025", alum: true, match: "mixteco" },
+  { person: "Baltazar Caballero", business: "Mixteco Organic Produce", program: "maf", cohort: "2025", alum: true, match: "mixteco", alsoTags: ["Farmer Incubator graduate"] },
   { person: "Andrea Morelos", business: "Seasonal Sweetss", program: "maf", cohort: "2025", alum: true, match: "seasonal sweet" },
   { person: "Charles McDonald", business: "Sip to Live", program: "maf", cohort: "2025", alum: true, match: "sip to live" },
   { person: "Deborah Michail", business: "Tavus", program: "maf", cohort: "2025", alum: true, match: "tavus" },
@@ -132,7 +135,7 @@ export const ALUMNI: RosterEntry[] = [
   { person: "Jenny Fong", business: "Modern Shibori", program: "maf", cohort: "2023", alum: true, match: "modern shibori" },
   { person: "Darren Oyobio", business: "Mossed Juicery", program: "maf", cohort: "2023", alum: true, match: "mossed" },
   { person: "Cecilia Liang", business: "Nuttea Organics", program: "maf", cohort: "2023", alum: true, match: "nuttea" },
-  { person: "Everardo Solorio", business: "Solorio's Organic Farm", program: "maf", cohort: "2023", alum: true, match: "solorio" },
+  { person: "Everardo Solorio", business: "Solorio's Organic Farm", program: "maf", cohort: "2023", alum: true, match: "solorio", alsoTags: ["Farmer Incubator graduate"] },
   { person: "Teyonna Allen", business: "Sweet Tey's", program: "maf", cohort: "2023", alum: true, match: "sweet tey" },
   { person: "Bria Hutson", business: "Tha MF'n Vegan", program: "maf", cohort: "2023", alum: true, match: "tha mf" },
   { person: "Rachel Russell", business: "Chestnut Street Granola", program: "maf", cohort: "2022", alum: true, match: "chestnut street" },

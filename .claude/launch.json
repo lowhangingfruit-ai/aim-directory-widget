@@ -4,8 +4,12 @@
     {
       "name": "aim-directory-widget",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3004
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3004,
+      "autoPort": true
     }
   ]
 }

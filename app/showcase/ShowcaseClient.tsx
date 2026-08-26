@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Profile, Program, ProgramID, PROGRAMS, FARMER_GRADUATES } from "@/lib/showcase";
+import { Profile, ProgramID, PROGRAMS, FARMER_GRADUATES } from "@/lib/showcase";
 
 interface Props {
   profiles: Profile[];
@@ -69,14 +69,14 @@ function bestPhoto(profile: Profile): string | null {
 // Vendor-uploaded feed images are often wordmarks or logos. When one is far
 // from square, contain-fit it on the program tint instead of cropping it.
 // Curated AIM portraits (detect=false) always crop to fill.
-function SmartImg({ src, alt, tint, detect, style }: {
-  src: string; alt: string; tint: string; detect: boolean; style?: React.CSSProperties;
+function SmartImg({ src, alt, tint, detect, forceContain, style }: {
+  src: string; alt: string; tint: string; detect: boolean; forceContain?: boolean; style?: React.CSSProperties;
 }) {
-  const [contain, setContain] = useState(false);
+  const [contain, setContain] = useState(!!forceContain);
   return (
     <img src={src} alt={alt}
       onLoad={(e) => {
-        if (!detect) return;
+        if (!detect || forceContain) return;
         const img = e.currentTarget;
         if (!img.naturalWidth || !img.naturalHeight) return;
         const r = img.naturalWidth / img.naturalHeight;
@@ -104,6 +104,43 @@ function useNarrow() {
   return { narrow: width < 640, mid: width < 980 };
 }
 
+// Split-flap-style stat: digits roll up to the target when the stat scrolls
+// into view. Parses values like "$130K+" and "72%" so only digits animate.
+function RollingStat({ value }: { value: string }) {
+  const m = value.match(/^([^0-9]*)(\d+)(.*)$/);
+  const target = m ? parseInt(m[2], 10) : 0;
+  const [shown, setShown] = useState(0);
+  const [el, setEl] = useState<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!el || !m) return;
+    let raf = 0;
+    const obs = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      obs.disconnect();
+      const start = performance.now();
+      const dur = 1400;
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        setShown(Math.round(target * eased));
+        if (t < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }, { threshold: 0.6 });
+    obs.observe(el);
+    return () => { obs.disconnect(); cancelAnimationFrame(raf); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [el, target]);
+
+  if (!m) return <>{value}</>;
+  return (
+    <span ref={setEl} style={{ fontVariantNumeric: "tabular-nums" }}>
+      {m[1]}{shown}{m[3]}
+    </span>
+  );
+}
+
 // ── AIM-style pieces ───────────────────────────────────────────────────────────
 
 function PillButton({ label, active, color, textOnColor, onClick }: {
@@ -127,25 +164,6 @@ function PillButton({ label, active, color, textOnColor, onClick }: {
     }}>
       {label}
     </button>
-  );
-}
-
-function ProgramTag({ program }: { program: Program }) {
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "4px 14px",
-      borderRadius: 300,
-      backgroundColor: program.color,
-      color: program.textOnColor,
-      fontFamily: "var(--font-heading)",
-      fontWeight: 600,
-      fontSize: 12,
-      letterSpacing: "0.03em",
-      lineHeight: 1.5,
-    }}>
-      {program.shortName}
-    </span>
   );
 }
 
@@ -305,8 +323,8 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
         }}>
           {photo ? (
             <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
-              tint={program.tint} detect={!profile.aimPhoto}
-              style={{ position: "absolute", inset: 0, height: "100%" }} />
+              tint={program.tint} detect={false} forceContain
+              style={{ position: "absolute", inset: 0, height: "100%", padding: 0 }} />
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex",
@@ -322,7 +340,26 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
         {/* Info side */}
         <div style={{ flex: 1, padding: narrow ? "24px 22px 28px" : "32px 34px 36px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <ProgramTag program={program} />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <span style={{
+                display: "inline-block", padding: "4px 14px", borderRadius: 300,
+                backgroundColor: program.color, color: program.textOnColor,
+                fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12,
+                letterSpacing: "0.03em", lineHeight: 1.5,
+              }}>
+                {program.shortName} {profile.cohort}
+              </span>
+              {profile.alsoTags?.map((t) => (
+                <span key={t} style={{
+                  display: "inline-block", padding: "4px 14px", borderRadius: 300,
+                  border: `1.5px solid ${AIM_BRIGHT}`, color: "#1d4d1d", backgroundColor: "#fff",
+                  fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12,
+                  letterSpacing: "0.03em", lineHeight: 1.5,
+                }}>
+                  {t}
+                </span>
+              ))}
+            </div>
             <h2 style={{
               fontFamily: "var(--font-heading)", fontWeight: 500,
               fontSize: narrow ? 26 : 30, color: "#000", lineHeight: 1.2, margin: "14px 0 2px",
@@ -331,7 +368,6 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
             </h2>
             <span style={{ fontSize: 15, color: "#494949" }}>
               {profile.person}
-              {profile.alum ? ` · Class of ${profile.cohort}` : ""}
             </span>
           </div>
 
@@ -386,7 +422,8 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
   );
   const [openProfile, setOpenProfile] = useState<Profile | null>(null);
   const { narrow, mid } = useNarrow();
-  const cols = narrow ? 2 : mid ? 3 : 4;
+  // Shayla asked for slightly larger participant photos: 3-up on desktop
+  const cols = narrow ? 2 : 3;
   const px = narrow ? 20 : 40;
 
   const visiblePrograms = PROGRAM_ORDER.filter((id) => tab === "all" || tab === id);
@@ -471,7 +508,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             {STATS.map((s) => (
               <div key={s.value}>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: narrow ? 32 : 40, color: AIM_GREEN, lineHeight: 1.1 }}>
-                  {s.value}
+                  <RollingStat value={s.value} />
                 </div>
                 <div style={{ fontSize: 13.5, color: "#000", lineHeight: 1.45, marginTop: 4 }}>{s.label}</div>
               </div>
@@ -493,7 +530,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
           display: "flex", gap: 8, justifyContent: narrow ? "flex-start" : "center",
           overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
         }}>
-          <PillButton label="All programs" active={tab === "all"} color={AIM_GREEN} textOnColor="#fff" onClick={() => setTab("all")} />
+          <PillButton label="All Farm & Food Programs" active={tab === "all"} color={AIM_GREEN} textOnColor="#fff" onClick={() => setTab("all")} />
           {PROGRAM_ORDER.map((id) => {
             const p = PROGRAMS[id];
             const count = id === "foodmaker" ? 5 : profiles.filter((x) => x.program === id).length;
