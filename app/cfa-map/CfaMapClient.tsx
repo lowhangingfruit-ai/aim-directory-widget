@@ -42,11 +42,11 @@ interface Frame {
   maxScale: number;
 }
 
-function frameOf(w: number, h: number, dpr = 1): Frame {
+function frameOf(w: number, h: number, dpr = 1, sourceWidth = PLAN.width): Frame {
   const lh = w * PLAN_RATIO;
   const minScale = lh > 0 ? Math.max(1, h / lh) : 1;
   // never below minScale: covering the frame wins over staying sharp
-  const sharpScale = w > 0 ? Math.max(minScale, PLAN.width / (w * dpr)) : minScale;
+  const sharpScale = w > 0 ? Math.max(minScale, sourceWidth / (w * dpr)) : minScale;
   return {
     w,
     h,
@@ -117,6 +117,9 @@ export default function CfaMapClient() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [dpr, setDpr] = useState(1);
+  // the detail render, once it has arrived: until then zoom is capped against
+  // the base so nobody is offered a sharpness the loaded art cannot deliver
+  const [detailReady, setDetailReady] = useState(false);
   const [narrow, setNarrow] = useState(false);
   // null means "wherever this phase opens"; any gesture pins it to a real view
   const [pinned, setPinned] = useState<View | null>(null);
@@ -130,7 +133,11 @@ export default function CfaMapClient() {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: boolean; distance: number; scale: number } | null>(null);
 
-  const frame = useMemo(() => frameOf(size.w, size.h, dpr), [size.w, size.h, dpr]);
+  const sourceWidth = detailReady ? PLAN.detailWidth : PLAN.width;
+  const frame = useMemo(
+    () => frameOf(size.w, size.h, dpr, sourceWidth),
+    [size.w, size.h, dpr, sourceWidth],
+  );
   const baseView = useMemo(() => {
     if (!frame.w) return { scale: 1, tx: 0, ty: 0 };
     const { x, y, scale } = phase.initialView;
@@ -145,9 +152,11 @@ export default function CfaMapClient() {
 
   // gesture handlers update from the latest view without re-subscribing
   const baseRef = useRef(baseView);
+  const sourceRef = useRef(sourceWidth);
   useEffect(() => {
     baseRef.current = baseView;
-  }, [baseView]);
+    sourceRef.current = sourceWidth;
+  }, [baseView, sourceWidth]);
 
   const active = selected ?? hovered;
 
@@ -186,6 +195,14 @@ export default function CfaMapClient() {
       observer?.disconnect();
     };
   }, [measure]);
+
+  // Off the critical path: the base is already on screen, and a failed load
+  // just leaves the zoom ceiling where it is.
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => setDetailReady(true);
+    img.src = PLAN.detail;
+  }, []);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 900);
@@ -259,7 +276,7 @@ export default function CfaMapClient() {
       const box = el.getBoundingClientRect();
       const px = e.clientX - box.left;
       const py = e.clientY - box.top;
-      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1);
+      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1, sourceRef.current);
       setPinned((current) => {
         const v = current ?? baseRef.current;
         const next = Math.min(
@@ -333,7 +350,7 @@ export default function CfaMapClient() {
       const [a, b] = [...pointers.current.values()];
       const px = (a.x + b.x) / 2 - box.left;
       const py = (a.y + b.y) / 2 - box.top;
-      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1);
+      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1, sourceRef.current);
       setPinned((current) => {
         const v = current ?? baseRef.current;
         const next = Math.min(f.maxScale, Math.max(f.minScale, startScale * ratio));
@@ -354,7 +371,7 @@ export default function CfaMapClient() {
         const v = current ?? baseRef.current;
         return clampView(
           { ...v, tx: v.tx + dx, ty: v.ty + dy },
-          frameOf(box.width, box.height, window.devicePixelRatio || 1),
+          frameOf(box.width, box.height, window.devicePixelRatio || 1, sourceRef.current),
         );
       });
     }
@@ -648,6 +665,26 @@ export default function CfaMapClient() {
                   backgroundSize: "cover",
                 }}
               />
+
+              {/* The detail render, laid over the base once it has loaded. The
+                  base stays underneath so there is never a blank frame, and
+                  this carries no alt text: it is the same picture. */}
+              {detailReady && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={PLAN.detail}
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
 
               {phase.features.map((f) =>
                 f.points.map((point, i) => {

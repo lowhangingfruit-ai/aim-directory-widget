@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """Pull the CFA site map out of AIM's Canva PDF.
 
-Writes the base plan into public/cfa/ and prints the marker coordinates for
+Writes the plan art into public/cfa/ and prints the marker coordinates for
 lib/cfaMap.ts. Safe to run twice: it overwrites its own outputs and touches
 nothing else.
 
     python3 scripts/extract-site-map.py ~/Downloads/"CFA Site Map.pdf"
+
+The PDF's embedded art is only 3680px wide. AIM's own render is 9200px and is
+the same framing at exactly 2.5x, so pass it as a second argument to cut the
+art from that instead. Marker coordinates are unaffected either way: they are
+percentages of the PDF page, and the crop is computed from the page geometry.
+
+    python3 scripts/extract-site-map.py ~/Downloads/"CFA Site Map.pdf" \
+        ~/Desktop/"AIM CFA -- Illustrative w Canopies Toned (1).jpg"
 
 Page 1 is the Phase One legend (A-M), page 2 is Phase Two (1-14). Both pages
 carry the same base image, so only one copy is written.
@@ -22,6 +30,7 @@ website. Raise them with AIM rather than only fixing them here:
 
 import hashlib
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -71,7 +80,17 @@ def page_crop(page, source_width, source_height):
     )
 
 
-def write_base_image(doc):
+# name, target width, quality. The base is what you look at, detail loads in the
+# background for deep zoom, and 1600 paints first. Keep these in step with PLAN
+# in lib/cfaMap.ts.
+RENDITIONS = (
+    ("site-plan.webp", 3486, 82),
+    ("site-plan-detail.webp", 7000, 80),
+    ("site-plan-1600.webp", 1600, 72),
+)
+
+
+def write_base_image(doc, hires=None):
     xref = doc[0].get_images(full=True)[0][0]
     image = doc.extract_image(xref)
     digests = set()
@@ -81,20 +100,47 @@ def write_base_image(doc):
     if len(digests) > 1:
         print("! pages no longer share one base image: check the plan art", file=sys.stderr)
 
-    x, y, w, h = page_crop(doc[0], image["width"], image["height"])
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    source = OUT_DIR / "source.jpg"
-    source.write_bytes(image["image"])
-    # full detail for deep zoom, plus a small first paint. cwebp crops before it
-    # resizes, so the small one is the same frame at lower resolution.
-    for name, width, quality in ((("site-plan.webp"), 0, 82), ("site-plan-1600.webp", 1600, 72)):
-        args = ["cwebp", "-quiet", "-q", str(quality), "-crop", str(x), str(y), str(w), str(h)]
-        if width:
-            args += ["-resize", str(width), "0"]
-        subprocess.run(args + [str(source), "-o", str(OUT_DIR / name)], check=True)
-    source.unlink()
-    print(f"cropped {image['width']}x{image['height']} to {w}x{h} at ({x}, {y})")
-    return w, h
+    if hires:
+        source = pathlib.Path(hires)
+        sw, sh = image_size(source)
+        # the crop comes from the PDF page, so the replacement has to be the
+        # same framing; anything else silently moves every marker
+        pdf_aspect = image["width"] / image["height"]
+        if abs(sw / sh - pdf_aspect) > 0.005:
+            sys.exit(
+                f"{source.name} is {sw}x{sh} ({sw / sh:.4f}), but the PDF art is "
+                f"{pdf_aspect:.4f}. Different framing would move every marker."
+            )
+        temp = None
+    else:
+        sw, sh = image["width"], image["height"]
+        source = temp = OUT_DIR / "source.jpg"
+        temp.write_bytes(image["image"])
+
+    x, y, w, h = page_crop(doc[0], sw, sh)
+    # cwebp crops before it resizes, so every rendition is the same frame
+    for name, width, quality in RENDITIONS:
+        subprocess.run(
+            ["cwebp", "-quiet", "-q", str(quality),
+             "-crop", str(x), str(y), str(w), str(h),
+             "-resize", str(min(width, w)), "0",
+             str(source), "-o", str(OUT_DIR / name)],
+            check=True,
+        )
+    if temp:
+        temp.unlink()
+    print(f"cut {sw}x{sh} to {w}x{h} at ({x}, {y}) from {source.name}")
+    return min(RENDITIONS[0][1], w), round(min(RENDITIONS[0][1], w) * h / w)
+
+
+def image_size(path):
+    out = subprocess.run(
+        ["sips", "-g", "pixelWidth", "-g", "pixelHeight", str(path)],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    dims = {k: int(v) for k, v in re.findall(r"(pixelWidth|pixelHeight): (\d+)", out)}
+    return dims["pixelWidth"], dims["pixelHeight"]
 
 
 def main():
@@ -104,8 +150,8 @@ def main():
     if doc.page_count != 2:
         print(f"! expected 2 pages, got {doc.page_count}", file=sys.stderr)
 
-    w, h = write_base_image(doc)
-    print(f"wrote {OUT_DIR}/site-plan.webp and site-plan-1600.webp at {w}x{h}")
+    w, h = write_base_image(doc, sys.argv[2] if len(sys.argv) > 2 else None)
+    print("wrote " + ", ".join(name for name, _, _ in RENDITIONS))
     print(f"set PLAN.width/height in lib/cfaMap.ts to {w}/{h}\n")
 
     for index, keys in enumerate(PHASE_KEYS[: doc.page_count]):

@@ -159,13 +159,26 @@ export const PHASES: Phase[] = [
 ]
 
 /**
- * The base plan, shared by both phases. Cropped to the PDF page frame: Canva
- * places the art larger than the page and it overhangs the trim, so the full
- * export would put every marker off by the overhang.
+ * The base plan, shared by both phases.
+ *
+ * Cut from AIM's own 9200x5175 render ("AIM CFA -- Illustrative w Canopies
+ * Toned"), which is the same framing as the PDF's embedded art at exactly 2.5x,
+ * so the marker percentages above carry over untouched.
+ *
+ * Cropped to the PDF page frame: Canva places the art larger than the page and
+ * it overhangs the trim, so the full export would put every marker off by the
+ * overhang. Crop is (242, 0, 8715, 4902) of the 9200px source.
+ *
+ * Three sizes, because one file cannot be both quick to load and sharp at full
+ * zoom. `placeholder` paints first, `src` is what you look at, and `detail`
+ * loads in the background and takes over once it is ready. Zoom is capped
+ * against whichever of the last two is actually loaded, see sharpScale.
  */
 export const PLAN = {
-  src: '/cfa/site-plan.webp',
   placeholder: '/cfa/site-plan-1600.webp',
+  src: '/cfa/site-plan.webp',
   width: 3486,
   height: 1961,
+  detail: '/cfa/site-plan-detail.webp',
+  detailWidth: 7000,
 }
