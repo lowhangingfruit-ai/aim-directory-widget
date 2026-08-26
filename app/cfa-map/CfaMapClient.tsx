@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PHASES, PLAN, type Feature, type Phase } from "@/lib/cfaMap";
 
 const AIM_GREEN = "#0d8240";
@@ -14,6 +14,8 @@ const EDGE_PAD = 24;
 
 const MAX_SCALE = 6;
 const PLAN_RATIO = PLAN.height / PLAN.width;
+/** how far past the plan's own resolution manual zoom may go before it softens */
+const OVERZOOM = 1.35;
 
 /**
  * The legend sets the row's height, so the frame is whatever shape that leaves
@@ -29,11 +31,30 @@ interface Frame {
   lh: number;
   /** the smallest scale that still covers the frame, so there are no gutters */
   minScale: number;
+  /**
+   * Past this the plan is being upscaled, because one plan pixel is covering
+   * more than one device pixel. That upscaling is the blur, so anything the
+   * widget does on its own stays at or under it. A smaller frame raises the
+   * ceiling, which is why a phone tolerates more zoom than a desktop.
+   */
+  sharpScale: number;
+  /** ceiling for manual zoom, a little past sharp where softening still reads */
+  maxScale: number;
 }
 
-function frameOf(w: number, h: number): Frame {
+function frameOf(w: number, h: number, dpr = 1): Frame {
   const lh = w * PLAN_RATIO;
-  return { w, h, lh, minScale: lh > 0 ? Math.max(1, h / lh) : 1 };
+  const minScale = lh > 0 ? Math.max(1, h / lh) : 1;
+  // never below minScale: covering the frame wins over staying sharp
+  const sharpScale = w > 0 ? Math.max(minScale, PLAN.width / (w * dpr)) : minScale;
+  return {
+    w,
+    h,
+    lh,
+    minScale,
+    sharpScale,
+    maxScale: Math.min(MAX_SCALE, Math.max(minScale, sharpScale * OVERZOOM)),
+  };
 }
 
 interface View {
@@ -45,7 +66,7 @@ interface View {
 
 /** Keep the plan covering the frame: no empty gutters at any zoom level. */
 function clampView(v: View, f: Frame): View {
-  const scale = Math.min(MAX_SCALE, Math.max(f.minScale, v.scale));
+  const scale = Math.min(f.maxScale, Math.max(f.minScale, v.scale));
   return {
     scale,
     tx: Math.min(0, Math.max(f.w * (1 - scale), v.tx)),
@@ -73,10 +94,13 @@ function viewFramingFeature(feature: Feature, f: Frame): View {
   // a vertical extent is a share of the plan's height but has to fit the
   // frame's, so put it in the same units as the horizontal one before comparing
   const vertical = f.h > 0 ? ((spanY + pad) * f.lh) / f.h : spanY + pad;
-  const scale =
+  const wanted =
     feature.points.length === 1
       ? 3
       : Math.min(3.2, Math.max(1.4, 100 / Math.max(spanX + pad, vertical)));
+  // an automatic flight never lands past sharp, so selecting a feature cannot
+  // be what makes the plan look soft
+  const scale = Math.min(wanted, f.sharpScale);
   return viewCentredOn(
     (Math.min(...xs) + Math.max(...xs)) / 2,
     (Math.min(...ys) + Math.max(...ys)) / 2,
@@ -92,6 +116,7 @@ export default function CfaMapClient() {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const [dpr, setDpr] = useState(1);
   const [narrow, setNarrow] = useState(false);
   // null means "wherever this phase opens"; any gesture pins it to a real view
   const [pinned, setPinned] = useState<View | null>(null);
@@ -101,14 +126,16 @@ export default function CfaMapClient() {
   const frameRef = useRef<HTMLDivElement>(null);
   const legendRows = useRef(new Map<string, HTMLButtonElement>());
   const animation = useRef<number | null>(null);
+  const landing = useRef<number | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: boolean; distance: number; scale: number } | null>(null);
 
-  const frame = useMemo(() => frameOf(size.w, size.h), [size.w, size.h]);
+  const frame = useMemo(() => frameOf(size.w, size.h, dpr), [size.w, size.h, dpr]);
   const baseView = useMemo(() => {
     if (!frame.w) return { scale: 1, tx: 0, ty: 0 };
     const { x, y, scale } = phase.initialView;
-    return viewCentredOn(x, y, narrow ? scale * 1.25 : scale, frame);
+    const wanted = narrow ? scale * 1.25 : scale;
+    return viewCentredOn(x, y, Math.min(wanted, frame.sharpScale), frame);
   }, [phase, narrow, frame]);
   // clamped on every render so a window resize cannot leave the plan off-frame
   const view = useMemo(
@@ -124,19 +151,41 @@ export default function CfaMapClient() {
 
   const active = selected ?? hovered;
 
-  // Measure the frame itself, not the window. The frame also changes size when
-  // the layout switches between the side-by-side and stacked arrangements and
-  // when its aspect ratio changes with it. A stale size feeds clampView the
-  // wrong bounds, which pushes the plan clean out of view.
-  useEffect(() => {
+  // Measure the frame itself, not the window: with the columns stretched the
+  // legend sets the row's height, so the frame changes shape for reasons the
+  // window never sees. A stale size feeds clampView the wrong bounds, which
+  // pushes the plan clean out of view.
+  //
+  // Both setters return the previous value when nothing moved, so running this
+  // after every commit costs one comparison and cannot loop.
+  const measure = useCallback(() => {
     const el = frameRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(() =>
-      setSize({ w: el.clientWidth, h: el.clientHeight }),
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    // moving the window between a retina and a standard display changes how far
+    // the plan can be zoomed before it softens
+    const ratio = window.devicePixelRatio || 1;
+    setDpr((prev) => (prev === ratio ? prev : ratio));
   }, []);
+
+  // after every commit, so a layout change is picked up in the same frame
+  useLayoutEffect(measure);
+
+  // ResizeObserver catches frame-only changes, but do not depend on it: some
+  // embedded webviews never deliver the initial callback the spec requires.
+  useEffect(() => {
+    window.addEventListener("resize", measure);
+    const el = frameRef.current;
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    if (el) observer?.observe(el);
+    return () => {
+      window.removeEventListener("resize", measure);
+      observer?.disconnect();
+    };
+  }, [measure]);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 900);
@@ -145,24 +194,41 @@ export default function CfaMapClient() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const animateTo = useCallback((from: View, target: View) => {
+  /** Drop any flight in progress, frame and safety timer both. */
+  const stopAnimation = useCallback(() => {
     if (animation.current) cancelAnimationFrame(animation.current);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPinned(target);
-      return;
-    }
-    const start = performance.now();
-    const step = (now: number) => {
-      const k = easeOut(Math.min(1, (now - start) / 420));
-      setPinned({
-        scale: from.scale + (target.scale - from.scale) * k,
-        tx: from.tx + (target.tx - from.tx) * k,
-        ty: from.ty + (target.ty - from.ty) * k,
-      });
-      if (k < 1) animation.current = requestAnimationFrame(step);
-    };
-    animation.current = requestAnimationFrame(step);
+    if (landing.current) clearTimeout(landing.current);
+    animation.current = null;
+    landing.current = null;
   }, []);
+
+  const animateTo = useCallback(
+    (from: View, target: View) => {
+      stopAnimation();
+      // An embed can sit in a hidden tab or scrolled off the page, and a hidden
+      // document is served no animation frames at all. Move without animating
+      // rather than not moving.
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || document.hidden) {
+        setPinned(target);
+        return;
+      }
+      const start = performance.now();
+      const step = (now: number) => {
+        const k = easeOut(Math.min(1, (now - start) / 420));
+        setPinned({
+          scale: from.scale + (target.scale - from.scale) * k,
+          tx: from.tx + (target.tx - from.tx) * k,
+          ty: from.ty + (target.ty - from.ty) * k,
+        });
+        if (k < 1) animation.current = requestAnimationFrame(step);
+        else if (landing.current) clearTimeout(landing.current);
+      };
+      animation.current = requestAnimationFrame(step);
+      // and if the frames stop arriving mid-flight, still land on the target
+      landing.current = window.setTimeout(() => setPinned(target), 700);
+    },
+    [stopAnimation],
+  );
 
   const selectFeature = useCallback(
     (feature: Feature | null, source: "legend" | "map") => {
@@ -189,15 +255,15 @@ export default function CfaMapClient() {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (animation.current) cancelAnimationFrame(animation.current);
+      stopAnimation();
       const box = el.getBoundingClientRect();
       const px = e.clientX - box.left;
       const py = e.clientY - box.top;
-      const f = frameOf(box.width, box.height);
+      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1);
       setPinned((current) => {
         const v = current ?? baseRef.current;
         const next = Math.min(
-          MAX_SCALE,
+          f.maxScale,
           Math.max(f.minScale, v.scale * Math.exp(-e.deltaY * 0.0016)),
         );
         const k = next / v.scale;
@@ -209,7 +275,7 @@ export default function CfaMapClient() {
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [stopAnimation]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -241,7 +307,7 @@ export default function CfaMapClient() {
 
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (animation.current) cancelAnimationFrame(animation.current);
+    stopAnimation();
     if (pointers.current.size === 2) {
       gesture.current = { moved: true, distance: pinchDistance(), scale: view.scale };
     } else {
@@ -267,10 +333,10 @@ export default function CfaMapClient() {
       const [a, b] = [...pointers.current.values()];
       const px = (a.x + b.x) / 2 - box.left;
       const py = (a.y + b.y) / 2 - box.top;
-      const f = frameOf(box.width, box.height);
+      const f = frameOf(box.width, box.height, window.devicePixelRatio || 1);
       setPinned((current) => {
         const v = current ?? baseRef.current;
-        const next = Math.min(MAX_SCALE, Math.max(f.minScale, startScale * ratio));
+        const next = Math.min(f.maxScale, Math.max(f.minScale, startScale * ratio));
         const k = next / v.scale;
         return clampView(
           { scale: next, tx: px - (px - v.tx) * k, ty: py - (py - v.ty) * k },
@@ -288,7 +354,7 @@ export default function CfaMapClient() {
         const v = current ?? baseRef.current;
         return clampView(
           { ...v, tx: v.tx + dx, ty: v.ty + dy },
-          frameOf(box.width, box.height),
+          frameOf(box.width, box.height, window.devicePixelRatio || 1),
         );
       });
     }
@@ -318,7 +384,7 @@ export default function CfaMapClient() {
   const zoomBy = useCallback(
     (factor: number) => {
       if (!frame.w) return;
-      const next = Math.min(MAX_SCALE, Math.max(frame.minScale, view.scale * factor));
+      const next = Math.min(frame.maxScale, Math.max(frame.minScale, view.scale * factor));
       const k = next / view.scale;
       animateTo(
         view,
@@ -338,8 +404,8 @@ export default function CfaMapClient() {
   const resetView = useCallback(() => {
     setSelected(null);
     setPinned(null);
-    if (animation.current) cancelAnimationFrame(animation.current);
-  }, []);
+    stopAnimation();
+  }, [stopAnimation]);
 
   const controlStyle: React.CSSProperties = {
     borderRadius: 300,
@@ -370,7 +436,13 @@ export default function CfaMapClient() {
         }}>
           Explore the Site Map
         </h1>
-        <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+        {/* stacked and equal width on a phone, where the two labels cannot sit
+            side by side and ragged widths read as a mistake */}
+        <div style={
+          narrow
+            ? { display: "grid", gap: 8, width: "100%" }
+            : { display: "inline-flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }
+        }>
           {PHASES.map((p) => {
             const on = p.id === phaseId;
             return (
@@ -432,7 +504,12 @@ export default function CfaMapClient() {
             color: AIM_GREEN,
             margin: "0 0 8px",
           }}>
-            {phase.title}
+            {/* "Phase One:" on its own line, the way the printed legend sets it */}
+            {phase.title.split(/:\s*/).map((line, i, all) => (
+              <span key={line} style={{ display: "block" }}>
+                {i < all.length - 1 ? `${line}:` : line}
+              </span>
+            ))}
           </h2>
           <p style={{ fontSize: 13, color: "#494949", margin: "0 0 14px" }}>
             Select a feature to find it on the site map, or choose a marker on the map.

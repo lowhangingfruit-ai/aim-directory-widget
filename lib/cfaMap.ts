@@ -109,8 +109,10 @@ export const PHASES: Phase[] = [
     title: 'Phase Two: Food Innovation Hub',
     markerShape: 'number',
     // every phase two feature sits in the western third; opening on the whole
-    // plan would show the hub at about a tenth of the frame
-    initialView: { x: 29, y: 84, scale: 2.6 },
+    // plan would show the hub at about a tenth of the frame. Held at 2.3 so the
+    // opening view stays inside the plan's own resolution, see sharpScale in
+    // CfaMapClient.
+    initialView: { x: 29, y: 84, scale: 2.3 },
     features: [
       { key: '1', label: 'Visitor Center and Cafe', points: [{ x: 38.06, y: 74.83 }] },
       {
