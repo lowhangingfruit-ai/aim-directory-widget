@@ -16,6 +16,9 @@ export interface Program {
   tint: string;
   blurb: string;
   url: string;
+  // Public application form, when the program has one. Staff /edit links and
+  // login-walled forms (like MAF onboarding) stay off the public page.
+  applyUrl?: string;
 }
 
 export const PROGRAMS: Record<ProgramID, Program> = {
@@ -31,6 +34,7 @@ export const PROGRAMS: Record<ProgramID, Program> = {
     blurb:
       "The Market Access Fund provides grant money to reduce financial hardships for current BIPOC market participants in their first five years at AIM markets.",
     url: "https://www.agriculturalinstitute.org/market-access-fund",
+    applyUrl: "https://docs.google.com/forms/d/e/1FAIpQLSePDXM2P7i72F1DWmxhA-gkynRc1S2OBjQ9zqWV3wYYaFYQ2Q/viewform",
   },
   farmer: {
     id: "farmer",

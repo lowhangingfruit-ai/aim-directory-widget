@@ -585,12 +585,22 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
               <p style={{ margin: "0 auto 10px", fontSize: 14.5, color: "#333", maxWidth: 600, lineHeight: 1.65 }}>
                 {program.blurb}
               </p>
-              <a href={program.url} target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 14, color: AIM_GREEN, fontWeight: 600,
-                textDecoration: "underline", textUnderlineOffset: 3,
-              }}>
-                About the program
-              </a>
+              <div style={{ display: "flex", gap: 22, justifyContent: "center", flexWrap: "wrap" }}>
+                <a href={program.url} target="_blank" rel="noopener noreferrer" style={{
+                  fontSize: 14, color: AIM_GREEN, fontWeight: 600,
+                  textDecoration: "underline", textUnderlineOffset: 3,
+                }}>
+                  About the program
+                </a>
+                {program.applyUrl && (
+                  <a href={program.applyUrl} target="_blank" rel="noopener noreferrer" style={{
+                    fontSize: 14, color: AIM_GREEN, fontWeight: 600,
+                    textDecoration: "underline", textUnderlineOffset: 3,
+                  }}>
+                    Apply to the Fund
+                  </a>
+                )}
+              </div>
 
               {sectionProfiles.length > 0 && (
                 <>
