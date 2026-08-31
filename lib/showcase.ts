@@ -23,9 +23,11 @@ export const PROGRAMS: Record<ProgramID, Program> = {
     id: "maf",
     name: "Market Access Fund",
     shortName: "Market Access Fund",
-    color: "#0d8240",
-    textOnColor: "#ffffff",
-    tint: "#e7f0e4",
+    // Gold, so the MAF tab reads distinctly from the dark-green All tab.
+    // Swap for the final flyer hex when Shayla confirms it.
+    color: "#d29c13",
+    textOnColor: "#3c2e00",
+    tint: "#f7efd7",
     blurb:
       "The Market Access Fund provides grant money to reduce financial hardships for current BIPOC market participants in their first five years at AIM markets.",
     url: "https://www.agriculturalinstitute.org/market-access-fund",

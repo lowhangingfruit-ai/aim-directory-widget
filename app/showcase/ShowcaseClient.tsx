@@ -29,6 +29,19 @@ const MARKET_LOGOS: Record<number, string> = {
 const PROGRAM_ORDER: ProgramID[] = ["maf", "farmer", "foodmaker"];
 type Tab = ProgramID | "all";
 
+// Full market names, per Shayla: "Hayward" alone wasn't clearly a market.
+const FULL_MARKETS: Record<number, string> = {
+  7776: "Sunday Marin Farmers Market",
+  7781: "Newark Farmers Market",
+  7782: "Clement St. Farmers Market",
+  7783: "Stonestown Farmers Market",
+  7784: "Hayward Farmers Market",
+  7785: "Grand Lake Farmers Market",
+  7786: "Thursday Marin Farmers Market",
+  7803: "Point Reyes Farmers Market",
+  8211: "Downtown San Rafael Farmers Market",
+};
+
 const STATS = [
   { value: "21", label: "participants in the 2026 cohorts" },
   { value: "31", label: "first-generation farmers supported since 2022" },
@@ -119,7 +132,7 @@ function RollingStat({ value }: { value: string }) {
       if (!entries[0].isIntersecting) return;
       obs.disconnect();
       const start = performance.now();
-      const dur = 1400;
+      const dur = 2600;
       const tick = (now: number) => {
         const t = Math.min(1, (now - start) / dur);
         const eased = 1 - Math.pow(1 - t, 3);
@@ -248,15 +261,20 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
       }}>
         {profile.business}
       </div>
-      {compact ? (
+      {compact && (
         <div style={{ fontSize: 12.5, color: "#8a8878" }}>Class of {profile.cohort}</div>
-      ) : (
-        <div style={{ fontSize: 14, color: "#494949", marginBottom: 4 }}>{profile.person}</div>
       )}
       {markets.length > 0 && (
-        <div style={{ fontSize: compact ? 12 : 13, color: AIM_GREEN, marginBottom: compact ? 0 : 6, marginTop: compact ? 2 : 0 }}>
-          {compact ? "Still at the markets" : markets.map((m) => allMarkets[m.marketID]).join(" · ")}
-        </div>
+        compact ? (
+          <div style={{ fontSize: 12, color: AIM_GREEN, marginTop: 2 }}>Still at the markets</div>
+        ) : (
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 11.5, color: "#8a8878", marginBottom: 1 }}>Meet them at:</div>
+            <div style={{ fontSize: 13, color: AIM_GREEN, lineHeight: 1.5 }}>
+              {markets.map((m) => FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]).join(" · ")}
+            </div>
+          </div>
+        )
       )}
       {!compact && (
         <span style={{
@@ -264,7 +282,7 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
           borderBottom: hovered ? `1.5px solid ${AIM_GREEN}` : "1.5px solid transparent",
           paddingBottom: 1, transition: "border-color 0.12s ease",
         }}>
-          Their story →
+          Story →
         </span>
       )}
     </div>
@@ -385,19 +403,19 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
                 fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 17,
                 color: AIM_BRIGHT, marginBottom: 8,
               }}>
-                Find them at
+                Meet them at AIM&rsquo;s farmers markets
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {markets.map((m) => (
                   <div key={m.marketID} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                     {MARKET_LOGOS[m.marketID] ? (
-                      <img src={MARKET_LOGOS[m.marketID]} alt={allMarkets[m.marketID]}
+                      <img src={MARKET_LOGOS[m.marketID]} alt={FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]}
                         style={{ width: 54, height: 54, objectFit: "cover", display: "block" }} />
                     ) : (
                       <div style={{ width: 54, height: 54, background: program.color }} />
                     )}
-                    <span style={{ fontSize: 11, color: "#494949", textAlign: "center", maxWidth: 60, lineHeight: 1.3 }}>
-                      {allMarkets[m.marketID]}
+                    <span style={{ fontSize: 11, color: "#494949", textAlign: "center", maxWidth: 84, lineHeight: 1.3 }}>
+                      {FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]}
                     </span>
                   </div>
                 ))}
@@ -456,12 +474,16 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             maxWidth: 620, lineHeight: 1.65,
           }}>
             Every season, AIM&rsquo;s{" "}
-            <span style={{ backgroundColor: "rgba(77,181,71,0.3)", padding: "1px 5px", fontWeight: 600 }}>
+            <span style={{ backgroundColor: "rgba(210,156,19,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
               Market Access Fund
-            </span>{" "}
-            and{" "}
-            <span style={{ backgroundColor: "rgba(222,117,44,0.28)", padding: "1px 5px", fontWeight: 600 }}>
-              Incubator Booth
+            </span>
+            ,{" "}
+            <span style={{ backgroundColor: "rgba(77,181,71,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Farmer Incubator
+            </span>
+            , and{" "}
+            <span style={{ backgroundColor: "rgba(222,117,44,0.28)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Food Maker Incubator
             </span>{" "}
             programs bring new farmers and food makers to our markets. Meet the 2026
             cohorts — what they grow, what they make, and where to find them.
