@@ -473,20 +473,21 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             margin: "0 auto", fontSize: narrow ? 15 : 16.5, color: "#000",
             maxWidth: 620, lineHeight: 1.65,
           }}>
-            Every season, AIM&rsquo;s{" "}
+            Every season, AIM helps create opportunities for new farmers and food makers
+            to build their businesses and reach more customers through our farmers markets.
+            Three programs expand market access: the{" "}
             <span style={{ backgroundColor: "rgba(210,156,19,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
               Market Access Fund
             </span>
-            ,{" "}
+            , the{" "}
             <span style={{ backgroundColor: "rgba(77,181,71,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Farmer Incubator
+              Incubator Booth – Farmer
             </span>
-            , and{" "}
+            , and the{" "}
             <span style={{ backgroundColor: "rgba(222,117,44,0.28)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Food Maker Incubator
-            </span>{" "}
-            programs bring new farmers and food makers to our markets. Meet the 2026
-            cohorts — what they grow, what they make, and where to find them.
+              Incubator Booth – Food Maker
+            </span>
+            . Meet the 2026 cohorts — what they grow, what they make, and where to find them.
           </p>
 
           {/* Hero photo strip: participant portraits as overlapping prints */}
