@@ -143,6 +143,8 @@ export const ALUMNI: RosterEntry[] = [
   { person: "Stephen Cajilig", business: "Golden Morsels", program: "maf", cohort: "2023", alum: true, match: "golden morsels", photo: "/participants/golden-morsels.jpg" },
   { person: "Tatiana Thomas", business: "Josephine's Southern Cuisine", program: "maf", cohort: "2023", alum: true, match: "josephine's southern", photo: "/participants/josephines-southern-cuisine.jpg" },
   { person: "Comfort Asobo", business: "Mimbo Kitchen", program: "maf", cohort: "2023", alum: true, match: "mimbo" },
+  // Confirmed alumni by Meg 2026-09-17; in AIM's photo set but not on the site's alumni list.
+  { person: "", business: "Little Moon Bakehouse", program: "maf", cohort: "2023", alum: true, match: "little moon", photo: "/participants/little-moon-bakehouse.jpg" },
   { person: "Jenny Fong", business: "Modern Shibori", program: "maf", cohort: "2023", alum: true, match: "modern shibori", photo: "/participants/modern-shibori.jpg" },
   { person: "Darren Oyobio", business: "Mossed Juicery", program: "maf", cohort: "2023", alum: true, match: "mossed", photo: "/participants/mossed-juicery.jpg" },
   { person: "Cecilia Liang", business: "Nuttea Organics", program: "maf", cohort: "2023", alum: true, match: "nuttea", photo: "/participants/nuttea-organics.jpg" },
