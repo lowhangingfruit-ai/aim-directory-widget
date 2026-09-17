@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Profile, ProgramID, PROGRAMS, FARMER_GRADUATES } from "@/lib/showcase";
+import { Profile, ProgramID, PROGRAMS } from "@/lib/showcase";
 
 interface Props {
   profiles: Profile[];
@@ -76,7 +76,18 @@ function knownMarkets(profile: Profile, allMarkets: Record<number, string>) {
 }
 
 function bestPhoto(profile: Profile): string | null {
-  return profile.aimPhoto ?? profile.vendor?.photo?.trim() ?? null;
+  return profile.photo ?? profile.aimPhoto ?? profile.vendor?.photo?.trim() ?? null;
+}
+
+// Cohort labels: MAF classes are years, incubator classes are "Cohort N"
+// until the backfill confirms years.
+function cohortLabel(cohort: string): string {
+  return /^\d{4}$/.test(cohort) ? `Class of ${cohort}` : cohort;
+}
+
+function cohortSortKey(cohort: string): number {
+  const n = cohort.match(/\d+/);
+  return n ? parseInt(n[0], 10) : 0;
 }
 
 // Vendor-uploaded feed images are often wordmarks or logos. When one is far
@@ -262,7 +273,7 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
         {profile.business}
       </div>
       {compact && (
-        <div style={{ fontSize: 12.5, color: "#8a8878" }}>Class of {profile.cohort}</div>
+        <div style={{ fontSize: 12.5, color: "#8a8878" }}>{cohortLabel(profile.cohort)}</div>
       )}
       {markets.length > 0 && (
         compact ? (
@@ -341,7 +352,7 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
         }}>
           {photo ? (
             <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
-              tint={program.tint} detect={false} forceContain
+              tint={program.tint} detect={false} forceContain={!profile.photo}
               style={{ position: "absolute", inset: 0, height: "100%", padding: 0 }} />
           ) : (
             <div style={{
@@ -434,10 +445,9 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
 
 export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) {
   const [tab, setTab] = useState<Tab>("all");
-  // Default the archive to the most recent class so it opens curated, not dense
-  const [alumYear, setAlumYear] = useState<string | null>(
-    () => [...new Set(alumni.map((a) => a.cohort))].sort().reverse()[0] ?? null
-  );
+  // Each program's archive defaults to its most recent class so it opens
+  // curated, not dense. Keyed per program; null means "all".
+  const [alumYearByProgram, setAlumYearByProgram] = useState<Partial<Record<ProgramID, string | null>>>({});
   const [openProfile, setOpenProfile] = useState<Profile | null>(null);
   const { narrow, mid } = useNarrow();
   // Shayla asked for slightly larger participant photos: 3-up on desktop
@@ -465,29 +475,26 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
           <h1 style={{
             fontFamily: "var(--font-heading)", fontWeight: 500,
             fontSize: narrow ? 32 : 45, lineHeight: 1.15, color: AIM_GREEN,
-            margin: "0 auto 16px", maxWidth: 700,
+            margin: "0 auto 16px", maxWidth: 760,
           }}>
-            Growing the Next Generation of Farmers and Food&nbsp;Makers
+            Farm &amp; Food Business Resources
           </h1>
           <p style={{
-            margin: "0 auto", fontSize: narrow ? 15 : 16.5, color: "#000",
-            maxWidth: 620, lineHeight: 1.65,
+            margin: "0 auto 14px", fontSize: narrow ? 15 : 16.5, color: "#000",
+            maxWidth: 640, lineHeight: 1.65,
           }}>
-            Every season, AIM helps create opportunities for new farmers and food makers
-            to build their businesses and reach more customers through our farmers markets.
-            Three programs expand market access: the{" "}
-            <span style={{ backgroundColor: "rgba(210,156,19,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Market Access Fund
-            </span>
-            , the{" "}
-            <span style={{ backgroundColor: "rgba(77,181,71,0.3)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Incubator Booth – Farmer
-            </span>
-            , and the{" "}
-            <span style={{ backgroundColor: "rgba(222,117,44,0.28)", padding: "1px 5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Incubator Booth – Food Maker
-            </span>
-            . Meet the 2026 cohorts — what they grow, what they make, and where to find them.
+            AIM&rsquo;s Farm &amp; Food Business Resources support food and agricultural
+            business growth to strengthen California&rsquo;s regional food system.
+          </p>
+          <p style={{
+            margin: "0 auto", fontSize: narrow ? 14 : 15, color: "#333",
+            maxWidth: 640, lineHeight: 1.65,
+          }}>
+            AIM operates three programs geared toward producers within their first five
+            years of operation. These programs provide financial, technical, and marketing
+            support to foster sustainable growth, expand market opportunities, and
+            strengthen local food systems. Additional programming is available to
+            businesses at any stage.
           </p>
 
           {/* Hero photo strip: participant portraits as overlapping prints */}
@@ -556,7 +563,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
           <PillButton label="All Farm & Food Programs" active={tab === "all"} color={AIM_GREEN} textOnColor="#fff" onClick={() => setTab("all")} />
           {PROGRAM_ORDER.map((id) => {
             const p = PROGRAMS[id];
-            const count = id === "foodmaker" ? 5 : profiles.filter((x) => x.program === id).length;
+            const count = profiles.filter((x) => x.program === id).length;
             return (
               <PillButton key={id}
                 label={`${p.shortName} (${count})`}
@@ -603,6 +610,17 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                 )}
               </div>
 
+              {/* Application window: placeholder until Jack confirms each timeline */}
+              <div style={{
+                display: "inline-block", marginTop: 14,
+                padding: "5px 16px", borderRadius: 300,
+                border: `1.5px solid ${program.color}`, backgroundColor: "#fff",
+                fontSize: 13, color: "#333",
+              }}>
+                <span style={{ fontWeight: 600 }}>Applications:</span>{" "}
+                {program.applyWindow ?? "next window announced soon"}
+              </div>
+
               {sectionProfiles.length > 0 && (
                 <>
                   <div style={{
@@ -636,13 +654,25 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                 </>
               )}
 
-              {/* Alumni archive: outgoing cohorts land here with their year */}
-              {id === "maf" && alumni.length > 0 && (() => {
-                const years = [...new Set(alumni.map((a) => a.cohort))].sort().reverse();
-                const shown = alumYear ? alumni.filter((a) => a.cohort === alumYear) : alumni;
-                // Tiles for alumni with photos; a simple name list for the rest
+              {/* Alumni archive: outgoing cohorts land here with their class */}
+              {(() => {
+                const programAlumni = alumni.filter((a) => a.program === id);
+                if (programAlumni.length === 0) return null;
+                const classes = [...new Set(programAlumni.map((a) => a.cohort))]
+                  .sort((a, b) => cohortSortKey(b) - cohortSortKey(a));
+                const selected = alumYearByProgram[id] !== undefined
+                  ? alumYearByProgram[id]
+                  : classes[0];
+                const shown = selected ? programAlumni.filter((a) => a.cohort === selected) : programAlumni;
                 const withPhoto = shown.filter((p) => bestPhoto(p));
                 const withoutPhoto = shown.filter((p) => !bestPhoto(p));
+                const intro = id === "maf"
+                  ? "Businesses that got their start through the Market Access Fund. Many still sell at AIM markets today."
+                  : id === "farmer"
+                    ? "Farms that launched through the Incubator Booth, many moving on to permanent booths at AIM markets."
+                    : "Food makers who got their start at the Incubator Booth.";
+                const setSelected = (v: string | null) =>
+                  setAlumYearByProgram((prev) => ({ ...prev, [id]: v }));
                 return (
                   <div style={{ marginTop: narrow ? 44 : 60 }}>
                     <h3 style={{
@@ -652,17 +682,18 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                       Program Alumni
                     </h3>
                     <p style={{ margin: "0 auto 18px", fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.6 }}>
-                      Businesses that got their start through the Market Access Fund.
-                      Many still sell at AIM markets today.
+                      {intro}
                     </p>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: narrow ? 22 : 30 }}>
-                      {years.map((y) => (
+                      {classes.map((y) => (
                         <PillButton key={y}
-                          label={`${y} (${alumni.filter((a) => a.cohort === y).length})`}
-                          active={alumYear === y} color={AIM_GREEN} textOnColor="#fff"
-                          onClick={() => setAlumYear(y)} />
+                          label={`${y} (${programAlumni.filter((a) => a.cohort === y).length})`}
+                          active={selected === y} color={AIM_GREEN} textOnColor="#fff"
+                          onClick={() => setSelected(y)} />
                       ))}
-                      <PillButton label={`All (${alumni.length})`} active={!alumYear} color={AIM_GREEN} textOnColor="#fff" onClick={() => setAlumYear(null)} />
+                      {classes.length > 1 && (
+                        <PillButton label={`All (${programAlumni.length})`} active={!selected} color={AIM_GREEN} textOnColor="#fff" onClick={() => setSelected(null)} />
+                      )}
                     </div>
                     {withPhoto.length > 0 && (
                       <div style={{
@@ -689,7 +720,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                             whiteSpace: "nowrap",
                           }}>
                             {p.business}
-                            {!alumYear && <span style={{ marginLeft: 6, fontSize: 11.5, color: "#8a8878" }}>{p.cohort}</span>}
+                            {!selected && <span style={{ marginLeft: 6, fontSize: 11.5, color: "#8a8878" }}>{p.cohort}</span>}
                           </button>
                         ))}
                       </div>
@@ -697,59 +728,6 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
                   </div>
                 );
               })()}
-
-              {id === "farmer" && (
-                <div style={{ marginTop: narrow ? 44 : 60 }}>
-                  <h3 style={{
-                    fontFamily: "var(--font-heading)", fontWeight: 500,
-                    fontSize: narrow ? 21 : 25, color: AIM_BRIGHT, marginBottom: 6,
-                  }}>
-                    Program Graduates
-                  </h3>
-                  <p style={{ margin: "0 auto 20px", fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.6 }}>
-                    {FARMER_GRADUATES.length} farms have launched through the Incubator Booth,
-                    many moving on to permanent booths at AIM markets.
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 760, margin: "0 auto" }}>
-                    {FARMER_GRADUATES.map((farm) => (
-                      <span key={farm} style={{
-                        padding: "6px 16px", borderRadius: 300,
-                        border: `1.5px solid ${program.color}`,
-                        color: "#1d4d1d", backgroundColor: "#fff",
-                        fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 13.5,
-                        whiteSpace: "nowrap",
-                      }}>
-                        {farm}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {id === "foodmaker" && (
-                <div style={{
-                  maxWidth: 560, margin: `${narrow ? 28 : 36}px auto 0`,
-                  backgroundColor: "#fff", border: `1.5px solid ${program.color}`,
-                  padding: narrow ? "26px 22px" : "34px 38px",
-                }}>
-                  <div style={{
-                    fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 22, color: "#000", marginBottom: 8,
-                  }}>
-                    Five food makers join the markets this summer
-                  </div>
-                  <p style={{ margin: "0 0 18px", fontSize: 14, color: "#333", lineHeight: 1.65 }}>
-                    Meet the newest cohort here soon.
-                  </p>
-                  <a href="/showcase/intake" style={{
-                    display: "inline-block", padding: "10px 26px", borderRadius: 300,
-                    backgroundColor: program.color, color: program.textOnColor,
-                    fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14, letterSpacing: "0.02em",
-                    textDecoration: "none",
-                  }}>
-                    Participants: add your profile
-                  </a>
-                </div>
-              )}
             </div>
           </section>
         );
@@ -835,11 +813,26 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
               Preview the intake form
             </a>
             <p style={{ margin: "16px auto 0", fontSize: 13, color: "#6f6d5f", maxWidth: 540, lineHeight: 1.6 }}>
-              The full build also includes an admin panel for AIM staff to edit profiles,
-              manage cohorts, and backfill past cohorts, since alumni won&rsquo;t fill out
-              the intake form.
+              Per Shayla&rsquo;s note, the intake form is not linked anywhere on the public
+              page: it lives at a hidden address that AIM shares with a business once it
+              is approved. The full build also includes an admin panel for AIM staff to
+              edit profiles, manage cohorts, and backfill past cohorts.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── Closing statement (Shayla's copy) ── */}
+      <div style={{ backgroundColor: "#fff", padding: `${narrow ? 40 : 56}px 0` }}>
+        <div style={{ ...sectionInner, textAlign: "center" }}>
+          <p style={{
+            margin: "0 auto", maxWidth: 620,
+            fontFamily: "var(--font-heading)", fontWeight: 500,
+            fontSize: narrow ? 19 : 24, lineHeight: 1.45, color: AIM_GREEN,
+          }}>
+            Farmers markets are both a sales outlet and an opportunity for expansion
+            and success. Our programs help our market participants thrive.
+          </p>
         </div>
       </div>
 

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
-import { buildProfiles, ALUMNI } from "@/lib/showcase";
+import { buildProfiles, ROSTER_2026, FOODMAKERS_CURRENT, ALUMNI, FARMER_ALUMNI, FOODMAKER_ALUMNI } from "@/lib/showcase";
 import ShowcaseClient from "./ShowcaseClient";
 
 export const metadata: Metadata = {
-  title: "Growing the Next Generation — AIM Farm & Food Business Programs",
+  title: "Farm & Food Business Resources — Agricultural Institute of Marin",
   description:
-    "The 2026 cohorts of AIM's Market Access Fund, Farmer Incubator, and Food Maker Incubator programs.",
+    "AIM's Market Access Fund, Farmer Incubator, and Food Maker Incubator programs, and the people in them.",
 };
 
 async function getVendors(): Promise<Vendor[]> {
@@ -32,8 +32,8 @@ async function getVendors(): Promise<Vendor[]> {
 
 export default async function ShowcasePage() {
   const vendors = await getVendors();
-  const profiles = buildProfiles(vendors);
-  const alumni = buildProfiles(vendors, ALUMNI);
+  const profiles = buildProfiles(vendors, [...ROSTER_2026, ...FOODMAKERS_CURRENT]);
+  const alumni = buildProfiles(vendors, [...ALUMNI, ...FARMER_ALUMNI, ...FOODMAKER_ALUMNI]);
 
   return <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} />;
 }
