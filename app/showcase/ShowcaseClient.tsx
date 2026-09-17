@@ -310,7 +310,7 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
 }) {
   const program = PROGRAMS[profile.program];
   const photo = bestPhoto(profile);
-  const story = usableStory(profile.vendor?.description);
+  const story = profile.story ?? usableStory(profile.vendor?.description);
   const markets = knownMarkets(profile, allMarkets);
 
   useEffect(() => {
@@ -401,7 +401,7 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
           </div>
 
           {story ? (
-            <p style={{ margin: 0, fontSize: 14.5, color: "#222", lineHeight: 1.75 }}>{story}</p>
+            <p style={{ margin: 0, fontSize: 14.5, color: "#222", lineHeight: 1.75, whiteSpace: "pre-line" }}>{story}</p>
           ) : (
             <p style={{ margin: 0, fontSize: 14.5, color: "#8a8878", lineHeight: 1.75, fontStyle: "italic" }}>
               Their full profile is coming soon.

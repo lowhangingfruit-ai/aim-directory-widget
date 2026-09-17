@@ -79,6 +79,8 @@ export interface RosterEntry {
   // AIM-supplied 1080x1350 portrait served from /public/participants.
   // These are shot to spec, so the profile view fills the frame with them.
   photo?: string;
+  // AIM-written bio (from Jack's program docs). Overrides the feed description.
+  story?: string;
 }
 
 const SQS = "https://images.squarespace-cdn.com/content/v1/5fd7b5e8b59b81291926f482";
@@ -106,12 +108,18 @@ export const ROSTER_2026: RosterEntry[] = [
   { person: "Vineeta Chand", business: "Snoring Orange Studio", program: "maf", cohort: "2026", match: "snoring orange",
     aimPhoto: `${SQS}/b025df2b-5bdd-4b65-bb7e-b09f5c8354cd/Chand.BioPic2+-+Vineeta+at+SnoringOrangeStudio.jpg?format=500w` },
   // Farmer Incubator Booth, 2026 cohort
-  { person: "Antonia Vega Gonzalez", business: "Dulce Organic Farms", program: "farmer", cohort: "2026", match: "dulce organic", photo: "/participants/dulce-organic-farms.jpg" },
-  { person: "Maria Magdalena Lopez Poiras", business: "Tierra de Esperanza", program: "farmer", cohort: "2026", match: "tierra de esperanza", photo: "/participants/tierra-de-esperanza.jpg" },
-  { person: "Luis A Cervantes Mendoza", business: "Monarca Berry Farm", program: "farmer", cohort: "2026", match: "monarca", photo: "/participants/monarca-berry-farm.jpg" },
-  { person: "Salvador Ruiz", business: "Products from Paradise", program: "farmer", cohort: "2026", match: "products from paradise", photo: "/participants/products-from-paradise.jpg" },
-  { person: "Martin Avina Hernandez", business: "Avina Organic Farm", program: "farmer", cohort: "2026", match: "avina", photo: "/participants/avina-organic-farm.jpg" },
-  { person: "Eduardo Medrano", business: "E&N Organic Farm", program: "farmer", cohort: "2026", match: "e&n organic", photo: "/participants/en-organic-farm.jpg" },
+  { person: "Antonia Vega Gonzalez", business: "Dulce Organic Farms", program: "farmer", cohort: "2026", match: "dulce organic", photo: "/participants/dulce-organic-farms.jpg",
+    story: "Dulce Organic Farms is a 23 acre organic berry farm owned by Antonia Vega Gonzales, based in Watsonville, CA. Alongside her husband, Jose Juan Pulido Garcia, they bring decades of experience farming in California.\n\nRaised by farmers, Antonia has been working since she was a young girl and has now grown to own her own 23-acre farm, where she produces strawberries, blueberries, red mulberry, and peas. Through the Incubator Booth program, Dulce Organic Farms hopes to expand its direct-to-consumer sales and expand their reach into AIM's markets." },
+  { person: "Maria Magdalena Lopez Poiras", business: "Tierra de Esperanza", program: "farmer", cohort: "2026", match: "tierra de esperanza", photo: "/participants/tierra-de-esperanza.jpg",
+    story: "Maria, a third-year ALBA farmer originally from Oaxaca, Mexico, is the founder of Tierra de Esperanza Organic Farm. With more than 20 years of experience working in agriculture in California and a farming tradition passed down from her parents and grandparents, Maria and her family made their dream of owning a farm a reality by starting their organic vegetable farm.\n\nToday, their farm supplies fresh organic vegetables to supermarkets, farmers' markets, and wholesale distributors. Maria and her family are committed to growing healthy produce and providing fresh food to their community." },
+  { person: "Luis A Cervantes Mendoza", business: "Monarca Berry Farm", program: "farmer", cohort: "2026", match: "monarca", photo: "/participants/monarca-berry-farm.jpg",
+    story: "Luis was born and raised in Mexico, where he grew up on a ranch. From a young age, agriculture was part of his daily life. When Luis came to the United States, he first worked as a construction worker, then attended Hartnell College and became involved with ALBA.\n\nThe name of his farm reflects both his background and his vision: “Monarca” represents a part of where he comes from, while “Berry” represents the crops he hopes to focus on. Luis wants to share a simple message: if you want to work in agriculture, you have to stay committed, work hard, and believe in your goals." },
+  { person: "Salvador Ruiz", business: "Products from Paradise", program: "farmer", cohort: "2026", match: "products from paradise", photo: "/participants/products-from-paradise.jpg",
+    story: "Products From Paradise is a family-owned farming business located in the Central Valley of California that specializes in growing cactus along with other fresh fruits and vegetables. The farm's goal is to be organic and sustainable, using natural methods to protect the soil, water, and biodiversity.\n\nThe family is looking to introduce cactus to a broader audience and educate customers about its benefits, and eventually to create a one-of-a-kind agritourism experience in the Central Valley." },
+  { person: "Martin Avina Hernandez", business: "Avina Organic Farm", program: "farmer", cohort: "2026", match: "avina", photo: "/participants/avina-organic-farm.jpg",
+    story: "Aviña Organic Farms is owned by Martin Aviña Hernandez, whose roots in farming trace back to his family in Mexico, who grew wheat and corn. Martin has been working in farms in California for over a decade with support from the Agriculture and Land-Based Training Association (ALBA). Martín grows a wide variety of crops on 12 acres including broccoli, chard, zucchini, fennel, and lettuce.\n\nHe actively prioritizes knowledge-sharing and mentorship with other farmers. As he works to increase his acreage, Martín hopes to hire more farmworkers and staff and, ultimately, model what farm ownership can look like for them too." },
+  { person: "Eduardo Medrano", business: "E&N Organic Farm", program: "farmer", cohort: "2026", match: "e&n organic", photo: "/participants/en-organic-farm.jpg",
+    story: "E&N Organic Farms is a small-scale organic mixed vegetable farm based out of Salinas. Owned by Eduardo Medrano, E&N grows a variety of crops, including broccolini, carrots, tomatoes, cilantro, lettuce, onions, peas, peppers, strawberries, and Swiss chard. Originally from the state of Michoacán, Eduardo has worked in agriculture for practically his entire life. He is a proponent of organic agriculture, believing that it is an important part of eating healthier, taking care of the land and environment, and bringing healthier food into people's homes." },
 ];
 
 // Market Access Fund alumni, as published in the Alumni section of AIM's
@@ -193,10 +201,12 @@ export const FARMER_ALUMNI: RosterEntry[] = [
 
 // Food Maker Incubator cohorts, from AIM's 2026-09 photo set.
 export const FOODMAKERS_CURRENT: RosterEntry[] = [
-  { person: "", business: "Chiki's Tacos", program: "foodmaker", cohort: "2026", match: "chiki", photo: "/participants/chikis-tacos.jpg" },
-  { person: "", business: "Coaster Cookies", program: "foodmaker", cohort: "2026", match: "coaster cookies", photo: "/participants/coaster-cookies.jpg" },
-  { person: "", business: "Bakery 6", program: "foodmaker", cohort: "2026", match: "bakery 6", photo: "/participants/bakery-6.jpg" },
-  { person: "", business: "Sweet Treat Marin", program: "foodmaker", cohort: "2026", match: "sweet treat marin", photo: "/participants/sweet-treat-marin.jpg" },
+  { person: "Luis & Alvaro Valle", business: "Chiki's Tacos", program: "foodmaker", cohort: "2026", match: "chiki", photo: "/participants/chikis-tacos.jpg",
+    story: "Chiki's Tacos, owned by Luis and Alvaro Valle, aims to give the community the highest quality and most authentic Mexican food in San Rafael, served with passion. With support from AIM's Incubator Booth, funded by the Marin County Measure A FARE Grant, Chiki's brings delicious Mexican food to market customers." },
+  { person: "Sean Chon", business: "Coaster Cookies", program: "foodmaker", cohort: "2026", match: "coaster cookies", photo: "/participants/coaster-cookies.jpg",
+    story: "Coaster Cookies is a small-batch cookie brand founded by California native and artist Sean Stereo. Inspired by old-fashioned favorites and guided by a devotion to creativity and craftsmanship, Coaster Cookies re-imagines the classics we know and love to create moments of connection, joy, and nostalgia, bringing people back to the simple satisfaction of a really good cookie." },
+  { person: "Elaine Blakeley", business: "Bakery 6", program: "foodmaker", cohort: "2026", match: "bakery 6", photo: "/participants/bakery-6.jpg" },
+  { person: "Stephanie Rodriguez", business: "Sweet Treat Marin", program: "foodmaker", cohort: "2026", match: "sweet treat marin", photo: "/participants/sweet-treat-marin.jpg" },
   { person: "", business: "Fully'z VeSoul Cafe", program: "foodmaker", cohort: "2026", match: "vesoul", photo: "/participants/fullyz-vesoul-cafe.jpg" },
   { person: "", business: "Suki", program: "foodmaker", cohort: "2026", match: "suki", photo: "/participants/suki.jpg" },
 ];
