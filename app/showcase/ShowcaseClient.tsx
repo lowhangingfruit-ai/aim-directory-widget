@@ -43,10 +43,10 @@ const FULL_MARKETS: Record<number, string> = {
 };
 
 const STATS = [
-  { value: "21", label: "participants in the 2026 cohorts" },
-  { value: "31", label: "first-generation farmers supported since 2022" },
-  { value: "72%", label: "of Fund recipients still sell at AIM markets" },
-  { value: "$130K+", label: "in waived fees and business stipends" },
+  { value: "22", label: "participants in the 2026 cohorts" },
+  { value: "31", label: "first-generation farmers supported" },
+  { value: "65%", label: "of Fund recipients still sell at AIM markets" },
+  { value: "$180K+", label: "in waived fees and business stipends" },
 ];
 
 function initials(business: string): string {
@@ -79,8 +79,7 @@ function bestPhoto(profile: Profile): string | null {
   return profile.photo ?? profile.aimPhoto ?? profile.vendor?.photo?.trim() ?? null;
 }
 
-// Cohort labels: MAF classes are years, incubator classes are "Cohort N"
-// until the backfill confirms years.
+// Cohort labels are years across all three programs.
 function cohortLabel(cohort: string): string {
   return /^\d{4}$/.test(cohort) ? `Class of ${cohort}` : cohort;
 }
@@ -545,7 +544,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             ))}
           </div>
           <div style={{ fontSize: 12, color: "#8a8878", marginTop: 12 }}>
-            Figures from AIM&rsquo;s program pages, January 2026.
+            Figures from AIM, September 2026.
           </div>
         </div>
       </div>
