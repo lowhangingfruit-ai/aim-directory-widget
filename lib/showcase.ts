@@ -1,4 +1,5 @@
 import { Vendor } from "./types";
+import { DETAILS, ProfileDetails } from "./showcaseDetails";
 
 // 2026 cohort roster. Names, program membership, and MAF portraits are public
 // on AIM's program pages (farmers-market-incubator-booth, market-access-fund).
@@ -113,7 +114,7 @@ export const ROSTER_2026: RosterEntry[] = [
   // Farmer Incubator Booth, 2026 cohort
   { person: "Antonia Vega Gonzalez", business: "Dulce Organic Farms", program: "farmer", cohort: "2026", match: "dulce organic", photo: "/participants/dulce-organic-farms.jpg",
     story: "Dulce Organic Farms is a 23 acre organic berry farm owned by Antonia Vega Gonzales, based in Watsonville, CA. Alongside her husband, Jose Juan Pulido Garcia, they bring decades of experience farming in California.\n\nRaised by farmers, Antonia has been working since she was a young girl and has now grown to own her own 23-acre farm, where she produces strawberries, blueberries, red mulberry, and peas. Through the Incubator Booth program, Dulce Organic Farms hopes to expand its direct-to-consumer sales and expand their reach into AIM's markets." },
-  { person: "Maria Lopez Porras", business: "Tierra de Esperanza", program: "farmer", cohort: "2026", match: "tierra de esperanza", photo: "/participants/tierra-de-esperanza.jpg",
+  { person: "Maria Magdalena Lopez", business: "Tierra de Esperanza", program: "farmer", cohort: "2026", match: "tierra de esperanza", photo: "/participants/tierra-de-esperanza.jpg",
     story: "Maria, a third-year ALBA farmer originally from Oaxaca, Mexico, is the founder of Tierra de Esperanza Organic Farm. With more than 20 years of experience working in agriculture in California and a farming tradition passed down from her parents and grandparents, Maria and her family made their dream of owning a farm a reality by starting their organic vegetable farm.\n\nToday, their farm supplies fresh organic vegetables to supermarkets, farmers' markets, and wholesale distributors. Maria and her family are committed to growing healthy produce and providing fresh food to their community." },
   { person: "Luis A Cervantes Mendoza", business: "Monarca Berry Farm", program: "farmer", cohort: "2026", match: "monarca", photo: "/participants/monarca-berry-farm.jpg",
     story: "Luis was born and raised in Mexico, where he grew up on a ranch. From a young age, agriculture was part of his daily life. When Luis came to the United States, he first worked as a construction worker, then attended Hartnell College and became involved with ALBA.\n\nThe name of his farm reflects both his background and his vision: “Monarca” represents a part of where he comes from, while “Berry” represents the crops he hopes to focus on. Luis wants to share a simple message: if you want to work in agriculture, you have to stay committed, work hard, and believe in your goals." },
@@ -153,7 +154,7 @@ export const ALUMNI: RosterEntry[] = [
   { person: "Stephen Cajilig", business: "Golden Morsels", program: "maf", cohort: "2023", alum: true, match: "golden morsels", photo: "/participants/golden-morsels.jpg" },
   { person: "Tatiana Thomas", business: "Josephine's Southern Cuisine", program: "maf", cohort: "2023", alum: true, match: "josephine's southern", photo: "/participants/josephines-southern-cuisine.jpg" },
   { person: "Comfort Asobo", business: "Mimbo Kitchen", program: "maf", cohort: "2023", alum: true, match: "mimbo" },
-  { person: "Jenny Fong", business: "Modern Shibori", program: "maf", cohort: "2023", alum: true, match: "modern shibori", photo: "/participants/modern-shibori.jpg" },
+  { person: "Jenny Fong", business: "Marree (formerly Modern Shibori)", program: "maf", cohort: "2023", alum: true, match: "modern shibori", photo: "/participants/modern-shibori.jpg" },
   { person: "Darren Oyobio", business: "Mossed Juicery", program: "maf", cohort: "2023", alum: true, match: "mossed", photo: "/participants/mossed-juicery.jpg" },
   { person: "Cecilia Liang", business: "Nuttea Organics", program: "maf", cohort: "2023", alum: true, match: "nuttea", photo: "/participants/nuttea-organics.jpg" },
   { person: "Everardo Solorio", business: "Solorio's Organic Farm", program: "maf", cohort: "2023", alum: true, match: "solorio", alsoTags: ["Farmer Incubator 2023"], photo: "/participants/solorios-organic-farm-maf.jpg" },
@@ -173,14 +174,14 @@ export const ALUMNI: RosterEntry[] = [
 export const FARMER_ALUMNI: RosterEntry[] = [
   { person: "Everardo Solorio", business: "Solorio's Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "solorio", alsoTags: ["Market Access Fund 2023"], photo: "/participants/solorios-organic-farm.jpg" },
   { person: "Adelio Coronel", business: "Coronel Organic Produce", program: "farmer", cohort: "2023", alum: true, match: "coronel", photo: "/participants/coronel-organic-produce.jpg" },
-  { person: "Roberto Morales", business: "Oaxax", program: "farmer", cohort: "2023", alum: true, match: "oaxaca", photo: "/participants/oaxaca.jpg" },
+  { person: "Roberto Morales", business: "Oaxax", program: "farmer", cohort: "2023", alum: true, match: "oaxax", photo: "/participants/oaxaca.jpg" },
   { person: "Guadalupe Quintero", business: "Luna Dorada Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "luna dorado", photo: "/participants/luna-dorado.jpg" },
   { person: "Angelica Lopez", business: "Narci's Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "narci", photo: "/participants/narcis-organic-farm.jpg" },
   { person: "Fernando Rodas Pedro", business: "Tikal Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "tikal", photo: "/participants/tikal.jpg" },
   { person: "Luis and Ana Villanueva", business: "Anna's Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "anna's organic", photo: "/participants/annas-organic-farm.jpg" },
   { person: "Domitila Tapia", business: "Mimi's Organic Farm", program: "farmer", cohort: "2023", alum: true, match: "mimi's organic", photo: "/participants/mimis-organic-farm.jpg" },
   { person: "Alberto Mendoza", business: "Ayoquezco Organic Farm", program: "farmer", cohort: "2024", alum: true, match: "ayoquezco", alsoTags: ["Market Access Fund 2025"], photo: "/participants/ayoquezco-organic-farm.jpg" },
-  { person: "Tatiana Thomas", business: "Royally Grown", program: "farmer", cohort: "2024", alum: true, match: "royally grown", photo: "/participants/royally-grown.jpg" },
+  { person: "Elda Marissa Garcia Avila", business: "Royally Grown", program: "farmer", cohort: "2024", alum: true, match: "royally grown", photo: "/participants/royally-grown.jpg" },
   { person: "Carlos Jesus", business: "Coyo Organics", program: "farmer", cohort: "2024", alum: true, match: "coyo", photo: "/participants/coyo-organics.jpg" },
   { person: "Crystal Salazar-Nieto", business: "Salazar Organic Farm", program: "farmer", cohort: "2024", alum: true, match: "salazar organic", photo: "/participants/salazar-organic-farm.jpg" },
   { person: "Emiliano Gomez-Vasquez", business: "Vasquez Organic Farm", program: "farmer", cohort: "2024", alum: true, match: "vasquez organic", photo: "/participants/vasquez-organic-farm.jpg" },
@@ -192,7 +193,7 @@ export const FARMER_ALUMNI: RosterEntry[] = [
   { person: "Miguel Avendano Reyes", business: "Siembra y Cosecha", program: "farmer", cohort: "2025", alum: true, match: "siembra", photo: "/participants/siembra-y-cosecha.jpg" },
   { person: "Rufino Ventura", business: "Ventura Organic", program: "farmer", cohort: "2025", alum: true, match: "ventura organic", photo: "/participants/ventura-organic.jpg" },
   { person: "Angela Marquez", business: "Angela's Ranch", program: "farmer", cohort: "2025", alum: true, match: "angela's ranch", photo: "/participants/angelas-ranch.jpg" },
-  { person: "Emilia Santos", business: "Alfa y Omega", program: "farmer", cohort: "2025", alum: true, match: "alpha y omega", photo: "/participants/alpha-y-omega.jpg" },
+  { person: "Emilia Santos", business: "Alfa y Omega", program: "farmer", cohort: "2025", alum: true, match: "alfa y omega", photo: "/participants/alpha-y-omega.jpg" },
   { person: "Victor Manuel Martinez", business: "Buena Vista", program: "farmer", cohort: "2025", alum: true, match: "buena vista", photo: "/participants/buena-vista.jpg" },
   { person: "Maria De Los Angeles", business: "La Buena Tierra", program: "farmer", cohort: "2025", alum: true, match: "la buena tierra", photo: "/participants/la-buena-tierra.jpg" },
   { person: "Fermin Lopez", business: "Lopez Organic Farm", program: "farmer", cohort: "2025", alum: true, match: "lopez organic", photo: "/participants/lopez-organic-farm.jpg" },
@@ -207,7 +208,7 @@ export const FOODMAKERS_CURRENT: RosterEntry[] = [
   { person: "Elaine Blakeley", business: "Bakery 6", program: "foodmaker", cohort: "2026", match: "bakery 6", photo: "/participants/bakery-6.jpg" },
   { person: "Stephanie Rodriguez", business: "Sweet Treat Marin", program: "foodmaker", cohort: "2026", match: "sweet treat marin", photo: "/participants/sweet-treat-marin.jpg" },
   { person: "Alexis Haynes", business: "Fully'z VeSoul Cafe", program: "foodmaker", cohort: "2026", match: "vesoul", photo: "/participants/fullyz-vesoul-cafe.jpg" },
-  { person: "Nick Faibisch", business: "Suki / Marin Provisions", program: "foodmaker", cohort: "2026", match: "suki", photo: "/participants/suki.jpg" },
+  { person: "Nickolaus Faibisch", business: "Suki / Marin Provisions", program: "foodmaker", cohort: "2026", match: "suki", photo: "/participants/suki.jpg" },
 ];
 
 export const FOODMAKER_ALUMNI: RosterEntry[] = [
@@ -217,6 +218,7 @@ export const FOODMAKER_ALUMNI: RosterEntry[] = [
 
 export interface Profile extends RosterEntry {
   vendor: Vendor | null;
+  details: ProfileDetails;
 }
 
 export function buildProfiles(vendors: Vendor[], entries: RosterEntry[] = ROSTER_2026): Profile[] {
@@ -226,5 +228,6 @@ export function buildProfiles(vendors: Vendor[], entries: RosterEntry[] = ROSTER
       vendors.find((v) =>
         v.company.toLowerCase().includes(entry.match.toLowerCase())
       ) ?? null,
+    details: DETAILS[`${entry.program}:${entry.match}`] ?? {},
   }));
 }

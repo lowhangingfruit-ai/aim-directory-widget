@@ -192,17 +192,15 @@ function PillButton({ label, active, color, textOnColor, onClick }: {
 
 function SocialLinks({ profile, centered }: { profile: Profile; centered?: boolean }) {
   const v = profile.vendor;
-  if (!v) return null;
+  const d = profile.details;
+  const pick = (a?: string, b?: string) => (a?.trim() || (b && b.trim() !== " " ? b.trim() : "")) || "";
   const links: { label: string; href: string }[] = [];
-  if (v.website?.trim() && v.website.trim() !== " ") {
-    links.push({ label: "Website", href: v.website.startsWith("http") ? v.website : `https://${v.website.trim()}` });
-  }
-  if (v.instagram_profile?.trim() && v.instagram_profile.trim() !== " ") {
-    links.push({ label: "Instagram", href: v.instagram_profile });
-  }
-  if (v.facebook_profile?.trim() && v.facebook_profile.trim() !== " ") {
-    links.push({ label: "Facebook", href: v.facebook_profile });
-  }
+  const website = pick(d.website, v?.website);
+  if (website) links.push({ label: "Website", href: website.startsWith("http") ? website : `https://${website}` });
+  const instagram = pick(d.instagram, v?.instagram_profile);
+  if (instagram) links.push({ label: "Instagram", href: instagram });
+  const facebook = pick(d.facebook, v?.facebook_profile);
+  if (facebook) links.push({ label: "Facebook", href: facebook });
   if (!links.length) return null;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", justifyContent: centered ? "center" : "flex-start" }}>
@@ -309,7 +307,8 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
 }) {
   const program = PROGRAMS[profile.program];
   const photo = bestPhoto(profile);
-  const story = profile.story ?? usableStory(profile.vendor?.description);
+  const story = profile.details.story ?? profile.story ?? usableStory(profile.vendor?.description);
+  const sells = profile.details.sells;
   const markets = knownMarkets(profile, allMarkets);
 
   useEffect(() => {
@@ -405,6 +404,18 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
             <p style={{ margin: 0, fontSize: 14.5, color: "#8a8878", lineHeight: 1.75, fontStyle: "italic" }}>
               Their full profile is coming soon.
             </p>
+          )}
+
+          {sells && (
+            <div>
+              <div style={{
+                fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 17,
+                color: AIM_BRIGHT, marginBottom: 4,
+              }}>
+                What they sell
+              </div>
+              <p style={{ margin: 0, fontSize: 14, color: "#333", lineHeight: 1.6 }}>{sells}</p>
+            </div>
           )}
 
           {markets.length > 0 && (
