@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Market directory intake form (`/intake`)
+
+Collects what Manage My Market doesn't hold (payment types, where products are grown or made).
+Answers are appended to a Google Sheet AIM owns, one row per submission, keyed by MMM vendor ID.
+The newest row for a vendor ID wins, so resubmissions and retries are harmless.
+
+Setup:
+
+1. Create a Google Cloud service account with the Google Sheets API enabled, and a JSON key.
+2. AIM creates a Sheet with a tab named `Responses`, header row from `SHEET_HEADERS` in
+   `lib/intake.ts`, and shares it (Editor) with the service account email.
+3. Set `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` (the PEM private key) and
+   `INTAKE_SHEET_ID` in Vercel. `INTAKE_SHEET_TAB` is optional.
+
+Without these, local dev accepts submissions as a dry run and stores nothing; production returns
+a generic error.

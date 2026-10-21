@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { parseSubmission, toSheetRow } from "@/lib/intake";
+import { appendRow, sheetConfig } from "@/lib/googleSheets";
+
+const GENERIC_ERROR = "Something went wrong saving your answers. Please try again in a minute.";
+
+// What happens when a step fails: nothing is written unless validation passes;
+// if the Sheet append fails the person sees a generic error with their answers
+// still filled in, and can resubmit. A retry may add a second row for the same
+// vendor, which is harmless because the newest row per vendor ID wins.
+export async function POST(request: NextRequest) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Please fill in the form." }, { status: 400 });
+  }
+
+  // Hidden field that people never see; bots tend to fill it in.
+  if (body && typeof body === "object" && (body as Record<string, unknown>).website_url) {
+    return NextResponse.json({ ok: true });
+  }
+
+  const parsed = parseSubmission(body);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const submission = parsed.value;
+
+  const cfg = sheetConfig();
+  if (!cfg) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[intake] dry run, Sheet not configured: ${submission.submissionID}`);
+      return NextResponse.json({ ok: true, stored: false });
+    }
+    console.error("[intake] Sheet not configured");
+    return NextResponse.json({ error: GENERIC_ERROR }, { status: 503 });
+  }
+
+  try {
+    await appendRow(cfg, toSheetRow(submission, new Date()));
+  } catch (err) {
+    console.error(`[intake] ${submission.submissionID} not saved: ${err instanceof Error ? err.message : "unknown error"}`);
+    return NextResponse.json({ error: GENERIC_ERROR }, { status: 502 });
+  }
+
+  console.info(`[intake] saved ${submission.submissionID} vendor=${submission.vendorID ?? "unlisted"}`);
+  return NextResponse.json({ ok: true, stored: true });
+}
