@@ -31,3 +31,7 @@ h1, h2, h3, h4, h5 {
   font-weight: 500;
   margin: 0;
 }
+
+/* "About this directory" disclosure on the directory page */
+.aim-about summary::-webkit-details-marker { display: none; }
+.aim-about[open] .aim-about-chevron { transform: rotate(180deg); }

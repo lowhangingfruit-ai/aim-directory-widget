@@ -378,7 +378,12 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
                     borderBottom: active ? `2px solid ${color}` : "2px solid transparent",
                     paddingBottom: 2,
                     transition: "color 0.12s ease",
-                  }}>{m.name}</span>
+                  }}>
+                    {m.name}
+                    <span style={{ display: "block", fontSize: 10.5, color: active ? "#333" : "#888", fontWeight: 400, marginTop: 1 }}>
+                      {m.count} {m.count === 1 ? "vendor" : "vendors"}
+                    </span>
+                  </span>
                 </button>
               );
             })}
