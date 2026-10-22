@@ -38,16 +38,24 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Market directory intake form (`/intake`)
 
 Collects what Manage My Market doesn't hold (payment types, where products are grown or made).
-Answers are appended to a Google Sheet AIM owns, one row per submission, keyed by MMM vendor ID.
-The newest row for a vendor ID wins, so resubmissions and retries are harmless.
+The site validates each submission in `/api/intake`, then passes it to a Google Apps Script web
+app bound to a Sheet AIM owns, which appends one row per submission keyed by MMM vendor ID. The
+newest row for a vendor ID wins. The script skips a submission ID it has already written, so a
+retry never adds a duplicate. The browser never sees the script URL or secret.
 
-Setup:
+Setup (done once, by an editor of AIM's Sheet):
 
-1. Create a Google Cloud service account with the Google Sheets API enabled, and a JSON key.
-2. AIM creates a Sheet with a tab named `Responses`, header row from `SHEET_HEADERS` in
-   `lib/intake.ts`, and shares it (Editor) with the service account email.
-3. Set `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` (the PEM private key) and
-   `INTAKE_SHEET_ID` in Vercel. `INTAKE_SHEET_TAB` is optional.
+1. Open the Sheet, then Extensions > Apps Script. Replace the starter code with
+   `docs/intake-apps-script.gs` and save.
+2. Project Settings (gear icon) > Script properties > Add `INTAKE_SECRET` with a long random value.
+3. Deploy > New deployment > type Web app. Execute as: Me. Who has access: Anyone. Deploy, approve
+   the permissions prompt (Advanced > Go to project, since it is your own unverified script), and
+   copy the web app URL ending in `/exec`.
+4. In Vercel, set `INTAKE_SCRIPT_URL` to that URL and `INTAKE_SCRIPT_SECRET` to the same secret.
+
+The script runs as the person who deployed it. If that person loses edit access to the Sheet, the
+form stops saving until someone with access redeploys it (step 3) and updates `INTAKE_SCRIPT_URL`.
+After editing the script, use Deploy > Manage deployments > Edit > New version to keep the same URL.
 
 Without these, local dev accepts submissions as a dry run and stores nothing; production returns
 a generic error.

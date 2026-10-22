@@ -1,6 +1,6 @@
 // Shared definitions for the market participant intake form (/intake).
 // The form collects fields Manage My Market doesn't hold; answers land in a
-// Google Sheet AIM owns, keyed by MMM vendorID. Later rows for the same
+// Google Sheet AIM owns (through an Apps Script web app), keyed by MMM vendorID. Later rows for the same
 // vendorID supersede earlier ones, so a resubmission or retry is harmless.
 
 // Payment types as AIM listed them. Token colors are still to be confirmed
