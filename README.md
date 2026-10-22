@@ -43,6 +43,13 @@ app bound to a Sheet AIM owns, which appends one row per submission keyed by MMM
 newest row for a vendor ID wins. The script skips a submission ID it has already written, so a
 retry never adds a duplicate. The browser never sees the script URL or secret.
 
+The directory reads answers back through the same script (`lib/intakeAnswers.ts`). The script
+returns only public columns (vendor ID, categories, products, payment types, other payment,
+location, agreement); contact name, email and notes never leave the Sheet. Reads are cached for 10
+minutes and refreshed after each submission. AIM staff can correct a row in the Sheet, or change
+"Agreed to show in directory" to No to hide that vendor's answers. If the Sheet can't be reached,
+the directory loads without them.
+
 Setup (done once, by an editor of AIM's Sheet):
 
 1. Open the Sheet, then Extensions > Apps Script. Replace the starter code with

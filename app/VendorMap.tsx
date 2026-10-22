@@ -43,12 +43,13 @@ async function geocodeCity(city: string, state: string): Promise<[number, number
 
 interface Props {
   vendors: Vendor[];
+  origins?: Record<number, string>; // intake answer, used instead of the MMM city
   selectedMarket: number | null;
   allMarkets: Record<number, string>;
   marketColor?: string;
 }
 
-export default function VendorMap({ vendors, selectedMarket, allMarkets, marketColor = "#0d8240" }: Props) {
+export default function VendorMap({ vendors, origins = {}, selectedMarket, allMarkets, marketColor = "#0d8240" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -108,7 +109,7 @@ export default function VendorMap({ vendors, selectedMarket, allMarkets, marketC
         // Group vendors by city+state
         const cityGroups = new Map<string, { city: string; state: string; vendors: Vendor[] }>();
         for (const v of vendors) {
-          const city = v.city?.trim();
+          const city = (origins[v.vendorID] ?? v.city)?.trim();
           const state = v.state?.trim();
           if (!city) continue;
           const key = `${city}|${state}`;
@@ -177,7 +178,7 @@ export default function VendorMap({ vendors, selectedMarket, allMarkets, marketC
         mapRef.current = null;
       }
     };
-  }, [vendors, selectedMarket]);
+  }, [vendors, origins, selectedMarket]);
 
   return (
     <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", height: 480, background: "#e8e6da" }}>

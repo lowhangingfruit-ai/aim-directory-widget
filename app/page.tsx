@@ -1,7 +1,6 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
-import { PaymentMap } from "@/lib/payments";
-import { CategoryMap } from "@/lib/categories";
+import { getIntakeAnswers } from "@/lib/intakeAnswers";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -31,13 +30,11 @@ export default async function Page({
   searchParams: Promise<{ marketID?: string }>;
 }) {
   const { marketID } = await searchParams;
-  const vendors = await getVendors(marketID);
+  const [vendors, answers] = await Promise.all([getVendors(marketID), getIntakeAnswers()]);
   const marketName = marketID ? MARKETS[Number(marketID)] : undefined;
 
-  // Filled from the intake Sheet once it's connected. Empty means no payment
-  // badges or filter are shown.
-  const payments: PaymentMap = {};
-  const categories: CategoryMap = {};
+  // Answers from the intake Sheet. Until it's connected these are empty, and
+  // the directory shows no payment, category or origin details.
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
@@ -126,8 +123,10 @@ export default async function Page({
           marketID={marketID ? Number(marketID) : undefined}
           marketName={marketName}
           allMarkets={MARKETS}
-          payments={payments}
-          categories={categories}
+          payments={answers.payments}
+          categories={answers.categories}
+          origins={answers.origins}
+          otherPayments={answers.otherPayments}
         />
       </div>
     </div>

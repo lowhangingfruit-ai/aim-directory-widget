@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseSubmission, SHEET_HEADERS, toSheetRow } from "@/lib/intake";
 import { appendRow, scriptConfig } from "@/lib/sheetScript";
+import { revalidateTag } from "next/cache";
+import { INTAKE_ANSWERS_TAG } from "@/lib/intakeAnswers";
 
 const GENERIC_ERROR = "Something went wrong saving your answers. Please try again in a minute.";
 
@@ -42,6 +44,10 @@ export async function POST(request: NextRequest) {
     console.error(`[intake] ${submission.submissionID} not saved: ${err instanceof Error ? err.message : "unknown error"}`);
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 502 });
   }
+
+  // The directory picks up the new answer on its next visit instead of
+  // waiting out the 10-minute cache.
+  revalidateTag(INTAKE_ANSWERS_TAG, "max");
 
   console.info(`[intake] saved ${submission.submissionID} vendor=${submission.vendorID ?? "unlisted"}`);
   return NextResponse.json({ ok: true, stored: true });

@@ -18,6 +18,8 @@ interface Props {
   allMarkets: Record<number, string>;
   payments: PaymentMap;
   categories: CategoryMap;
+  origins: Record<number, string>;
+  otherPayments: Record<number, string>;
 }
 
 const TODAY = new Date();
@@ -84,6 +86,8 @@ const LEGAL_SUFFIXES = /[\s,]+(LLC|Inc\.?|Corp\.?|Co\.?|Ltd\.?|L\.L\.C\.?)$/i;
 function displayName(company: string): string {
   return company.replace(LEGAL_SUFFIXES, "").trim();
 }
+
+const norm = (s: string) => s.trim().toLowerCase();
 
 function formatCity(city: string, state: string): string {
   const c = titleCase(city.trim());
@@ -218,7 +222,7 @@ function FadeRow({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function DirectoryClient({ vendors, marketID, allMarkets, payments, categories }: Props) {
+export default function DirectoryClient({ vendors, marketID, allMarkets, payments, categories, origins, otherPayments }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -555,6 +559,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
         {view === "map" && (
           <VendorMap
             vendors={filtered}
+            origins={origins}
             selectedMarket={selectedMarket}
             allMarkets={allMarkets}
             marketColor={selectedMarket ? MARKET_COLORS[selectedMarket] : "#0d8240"}
@@ -594,6 +599,8 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
           allMarkets={allMarkets}
           payments={payments[openVendor.vendorID]}
           categories={categories[openVendor.vendorID]}
+          origin={origins[openVendor.vendorID]}
+          otherPayment={otherPayments[openVendor.vendorID]}
         />
       )}
 
@@ -832,7 +839,7 @@ const PANEL_LABEL: React.CSSProperties = {
   fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 16, color: "#000", margin: "0 0 8px",
 };
 
-function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments, categories }: {
+function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments, categories, origin, otherPayment }: {
   vendor: Vendor;
   onClose: () => void;
   narrow: boolean;
@@ -840,6 +847,8 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
   allMarkets: Record<number, string>;
   payments?: PaymentID[];
   categories?: CategoryMap[number];
+  origin?: string;
+  otherPayment?: string;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { closeRef.current?.focus(); }, [vendor.vendorID]);
@@ -885,6 +894,9 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
                 {name}
               </h2>
               {location && <div style={{ fontSize: 14, color: "#666" }}>{location}</div>}
+              {origin && norm(origin) !== norm(vendor.city ?? "") && (
+                <div style={{ fontSize: 13.5, color: "#666" }}>Grown or made in {origin}</div>
+              )}
               {categories && categories.categories.length > 0 && (
                 <div style={{ fontSize: 13.5, color: "#0d8240", fontWeight: 600, marginTop: 4 }}>
                   {categories.categories.map((c) => CATEGORY_LABELS[c]).join(" · ")}
@@ -898,11 +910,11 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
             </div>
           </div>
 
-          {payments && payments.length > 0 && (
+          {((payments && payments.length > 0) || otherPayment) && (
             <section>
               <h3 style={PANEL_LABEL}>Ways to pay</h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {payments.map((id) => (
+                {(payments ?? []).map((id) => (
                   <span key={id} style={{
                     fontSize: 13, fontWeight: 600, padding: "4px 12px", borderRadius: 300,
                     backgroundColor: BENEFIT_IDS.includes(id) ? "#0d8240" : "#f6f5ea",
@@ -912,6 +924,9 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
                   </span>
                 ))}
               </div>
+              {otherPayment && (
+                <p style={{ margin: "8px 0 0", fontSize: 13.5, color: "#555" }}>Also accepts: {otherPayment}</p>
+              )}
             </section>
           )}
 
