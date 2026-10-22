@@ -1,5 +1,6 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
+import { PaymentMap, samplePayments } from "@/lib/payments";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -26,69 +27,72 @@ async function getVendors(marketID?: string): Promise<Vendor[]> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ marketID?: string }>;
+  searchParams: Promise<{ marketID?: string; preview?: string }>;
 }) {
-  const { marketID } = await searchParams;
+  const { marketID, preview } = await searchParams;
   const vendors = await getVendors(marketID);
   const marketName = marketID ? MARKETS[Number(marketID)] : undefined;
 
-  return (
-    <div style={{ minHeight: "100vh", padding: "0 16px 60px" }}>
-      {/* Page wrapper */}
-      <div style={{
-        maxWidth: 860,
-        margin: "0 auto",
-        backgroundColor: "#f6f5ea",
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.08)",
-        borderRadius: "0 0 8px 8px",
-        overflow: "hidden",
-      }}>
+  // Real payment answers arrive with the intake Sheet. Until then, payment
+  // badges and filters only appear on the review link, with sample data.
+  const paymentPreview = preview === "payments";
+  const payments: PaymentMap = paymentPreview ? samplePayments(vendors.map((v) => v.vendorID)) : {};
 
-        {/* Page header */}
+  return (
+    <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
+      {paymentPreview && (
         <div style={{
-          padding: "clamp(20px, 4vw, 36px) clamp(20px, 4vw, 32px) 28px",
-          borderBottom: "1px solid #d8d8d8",
+          backgroundColor: "#4db547", color: "#000", padding: "9px 16px",
+          fontSize: 14, textAlign: "center", lineHeight: 1.4,
         }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-            <span style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 12,
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "#0d8240",
-            }}>
-              Agricultural Institute of Marin
-            </span>
+          Preview for AIM review: payment types are sample data until vendors fill in the intake form
+        </div>
+      )}
+
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <header style={{
+          padding: "clamp(28px, 5vw, 48px) 20px clamp(20px, 3vw, 28px)",
+          textAlign: "center",
+        }}>
+          <div style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 12,
+            fontWeight: 500,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "#0d8240",
+            marginBottom: 8,
+          }}>
+            Agricultural Institute of Marin
           </div>
           <h1 style={{
             fontFamily: "var(--font-heading)",
-            fontSize: 32,
+            fontSize: "clamp(28px, 4.5vw, 40px)",
             fontWeight: 500,
             color: "#000",
-            margin: "0 0 8px",
-            lineHeight: 1.2,
+            margin: "0 0 10px",
+            lineHeight: 1.15,
           }}>
             {marketName ? `${marketName} Vendors` : "Market Participant Directory"}
           </h1>
           <p style={{
-            margin: 0,
-            fontSize: 14,
+            margin: "0 auto",
+            fontSize: 15,
             color: "#494949",
-            maxWidth: 520,
+            maxWidth: 560,
             lineHeight: 1.6,
           }}>
             Find farms, food makers, and artisans at AIM farmers markets across the Bay Area.
-            Filter by market, date, or product category.
+            Filter by market or date, or search for a product.
           </p>
-        </div>
+        </header>
 
-        {/* Directory */}
         <DirectoryClient
           vendors={vendors}
           marketID={marketID ? Number(marketID) : undefined}
           marketName={marketName}
           allMarkets={MARKETS}
+          payments={payments}
         />
       </div>
     </div>

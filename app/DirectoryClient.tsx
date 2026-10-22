@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { Vendor, VendorMarket } from "@/lib/types";
+import type { PaymentID } from "@/lib/intake";
+import { BENEFIT_IDS, PAYMENT_LABELS, PAYMENT_SHORT, PaymentMap } from "@/lib/payments";
 
 const VendorMap = dynamic(() => import("./VendorMap"), { ssr: false });
 
@@ -11,6 +14,7 @@ interface Props {
   marketID?: number;
   marketName?: string;
   allMarkets: Record<number, string>;
+  payments: PaymentMap;
 }
 
 const TODAY = new Date();
@@ -151,67 +155,80 @@ function dateKey(d: Date): string {
 }
 
 function useLayout() {
-  const [narrow, setNarrow] = useState(false);
+  const [width, setWidth] = useState(1024);
   useEffect(() => {
-    const update = () => setNarrow(window.innerWidth < 600);
+    const update = () => setWidth(window.innerWidth);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return { cols: narrow ? 1 : 2, px: narrow ? 20 : 32, narrow };
+  const narrow = width < 640;
+  return { cols: narrow ? 1 : width < 1000 ? 2 : 3, px: narrow ? 16 : 24, narrow, logoSize: narrow ? 64 : 96 };
 }
 
-// ── Shared label style ─────────────────────────────────────────────────────────
-const LABEL_STYLE: React.CSSProperties = {
-  fontSize: 10,
-  fontFamily: "var(--font-heading)",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.1em",
-  color: "#aaa",
-};
-
 // ── Pill ──────────────────────────────────────────────────────────────────────
-function Pill({ label, count, active, onClick, size = "md", color, isNext }: {
-  label: string; count?: number; active: boolean; onClick: () => void;
-  size?: "sm" | "md"; color?: string; isNext?: boolean;
-}) {
-  const activeColor = color ?? "#0d8240";
+function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{
+    <button type="button" onClick={onClick} aria-pressed={active} style={{
       flexShrink: 0,
-      padding: size === "sm" ? "4px 10px" : "6px 14px",
+      padding: "5px 14px",
       fontFamily: "var(--font-body)",
-      fontSize: size === "sm" ? 12 : 13,
+      fontSize: 13,
       cursor: "pointer",
-      border: `1px solid ${active ? activeColor : isNext ? "#0d824055" : color ? `${color}55` : "#d8d8d8"}`,
-      borderRadius: 0,
-      backgroundColor: active ? activeColor : "#fff",
-      color: active ? "#fff" : isNext ? "#0d8240" : color ? activeColor : "#494949",
+      border: `1.5px solid ${active ? "#0d8240" : "#d8d8d8"}`,
+      borderRadius: 300,
+      backgroundColor: active ? "#0d8240" : "#fff",
+      color: active ? "#fff" : "#333",
+      fontWeight: active ? 600 : 400,
       transition: "all 0.12s ease",
       whiteSpace: "nowrap",
-      fontWeight: active || isNext ? 600 : 400,
     }}>
-      {isNext && !active && <span style={{ marginRight: 4, fontSize: 9 }}>●</span>}
       {label}
-      {count !== undefined && (
-        <span style={{ marginLeft: 5, fontSize: 11, opacity: active ? 0.8 : 0.5 }}>{count}</span>
-      )}
     </button>
   );
 }
 
+// Horizontal scroll row with a fade on the right edge, defined outside the
+// component so it keeps its scroll position across renders.
+const scrollRowStyle: React.CSSProperties = {
+  display: "flex",
+  gap: 6,
+  overflowX: "auto",
+  paddingBottom: 10,
+  marginBottom: 10,
+  borderBottom: "1px solid #e8e8e0",
+  WebkitOverflowScrolling: "touch",
+  scrollbarWidth: "none",
+};
+
+function FadeRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={scrollRowStyle}>{children}</div>
+      <div style={{
+        position: "absolute", right: 0, top: 0, bottom: 10,
+        width: 48, pointerEvents: "none",
+        background: "linear-gradient(to right, rgba(246,245,234,0), #f6f5ea)",
+      }} />
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function DirectoryClient({ vendors, marketID, marketName, allMarkets }: Props) {
+export default function DirectoryClient({ vendors, marketID, allMarkets, payments }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [expandedID, setExpandedID] = useState<number | null>(null);
+  const [paymentFilter, setPaymentFilter] = useState<Set<PaymentID>>(new Set());
+  const [openID, setOpenID] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
   const [hoveredMarket, setHoveredMarket] = useState<number | null>(null);
-  const { cols, px, narrow } = useLayout();
+  const { cols, px, narrow, logoSize } = useLayout();
+
+  const hasPayments = Object.keys(payments).length > 0;
+  const openVendor = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
 
   useEffect(() => {
     const el = document.getElementById("aim-directory-root");
@@ -220,6 +237,19 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     target.addEventListener("scroll", onScroll);
     return () => target.removeEventListener("scroll", onScroll);
   }, []);
+
+  // While the side panel is open the page behind it doesn't scroll, and Esc closes it.
+  useEffect(() => {
+    if (openID === null) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenID(null); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [openID]);
 
   const marketOptions = useMemo(() => {
     const counts: Record<number, number> = {};
@@ -255,6 +285,10 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         })
       );
     }
+    // A booth matches if it takes any of the chosen payment types.
+    if (paymentFilter.size > 0) {
+      list = list.filter((v) => (payments[v.vendorID] ?? []).some((p) => paymentFilter.has(p)));
+    }
     // When a market is selected, sort by next upcoming date (no dates → end)
     if (selectedMarket) {
       list = [...list].sort((a, b) => {
@@ -266,69 +300,32 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
     }
 
     return list;
-  }, [vendors, selectedMarket, search, selectedDate]);
+  }, [vendors, selectedMarket, search, selectedDate, paymentFilter, payments]);
 
-  // When market selected: single flat group (sorted by date). Otherwise: letter groups.
-  const grouped = useMemo(() => {
-    if (selectedMarket) {
-      return [{ letter: "_", vendors: filtered }];
-    }
-    const letterGroups: { letter: string; vendors: Vendor[] }[] = [];
-    const numericGroups: { letter: string; vendors: Vendor[] }[] = [];
-    let currentLetter: { letter: string; vendors: Vendor[] } | null = null;
-    let currentNum: { letter: string; vendors: Vendor[] } | null = null;
-    for (const v of filtered) {
-      const first = v.company[0]?.toUpperCase() || "#";
-      const isNumeric = /\d/.test(first);
-      if (isNumeric) {
-        if (!currentNum || currentNum.letter !== first) {
-          currentNum = { letter: first, vendors: [] };
-          numericGroups.push(currentNum);
-        }
-        currentNum.vendors.push(v);
-      } else {
-        if (!currentLetter || currentLetter.letter !== first) {
-          currentLetter = { letter: first, vendors: [] };
-          letterGroups.push(currentLetter);
-        }
-        currentLetter.vendors.push(v);
-      }
-    }
-    return [...letterGroups, ...numericGroups];
+  // Alphabetical, with names starting in a digit after Z. One continuous grid,
+  // so rows never break where the letter changes.
+  const ordered = useMemo(() => {
+    if (selectedMarket) return filtered;
+    const isNumeric = (v: Vendor) => /\d/.test(v.company[0] ?? "");
+    return [...filtered.filter((v) => !isNumeric(v)), ...filtered.filter(isNumeric)];
   }, [filtered, selectedMarket]);
 
   const handleMarketSelect = (id: number) => {
     setSelectedMarket((prev) => (prev === id ? null : id));
     setSelectedDate(null);
-    setExpandedID(null);
     setSearch("");
   };
 
-  const scrollRowStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 6,
-    overflowX: "auto",
-    paddingBottom: 10,
-    marginBottom: 10,
-    borderBottom: "1px solid #e8e8e0",
-    WebkitOverflowScrolling: "touch",
-    scrollbarWidth: "none",
+  const togglePayment = (id: PaymentID) => {
+    setPaymentFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
-  function FadeRow({ children }: { children: React.ReactNode }) {
-    return (
-      <div style={{ position: "relative" }}>
-        <div style={scrollRowStyle}>{children}</div>
-        <div style={{
-          position: "absolute", right: 0, top: 0, bottom: 10,
-          width: 40, pointerEvents: "none",
-          background: "linear-gradient(to right, transparent, #f6f5ea)",
-        }} />
-      </div>
-    );
-  }
-
-  const hasActiveFilter = !!(selectedDate || search);
+  const hasActiveFilter = !!(selectedDate || search || paymentFilter.size > 0);
 
   return (
     <div id="aim-directory-root" style={{ fontFamily: "var(--font-body)", position: "relative" }}>
@@ -337,8 +334,8 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
       <div style={{
         position: "sticky", top: 0, zIndex: 20,
         backgroundColor: "#f6f5ea",
-        borderBottom: "1px solid #dddcd3",
-        boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+        borderTop: "1px solid #e8e7dc",
+        borderBottom: "1px solid #e8e7dc",
         padding: `14px ${px}px 12px`,
       }}>
         {/* Branded market logo scroll row */}
@@ -354,19 +351,20 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   onClick={() => handleMarketSelect(m.id)}
                   onMouseEnter={() => setHoveredMarket(m.id)}
                   onMouseLeave={() => setHoveredMarket(null)}
+                  aria-pressed={active}
                   style={{
                     flexShrink: 0, border: "none", background: "none",
-                    cursor: "pointer", padding: "0 6px",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    cursor: "pointer", padding: "0 4px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                   }}
                 >
                   <div style={{
-                    width: 110, height: 110, overflow: "hidden",
+                    width: logoSize, height: logoSize, overflow: "hidden",
                     opacity: selectedMarket && !active ? 0.35 : 1,
                     transition: "opacity 0.15s ease",
                   }}>
                     {MARKET_LOGOS[m.id] ? (
-                      <img src={MARKET_LOGOS[m.id]} alt={m.name}
+                      <img src={MARKET_LOGOS[m.id]} alt=""
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     ) : (
                       <div style={{ width: "100%", height: "100%", background: color }} />
@@ -374,7 +372,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
                   </div>
                   <span style={{
                     fontSize: 11, fontFamily: "var(--font-body)", lineHeight: 1.3,
-                    textAlign: "center", maxWidth: 110,
+                    textAlign: "center", maxWidth: logoSize + 8,
                     color: active ? "#111" : hovered ? "#333" : "#666",
                     fontWeight: active ? 700 : 400,
                     borderBottom: active ? `2px solid ${color}` : "2px solid transparent",
@@ -409,7 +407,7 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
               const active = selectedDate === key;
               return (
                 <button key={key}
-                  onClick={() => { setSelectedDate((p) => (p === key ? null : key)); setExpandedID(null); }}
+                  onClick={() => setSelectedDate((p) => (p === key ? null : key))}
                   style={{
                     flexShrink: 0, background: "none", border: "none", cursor: "pointer",
                     padding: "2px 0", marginRight: 20,
@@ -435,37 +433,49 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
           </svg>
           <input type="text" placeholder="Search market participants, products, city…" value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search market participants"
             style={{
-              width: "100%", padding: "9px 36px",
+              width: "100%", padding: "10px 36px",
               fontFamily: "var(--font-body)", fontSize: 14,
               border: "1px solid #d8d8d8", borderRadius: 0,
               backgroundColor: "#fff", color: "#000",
               outline: "none", boxSizing: "border-box",
             }} />
           {search && (
-            <button onClick={() => setSearch("")} style={{
+            <button onClick={() => setSearch("")} aria-label="Clear search" style={{
               position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
               background: "none", border: "none", cursor: "pointer", color: "#afada9", fontSize: 16, lineHeight: 1, padding: 2,
             }}>×</button>
           )}
         </div>
+
+        {/* Payment filter */}
+        {hasPayments && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, overflowX: "auto", scrollbarWidth: "none" }}>
+            <span style={{ fontSize: 13, color: "#555", marginRight: 4, whiteSpace: "nowrap" }}>Accepts</span>
+            {[...BENEFIT_IDS, "card" as PaymentID].map((id) => (
+              <FilterPill key={id} label={PAYMENT_SHORT[id]} active={paymentFilter.has(id)} onClick={() => togglePayment(id)} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Body ── */}
       <div style={{ padding: `0 ${px}px 48px` }}>
 
         {/* Count + toggle row */}
-        <div style={{ padding: "16px 0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ padding: "16px 0 6px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <p style={{ fontSize: 13, margin: 0, color: "#555" }}>
             <span style={{ fontWeight: 600, color: "#111" }}>{filtered.length}</span>
             {" "}{filtered.length === 1 ? "market participant" : "market participants"}
             {selectedMarket && !selectedDate && ` at ${allMarkets[selectedMarket]}`}
             {selectedDate && ` attending ${selectedDate}`}
+            {paymentFilter.size > 0 && ` accepting ${[...paymentFilter].map((p) => PAYMENT_SHORT[p]).join(" or ")}`}
             {search ? ` matching "${search}"` : ""}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {hasActiveFilter && (
-              <button onClick={() => { setSelectedDate(null); setSearch(""); }}
+              <button onClick={() => { setSelectedDate(null); setSearch(""); setPaymentFilter(new Set()); }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
                 Clear filters
               </button>
@@ -499,37 +509,42 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
         )}
 
         {/* Vendor list */}
-        {view === "list" && (filtered.length === 0 ? (
-          <p style={{ color: "#aaa", textAlign: "center", padding: "64px 0" }}>No market participants found.</p>
+        {view === "list" && (ordered.length === 0 ? (
+          <p style={{ color: "#888", textAlign: "center", padding: "64px 0" }}>No market participants found.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {grouped.map(({ letter, vendors: group }) => (
-              <div key={letter} style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                alignItems: "start",
-                gap: 0,
-              }}>
-                {group.map((vendor) => (
-                  <VendorCard
-                    key={vendor.vendorID}
-                    vendor={vendor}
-                    expanded={expandedID === vendor.vendorID}
-                    onToggle={() => setExpandedID((p) => (p === vendor.vendorID ? null : vendor.vendorID))}
-                    selectedMarket={selectedMarket}
-                    selectedDate={selectedDate}
-                    allMarkets={allMarkets}
-                    cols={cols}
-                  />
-                ))}
-              </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            columnGap: 24,
+            alignItems: "stretch",
+          }}>
+            {ordered.map((vendor) => (
+              <VendorCard
+                key={vendor.vendorID}
+                vendor={vendor}
+                onOpen={() => setOpenID(vendor.vendorID)}
+                selectedMarket={selectedMarket}
+                selectedDate={selectedDate}
+                payments={payments[vendor.vendorID]}
+              />
             ))}
           </div>
         ))}
       </div>
 
+      {openVendor && (
+        <VendorPanel
+          vendor={openVendor}
+          onClose={() => setOpenID(null)}
+          narrow={narrow}
+          selectedMarket={selectedMarket}
+          allMarkets={allMarkets}
+          payments={payments[openVendor.vendorID]}
+        />
+      )}
+
       {/* Back to top */}
-      {showBackToTop && (
+      {showBackToTop && !openVendor && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
@@ -548,188 +563,326 @@ export default function DirectoryClient({ vendors, marketID, marketName, allMark
   );
 }
 
+// ── Vendor image ───────────────────────────────────────────────────────────────
+// Most MMM uploads are logos in every shape, so the whole image is shown on
+// white rather than cropped. No upload, or one that fails, gets an initial tile.
+const TILE_COLORS = [
+  { bg: "#e7f1e4", fg: "#0d8240" },
+  { bg: "#fdf0dc", fg: "#b8641d" },
+  { bg: "#fbe6e6", fg: "#b33a3a" },
+  { bg: "#e3eef6", fg: "#2f6f95" },
+  { bg: "#f1ecd6", fg: "#7d6a1e" },
+];
+
+function VendorImage({ vendor, size, eager = false }: { vendor: Vendor; size: number; eager?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const src = vendor.photo?.trim();
+  const name = displayName(vendor.company);
+
+  if (src && !failed) {
+    return (
+      <div style={{
+        width: size, height: size, flexShrink: 0, backgroundColor: "#fff",
+        border: "1px solid #e8e7dc", overflow: "hidden",
+      }}>
+        <Image
+          src={src}
+          alt={`${name} logo`}
+          width={size}
+          height={size}
+          sizes={`${size}px`}
+          loading={eager ? "eager" : "lazy"}
+          onError={() => setFailed(true)}
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+        />
+      </div>
+    );
+  }
+
+  const initial = (name.match(/[A-Za-z0-9]/)?.[0] ?? "?").toUpperCase();
+  const tone = TILE_COLORS[vendor.vendorID % TILE_COLORS.length];
+  return (
+    <div aria-hidden="true" style={{
+      width: size, height: size, flexShrink: 0, backgroundColor: tone.bg, color: tone.fg,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: Math.round(size * 0.42), lineHeight: 1,
+    }}>
+      {initial}
+    </div>
+  );
+}
+
+// ── Market marks ───────────────────────────────────────────────────────────────
+// Sunday and Thursday Marin share one logo, so marks are grouped by logo.
+function marketMarks(vendor: Vendor): { key: string; logo?: string; color: string; names: string[] }[] {
+  const byKey = new Map<string, { key: string; logo?: string; color: string; names: string[] }>();
+  const sorted = vendor.markets
+    .filter((m) => MARKET_SHORT[m.marketID])
+    .sort((a, b) => MARKET_SHORT[a.marketID].localeCompare(MARKET_SHORT[b.marketID]));
+  for (const m of sorted) {
+    const logo = MARKET_LOGOS[m.marketID];
+    const key = logo ?? String(m.marketID);
+    const entry = byKey.get(key) ?? { key, logo, color: MARKET_COLORS[m.marketID] ?? "#0d8240", names: [] };
+    entry.names.push(MARKET_SHORT[m.marketID]);
+    byKey.set(key, entry);
+  }
+  return [...byKey.values()];
+}
+
+function MarketMarks({ vendor, max = 5, size = 22 }: { vendor: Vendor; max?: number; size?: number }) {
+  const marks = marketMarks(vendor);
+  if (!marks.length) return null;
+  const shown = marks.slice(0, max);
+  const label = marks.flatMap((m) => m.names).join(", ");
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }} title={label} aria-label={`Sells at ${label}`}>
+      {shown.map((m) => m.logo ? (
+        <img key={m.key} src={m.logo} alt="" style={{ width: size, height: size, objectFit: "cover", display: "block" }} />
+      ) : (
+        <span key={m.key} style={{ width: size, height: size, background: m.color, display: "block" }} />
+      ))}
+      {marks.length > max && (
+        <span style={{ fontSize: 12, color: "#666", marginLeft: 2 }}>+{marks.length - max}</span>
+      )}
+    </div>
+  );
+}
+
+// ── Payment badges ─────────────────────────────────────────────────────────────
+function PaymentBadges({ ids, only }: { ids?: PaymentID[]; only?: PaymentID[] }) {
+  const list = (ids ?? []).filter((id) => !only || only.includes(id));
+  if (!list.length) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {list.map((id) => (
+        <span key={id} style={{
+          fontSize: 11, fontWeight: 600, lineHeight: 1.5, letterSpacing: "0.02em",
+          padding: "1px 8px", borderRadius: 300,
+          border: "1px solid #0d8240", color: "#0d8240", backgroundColor: "#fff",
+          whiteSpace: "nowrap",
+        }}>
+          {PAYMENT_SHORT[id]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Vendor card ────────────────────────────────────────────────────────────────
-function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, allMarkets, cols }: {
+function VendorCard({ vendor, onOpen, selectedMarket, selectedDate, payments }: {
   vendor: Vendor;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
   selectedMarket: number | null;
   selectedDate: string | null;
-  allMarkets: Record<number, string>;
-  cols: number;
+  payments?: PaymentID[];
 }) {
   const [hovered, setHovered] = useState(false);
-
-  const relevantMarkets = selectedMarket
-    ? vendor.markets.filter((m) => m.marketID === selectedMarket)
-    : vendor.markets.filter((m) => allMarkets[m.marketID]);
-
   const next = nextDate(vendor.markets, selectedMarket);
-  const phone = formatPhone(vendor.phone1);
   const location = formatCity(vendor.city, vendor.state);
-  const hasNoUpcomingDate = nextDateTimestamp(vendor, selectedMarket) === Infinity;
-
-  const marketBadges = vendor.markets
-    .filter((m) => MARKET_SHORT[m.marketID])
-    .sort((a, b) => (MARKET_SHORT[a.marketID] ?? "").localeCompare(MARKET_SHORT[b.marketID] ?? ""));
-
-  const hasContact = !!(phone || vendor.website?.trim() || vendor.instagram_profile?.trim() || vendor.facebook_profile?.trim());
-
-  // Short description snippet for collapsed preview
-  const descSnippet = vendor.description?.trim()
-    ? vendor.description.trim().slice(0, 90) + (vendor.description.trim().length > 90 ? "…" : "")
-    : null;
+  const dimmed = nextDateTimestamp(vendor, selectedMarket) === Infinity && !!selectedMarket;
+  const description = vendor.description?.trim();
 
   return (
-    <div
-      onClick={onToggle}
+    <button
+      type="button"
+      onClick={onOpen}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        gridColumn: expanded && cols > 1 ? "1 / -1" : undefined,
-        background: expanded ? "#edebd6" : hovered ? "rgba(0,0,0,0.025)" : "transparent",
-        border: "none",
-        borderBottom: "1px solid #dddcd3",
-        borderRadius: 0,
-        cursor: "pointer",
-        overflow: "hidden",
+        display: "flex", gap: 14, alignItems: "flex-start",
+        width: "100%", height: "100%", textAlign: "left",
+        padding: "18px 10px",
+        background: hovered ? "#faf9f2" : "transparent",
+        border: "none", borderBottom: "1px solid #e8e7dc", borderRadius: 0,
+        cursor: "pointer", fontFamily: "var(--font-body)", color: "#000",
+        opacity: dimmed ? 0.55 : 1,
         transition: "background 0.15s ease",
-        boxShadow: "none",
-        fontFamily: "var(--font-body)",
-        opacity: hasNoUpcomingDate && selectedMarket && !expanded ? 0.55 : 1,
       }}
     >
-      {/* ── Collapsed row ── */}
-      <div style={{ padding: "20px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{
-            fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 17,
-            color: hasNoUpcomingDate && selectedMarket ? "#aaa" : "#111",
-            marginBottom: 4,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>
-            {displayName(vendor.company)}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: descSnippet ? 6 : 0 }}>
-            {location && <span style={{ fontSize: 13, color: "#888" }}>{location}</span>}
-            {next && !selectedDate && <span style={{ fontSize: 11, color: "#ccc" }}>·</span>}
-            {next && !selectedDate && <span style={{ fontSize: 13, color: "#0d8240", fontWeight: 600 }}>{next}</span>}
-            {!next && selectedMarket && <span style={{ fontSize: 13, color: "#bbb" }}>Dates TBD</span>}
-          </div>
-          {descSnippet && !expanded && (
-            <p style={{ margin: 0, fontSize: 13, color: "#999", lineHeight: 1.55 }}>{descSnippet}</p>
-          )}
+      <VendorImage vendor={vendor} size={64} />
+      <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{
+          fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 17, lineHeight: 1.25,
+          color: dimmed ? "#888" : "#111",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {displayName(vendor.company)}
         </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round"
-          style={{ flexShrink: 0, marginTop: 4, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}>
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13 }}>
+          {location && <span style={{ color: "#666" }}>{location}</span>}
+          {next && !selectedDate && location && <span style={{ color: "#c8c6ba" }}>·</span>}
+          {next && !selectedDate && <span style={{ color: "#0d8240", fontWeight: 600 }}>{next}</span>}
+          {!next && selectedMarket && <span style={{ color: "#999" }}>Dates TBD</span>}
+        </div>
+        {description && (
+          <p style={{
+            margin: 0, fontSize: 13.5, color: "#494949", lineHeight: 1.5,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>
+            {description}
+          </p>
+        )}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+          <MarketMarks vendor={vendor} />
+          <PaymentBadges ids={payments} only={BENEFIT_IDS} />
+        </div>
       </div>
+    </button>
+  );
+}
 
-      {/* ── Expanded detail ── */}
-      {expanded && (
-        <div style={{ borderTop: "1px solid #dddcd3", display: "flex", alignItems: "stretch", flexDirection: vendor.description ? "row" : "column" }}>
+// ── Contact links ──────────────────────────────────────────────────────────────
+const LINK_STYLE: React.CSSProperties = {
+  fontSize: 14, color: "#0d8240", textDecoration: "none", fontWeight: 600,
+  display: "flex", alignItems: "center", gap: 6,
+};
 
-          {/* Left: description */}
-          {vendor.description && (
-            <div style={{ flex: "0 0 55%", padding: "24px 24px", borderRight: "1px solid #dddcd3" }}>
-              <p style={{ margin: 0, fontSize: 14, color: "#333", lineHeight: 1.8 }}>
-                {vendor.description}
-              </p>
+function ContactLinks({ vendor }: { vendor: Vendor }) {
+  const phone = formatPhone(vendor.phone1);
+  const website = vendor.website?.trim();
+  const instagram = vendor.instagram_profile?.trim();
+  const facebook = vendor.facebook_profile?.trim();
+  if (!phone && !website && !instagram && !facebook) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 22px", alignItems: "center" }}>
+      {phone && (
+        <a href={`tel:${vendor.phone1}`} style={LINK_STYLE}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          {phone}
+        </a>
+      )}
+      {website && (
+        <a href={website.startsWith("http") ? website : `https://${website}`} target="_blank" rel="noopener noreferrer" style={LINK_STYLE}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Website
+        </a>
+      )}
+      {instagram && (
+        <a href={instagram} target="_blank" rel="noopener noreferrer" style={LINK_STYLE}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          Instagram
+        </a>
+      )}
+      {facebook && (
+        <a href={facebook} target="_blank" rel="noopener noreferrer" style={LINK_STYLE}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          Facebook
+        </a>
+      )}
+    </div>
+  );
+}
+
+// ── Side panel ─────────────────────────────────────────────────────────────────
+const PANEL_LABEL: React.CSSProperties = {
+  fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 16, color: "#000", margin: "0 0 8px",
+};
+
+function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments }: {
+  vendor: Vendor;
+  onClose: () => void;
+  narrow: boolean;
+  selectedMarket: number | null;
+  allMarkets: Record<number, string>;
+  payments?: PaymentID[];
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { closeRef.current?.focus(); }, [vendor.vendorID]);
+
+  const name = displayName(vendor.company);
+  const location = formatCity(vendor.city, vendor.state);
+  const description = vendor.description?.trim();
+  const markets = vendor.markets
+    .filter((m) => allMarkets[m.marketID])
+    .sort((a, b) => {
+      if (selectedMarket) {
+        if (a.marketID === selectedMarket) return -1;
+        if (b.marketID === selectedMarket) return 1;
+      }
+      return nextDateTimestamp({ ...vendor, markets: [a] }, null) - nextDateTimestamp({ ...vendor, markets: [b] }, null);
+    });
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={name} style={{ position: "fixed", inset: 0, zIndex: 100 }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.32)" }} />
+      <aside style={{
+        position: "absolute", top: 0, right: 0, bottom: 0,
+        width: narrow ? "100%" : 460, maxWidth: "100%",
+        backgroundColor: "#fff", overflowY: "auto",
+        boxShadow: "-8px 0 32px rgba(0,0,0,0.12)",
+        fontFamily: "var(--font-body)",
+      }}>
+        <div style={{
+          position: "sticky", top: 0, zIndex: 1, backgroundColor: "#fff",
+          display: "flex", justifyContent: "flex-end", padding: "10px 12px",
+        }}>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" style={{
+            width: 36, height: 36, border: "1px solid #e8e7dc", borderRadius: 300,
+            background: "#fff", cursor: "pointer", fontSize: 20, lineHeight: 1, color: "#333",
+          }}>×</button>
+        </div>
+
+        <div style={{ padding: "0 28px 40px", display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <VendorImage vendor={vendor} size={96} eager />
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 26, lineHeight: 1.2, margin: "0 0 4px" }}>
+                {name}
+              </h2>
+              {location && <div style={{ fontSize: 14, color: "#666" }}>{location}</div>}
             </div>
-          )}
+          </div>
 
-          {/* Right (or full-width): meta */}
-          <div style={{ flex: 1, padding: "24px 24px", display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
-
-            {/* Contact */}
-            {hasContact && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", alignItems: "center" }}>
-                {phone && (
-                  <a href={`tel:${vendor.phone1}`} onClick={(e) => e.stopPropagation()}
-                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    {phone}
-                  </a>
-                )}
-                {vendor.website?.trim() && vendor.website.trim() !== " " && (
-                  <a href={vendor.website.startsWith("http") ? vendor.website : `https://${vendor.website}`}
-                    target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    Website
-                  </a>
-                )}
-                {vendor.instagram_profile?.trim() && vendor.instagram_profile.trim() !== " " && (
-                  <a href={vendor.instagram_profile} target="_blank" rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                    Instagram
-                  </a>
-                )}
-                {vendor.facebook_profile?.trim() && vendor.facebook_profile.trim() !== " " && (
-                  <a href={vendor.facebook_profile} target="_blank" rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ fontSize: 13, color: "#0d8240", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                    Facebook
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Market badges (all-markets view) */}
-            {!selectedMarket && marketBadges.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                {marketBadges.map((m) => (
-                  <div key={m.marketID} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                    {MARKET_LOGOS[m.marketID] ? (
-                      <img src={MARKET_LOGOS[m.marketID]} alt={MARKET_SHORT[m.marketID]}
-                        style={{ width: 52, height: 52, objectFit: "cover", display: "block" }} />
-                    ) : (
-                      <div style={{ width: 52, height: 52, background: MARKET_COLORS[m.marketID] ?? "#0d8240" }} />
-                    )}
-                    <span style={{ fontSize: 10, color: "#666", textAlign: "center", maxWidth: 56, lineHeight: 1.3 }}>
-                      {MARKET_SHORT[m.marketID]}
-                    </span>
-                  </div>
+          {payments && payments.length > 0 && (
+            <section>
+              <h3 style={PANEL_LABEL}>Ways to pay</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {payments.map((id) => (
+                  <span key={id} style={{
+                    fontSize: 13, fontWeight: 600, padding: "4px 12px", borderRadius: 300,
+                    backgroundColor: BENEFIT_IDS.includes(id) ? "#0d8240" : "#f6f5ea",
+                    color: BENEFIT_IDS.includes(id) ? "#fff" : "#333",
+                  }}>
+                    {PAYMENT_LABELS[id]}
+                  </span>
                 ))}
               </div>
-            )}
+            </section>
+          )}
 
-            {/* Market dates */}
-            {relevantMarkets.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {relevantMarkets.map((m) => {
-                  const grouped = groupByMonth(m.dates ?? []);
-                  const months = Object.entries(grouped);
+          {description && (
+            <p style={{ margin: 0, fontSize: 15, color: "#222", lineHeight: 1.75 }}>{description}</p>
+          )}
+
+          <ContactLinks vendor={vendor} />
+
+          {markets.length > 0 && (
+            <section>
+              <h3 style={PANEL_LABEL}>Where to find them</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {markets.map((m) => {
+                  const months = Object.entries(groupByMonth(m.dates ?? []));
                   return (
                     <div key={m.marketID}>
-                      {relevantMarkets.length > 1 && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          {MARKET_LOGOS[m.marketID] && (
-                            <img src={MARKET_LOGOS[m.marketID]} alt=""
-                              style={{ width: 32, height: 32, objectFit: "cover", display: "block", flexShrink: 0 }} />
-                          )}
-                          <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>
-                            {allMarkets[m.marketID] ?? m.market}
-                          </span>
-                        </div>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        {MARKET_LOGOS[m.marketID] ? (
+                          <img src={MARKET_LOGOS[m.marketID]} alt=""
+                            style={{ width: 36, height: 36, objectFit: "cover", display: "block", flexShrink: 0 }} />
+                        ) : (
+                          <span style={{ width: 36, height: 36, background: MARKET_COLORS[m.marketID] ?? "#0d8240", display: "block" }} />
+                        )}
+                        <span style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>{allMarkets[m.marketID] ?? m.market}</span>
+                      </div>
                       {months.length === 0 ? (
-                        <span style={{ fontSize: 13, color: "#aaa" }}>Dates TBD</span>
+                        <span style={{ fontSize: 13, color: "#888" }}>Dates TBD</span>
                       ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                           {months.map(([month, days]) => (
                             <div key={month} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                              <span style={{ fontSize: 12, color: "#999", minWidth: 48, flexShrink: 0 }}>
+                              <span style={{ fontSize: 12.5, color: "#888", minWidth: 64, flexShrink: 0 }}>
                                 {month.replace(/\s*\d{4}$/, "")}
                               </span>
-                              <span style={{ fontSize: 13, color: "#333", lineHeight: 1.7 }}>
-                                {days.join(" · ")}
-                              </span>
+                              <span style={{ fontSize: 13.5, color: "#333", lineHeight: 1.7 }}>{days.join(" · ")}</span>
                             </div>
                           ))}
                         </div>
@@ -738,10 +891,10 @@ function VendorCard({ vendor, expanded, onToggle, selectedMarket, selectedDate, 
                   );
                 })}
               </div>
-            )}
-          </div>
+            </section>
+          )}
         </div>
-      )}
+      </aside>
     </div>
   );
 }
