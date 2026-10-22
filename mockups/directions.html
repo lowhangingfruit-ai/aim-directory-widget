@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Directory directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Ek+Mukta:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #0d8240;
+  --green-dark: #0a6633;
+  --bright: #4db547;
+  --orange: #de752c;
+  --cream: #f6f5ea;
+  --cream-2: #efeddc;
+  --ink: #111;
+  --body: #333;
+  --muted: #6b6a60;
+  --line: #e6e4d6;
+  --white: #fff;
+  --head: 'Ek Mukta', sans-serif;
+  --text: 'Asap', sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: #fff; color: var(--ink); font-family: var(--text); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--head); font-weight: 500; margin: 0; }
+button { font-family: inherit; }
+img { display: block; }
+
+/* Review bar, not part of any direction */
+.review { position: sticky; top: 0; z-index: 60; background: var(--bright); color: #000; font-size: 13px; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.review p { margin: 0; }
+.review nav { display: flex; gap: 6px; }
+.review button { border: 1.5px solid #000; background: transparent; border-radius: 300px; padding: 3px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: #000; }
+.review button[aria-pressed="true"] { background: #000; color: #fff; }
+
+.direction { display: none; }
+.direction.on { display: block; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 640px) { .wrap { padding: 0 16px; } }
+
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--green); }
+.pill { flex-shrink: 0; border: 1.5px solid var(--line); background: #fff; color: var(--body); border-radius: 300px; padding: 6px 15px; font-size: 13.5px; cursor: pointer; white-space: nowrap; transition: border-color .12s, background .12s, color .12s; }
+.pill:hover { border-color: #bdbbaa; }
+.pill[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+.pill.small { padding: 4px 12px; font-size: 12.5px; }
+.search { position: relative; }
+.search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #9a998d; pointer-events: none; }
+.search input { width: 100%; border: 1.5px solid var(--line); border-radius: 300px; padding: 12px 18px 12px 42px; font: inherit; font-size: 15px; background: #fff; outline: none; }
+.search input:focus { border-color: var(--green); }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 300px; padding: 3px; background: #fff; flex-shrink: 0; }
+.seg button { border: 0; background: none; border-radius: 300px; padding: 5px 14px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; font-weight: 600; }
+.scroll-x { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.scroll-x::-webkit-scrollbar { display: none; }
+.marks { display: flex; gap: 4px; align-items: center; }
+.marks img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
+.marks span { font-size: 12px; color: var(--muted); margin-left: 2px; }
+.date { color: var(--green); font-weight: 600; }
+.tbd { color: #9a998d; }
+
+/* ── A: Gallery ─────────────────────────────────────────────── */
+#a .hero { text-align: center; padding: 56px 0 28px; }
+#a .hero h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1.05; margin: 10px 0 12px; }
+#a .hero p { max-width: 560px; margin: 0 auto; color: #494949; font-size: 16px; }
+#a .markets { display: flex; gap: 18px; padding: 8px 6px 30px; }
+#a .markets > :first-child { margin-left: auto; }
+#a .markets > :last-child { margin-right: auto; }
+#a .mk { border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 92px; flex-shrink: 0; padding: 0; }
+#a .mk .logo { width: 84px; height: 84px; border-radius: 22px; overflow: hidden; transition: transform .15s, box-shadow .15s, opacity .15s; }
+#a .mk .logo img { width: 100%; height: 100%; object-fit: cover; }
+#a .mk.all .logo { background: var(--green); color: #fff; display: grid; place-items: center; font-family: var(--head); font-weight: 700; font-size: 22px; }
+#a .mk b { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+#a .mk small { font-size: 11.5px; color: var(--muted); margin-top: -6px; }
+#a .mk:hover .logo { transform: translateY(-2px); }
+#a .mk[aria-pressed="true"] .logo { box-shadow: 0 0 0 3px #fff, 0 0 0 5.5px var(--green); }
+#a .markets.picked .mk[aria-pressed="false"] .logo { opacity: .45; }
+#a .bar { position: sticky; top: 37px; z-index: 20; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+#a .bar .row1 { display: flex; gap: 12px; align-items: center; padding: 14px 0 10px; }
+#a .bar .row1 .search { flex: 1; }
+#a .bar .row2 { display: flex; gap: 8px; align-items: center; padding: 0 0 14px; }
+#a .bar .row2 .scroll-x { flex: 1; }
+#a .accepts { display: flex; gap: 6px; align-items: center; padding-left: 12px; border-left: 1px solid var(--line); flex-shrink: 0; }
+#a .accepts label { font-size: 13px; color: var(--muted); }
+#a .count { display: flex; justify-content: space-between; align-items: baseline; padding: 22px 0 14px; font-size: 14px; color: var(--muted); }
+#a .count b { color: var(--ink); }
+#a .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 22px; padding-bottom: 72px; }
+@media (max-width: 1100px) { #a .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { #a .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; } }
+#a .card { cursor: pointer; }
+#a .card .img { aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; transition: transform .18s, box-shadow .18s; position: relative; }
+#a .card .img img { width: 76%; height: 76%; object-fit: contain; }
+#a .card .img.sign { border: 0; padding: 14%; text-align: center; font-family: var(--head); font-weight: 700; line-height: 1.02; letter-spacing: -.01em; }
+#a .card:hover .img { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(40,40,20,.12); }
+#a .card .cat { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 3px; }
+#a .card h3 { font-size: 20px; font-weight: 700; line-height: 1.15; }
+#a .card .meta { font-size: 13.5px; color: var(--muted); margin: 4px 0 8px; }
+@media (max-width: 760px) {
+  #a .hero { padding: 36px 0 20px; }
+  #a .markets { gap: 12px; padding-bottom: 22px; }
+  #a .mk { width: 74px; }
+  #a .mk .logo { width: 66px; height: 66px; border-radius: 18px; }
+  #a .bar .row1 .seg { display: none; }
+  #a .bar .row2 { flex-direction: column; align-items: stretch; }
+  #a .accepts { border-left: 0; padding-left: 0; }
+  #a .card h3 { font-size: 17px; }
+  #a .card .meta { font-size: 12.5px; }
+}
+
+/* ── B: Market day ──────────────────────────────────────────── */
+#b { background: var(--cream); min-height: 100vh; }
+#b .intro { text-align: center; padding: 56px 0 30px; }
+#b .intro h1 { font-size: clamp(34px, 5vw, 50px); line-height: 1.05; margin: 10px 0 12px; }
+#b .intro p { max-width: 520px; margin: 0 auto; color: #494949; font-size: 16px; }
+#b .mgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 980px) { #b .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { #b .mgrid { grid-template-columns: 1fr; gap: 10px; } }
+#b .mcard { display: flex; gap: 18px; align-items: center; background: #fff; border: 0; border-radius: 20px; padding: 14px; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .15s; color: var(--ink); }
+#b .mcard:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(40,40,20,.10); }
+#b .mcard img { width: 96px; height: 96px; border-radius: 14px; object-fit: cover; flex-shrink: 0; }
+#b .mcard h3 { font-size: 23px; line-height: 1.1; }
+#b .mcard .when { font-size: 13.5px; color: var(--muted); margin: 2px 0 8px; }
+#b .mcard .next { font-size: 14px; }
+#b .mcard .arrow { margin-left: auto; color: var(--green); font-size: 22px; padding-right: 6px; }
+#b .mcard.off { cursor: default; background: transparent; border: 1.5px dashed #d6d4c3; }
+#b .mcard.off:hover { transform: none; box-shadow: none; }
+#b .mcard.off img { filter: grayscale(1); opacity: .5; }
+#b .or { display: flex; align-items: center; gap: 14px; max-width: 640px; margin: 40px auto 0; padding-bottom: 80px; }
+#b .or span { font-size: 14px; color: var(--muted); white-space: nowrap; }
+#b .or .search { flex: 1; }
+@media (max-width: 640px) {
+  #b .mcard img { width: 72px; height: 72px; }
+  #b .mcard h3 { font-size: 20px; }
+  #b .or { flex-direction: column; align-items: stretch; }
+}
+#b .band { padding: 22px 0 0; }
+#b .back { border: 0; background: none; cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; padding: 0; }
+#b .mhead { display: flex; gap: 24px; align-items: center; padding: 20px 0 26px; }
+#b .mhead img { width: 132px; height: 132px; border-radius: 24px; object-fit: cover; border: 5px solid #fff; box-shadow: 0 6px 18px rgba(40,40,20,.12); flex-shrink: 0; }
+#b .mhead h1 { font-size: clamp(32px, 4.6vw, 50px); line-height: 1.02; margin: 6px 0 6px; }
+#b .mhead p { margin: 0; color: #3d3c35; font-size: 15px; }
+#b .days { display: flex; gap: 10px; padding-bottom: 26px; }
+#b .day { flex-shrink: 0; width: 86px; border: 0; border-radius: 16px; background: rgba(255,255,255,.6); padding: 10px 0 9px; text-align: center; cursor: pointer; color: var(--ink); transition: background .12s; }
+#b .day:hover { background: #fff; }
+#b .day small { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+#b .day b { display: block; font-family: var(--head); font-weight: 700; font-size: 30px; line-height: 1.05; margin: 2px 0 0; }
+#b .day span { font-size: 12.5px; color: var(--muted); }
+#b .day[aria-pressed="true"] { background: var(--ink); color: #fff; }
+#b .day[aria-pressed="true"] small, #b .day[aria-pressed="true"] span { color: rgba(255,255,255,.75); }
+#b .tools { background: var(--cream); position: sticky; top: 37px; z-index: 20; border-bottom: 1px solid var(--line); }
+#b .tools .wrap { display: flex; gap: 14px; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+#b .tools .search { width: 300px; flex-shrink: 0; }
+#b .tools .search input { padding-top: 9px; padding-bottom: 9px; font-size: 14px; }
+#b .tools .scroll-x { flex: 1; }
+@media (max-width: 760px) {
+  #b .mhead { gap: 16px; padding: 14px 0 20px; }
+  #b .mhead img { width: 84px; height: 84px; border-radius: 16px; border-width: 3px; }
+  #b .day { width: 72px; }
+  #b .day b { font-size: 25px; }
+  #b .tools .wrap { flex-direction: column; align-items: stretch; gap: 10px; }
+  #b .tools .search { width: 100%; }
+}
+#b .groups { padding-top: 8px; padding-bottom: 80px; }
+#b .group { padding-top: 28px; }
+#b .group h2 { font-size: 26px; display: flex; align-items: baseline; gap: 10px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+#b .group h2 span { font-family: var(--text); font-size: 14px; color: var(--muted); }
+#b .rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+@media (max-width: 860px) { #b .rows { grid-template-columns: 1fr; } }
+#b .vrow { display: flex; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid #e2e0cf; cursor: pointer; }
+#b .vrow:hover h3 { color: var(--green); }
+#b .thumb { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: #fff; flex-shrink: 0; display: grid; place-items: center; }
+#b .thumb img { width: 80%; height: 80%; object-fit: contain; }
+#b .thumb.sign { font-family: var(--head); font-weight: 700; font-size: 26px; }
+#b .vrow h3 { font-size: 19px; font-weight: 700; line-height: 1.2; transition: color .12s; }
+#b .vrow p { margin: 2px 0 0; font-size: 13.5px; color: #55544b; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+#b .vrow .city { font-size: 13px; color: var(--muted); }
+#b .vrow .go { margin-left: auto; color: #b0ae9d; font-size: 18px; }
+
+/* ── C: Market guide ────────────────────────────────────────── */
+#c .masthead { border-bottom: 2px solid var(--ink); padding: 44px 0 22px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+#c .masthead h1 { font-size: clamp(36px, 5.4vw, 60px); line-height: 1; margin-top: 8px; }
+#c .masthead p { margin: 0; max-width: 360px; color: #494949; font-size: 14.5px; }
+#c .layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 44px; padding-top: 28px; padding-bottom: 80px; }
+#c aside { position: sticky; top: 61px; align-self: start; max-height: calc(100vh - 80px); overflow-y: auto; scrollbar-width: thin; padding-bottom: 16px; }
+#c aside h4 { font-family: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); margin: 24px 0 10px; }
+#c aside h4:first-of-type { margin-top: 18px; }
+#c .opt { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 5px 0; cursor: pointer; text-align: left; font-size: 14px; color: var(--body); }
+#c .opt img { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; }
+#c .opt .box { width: 18px; height: 18px; border: 1.5px solid #bdbbaa; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; }
+#c .opt[aria-pressed="true"] .box { background: var(--green); border-color: var(--green); }
+#c .opt[aria-pressed="true"] .box::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+#c .opt[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+#c .opt em { font-style: normal; margin-left: auto; font-size: 12px; color: #a3a194; }
+#c .opt.off { opacity: .45; }
+#c .alpha { position: sticky; top: 37px; z-index: 15; background: #fff; display: flex; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+#c .alpha a { flex: 1; min-width: 22px; text-align: center; font-family: var(--head); font-weight: 700; font-size: 15px; color: var(--ink); text-decoration: none; padding: 2px 0; border-radius: 6px; }
+#c .alpha a:hover { background: var(--cream); color: var(--green); }
+#c .alpha a.none { color: #d2d0c2; pointer-events: none; }
+#c .top { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 0 0 6px; }
+#c .top .search { flex: 1; max-width: 460px; }
+#c .top .search input { border-radius: 10px; padding-top: 10px; padding-bottom: 10px; font-size: 14px; }
+#c .filters-btn { display: none; }
+#c .letter { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; scroll-margin-top: 100px; }
+#c .letter > b { font-family: var(--head); font-weight: 700; font-size: 58px; line-height: 1; color: var(--green); padding-top: 18px; }
+#c .entry { display: grid; grid-template-columns: 76px minmax(0, 1fr) 96px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+#c .entry:hover h3 { text-decoration: underline; text-decoration-color: var(--green); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#c .entry .pic { width: 76px; height: 76px; border-radius: 12px; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; overflow: hidden; }
+#c .entry .pic img { width: 82%; height: 82%; object-fit: contain; }
+#c .entry .pic.sign { border: 0; font-family: var(--head); font-weight: 700; font-size: 30px; }
+#c .entry h3 { font-size: 23px; font-weight: 700; line-height: 1.12; }
+#c .entry .sub { font-size: 13px; color: var(--muted); margin: 4px 0 7px; }
+#c .entry .sub i { font-style: normal; color: var(--orange); font-weight: 600; }
+#c .entry p { margin: 0 0 10px; font-size: 14px; color: #44433b; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#c .cal { border: 1.5px solid var(--ink); border-radius: 12px; overflow: hidden; text-align: center; }
+#c .cal small { display: block; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 3px 0; }
+#c .cal b { display: block; font-family: var(--head); font-weight: 700; font-size: 32px; line-height: 1.1; padding-top: 4px; }
+#c .cal span { display: block; font-size: 12px; color: var(--muted); padding-bottom: 6px; }
+#c .cal.none { border-style: dashed; border-color: #c9c7b8; }
+#c .cal.none small { background: transparent; color: #a3a194; }
+#c .cal-label { font-size: 11px; color: var(--muted); text-align: center; margin-top: 5px; }
+@media (max-width: 900px) {
+  #c .masthead { flex-direction: column; align-items: flex-start; padding-top: 32px; }
+  #c .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 16px; }
+  #c .top .seg { display: none; }
+  #c aside { display: none; }
+  #c aside.open { display: block; position: static; max-height: none; background: var(--cream); border-radius: 14px; padding: 4px 18px 18px; margin-bottom: 16px; }
+  #c .filters-btn { display: inline-flex; }
+  #c .letter { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  #c .letter > b { font-size: 40px; padding-top: 22px; }
+  #c .entry { grid-template-columns: 60px minmax(0, 1fr); gap: 14px; }
+  #c .entry .pic { width: 60px; height: 60px; }
+  #c .entry h3 { font-size: 19px; }
+  #c .entry .when { grid-column: 2; display: flex; align-items: center; gap: 10px; }
+  #c .cal { display: flex; align-items: center; border-radius: 300px; }
+  #c .cal small { padding: 4px 10px; }
+  #c .cal b { font-size: 15px; padding: 0 0 0 10px; }
+  #c .cal span { padding: 0 12px 0 4px; font-size: 13px; color: var(--ink); }
+  #c .cal-label { margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="review">
+  <p>Directory design directions, using real Sunday Marin vendors. Categories are assigned by hand for the mockup.</p>
+  <nav>
+    <button data-go="a">A · Gallery</button>
+    <button data-go="b">B · Market day</button>
+    <button data-go="c">C · Market guide</button>
+  </nav>
+</div>
+
+<!-- ── A: Gallery ── -->
+<section id="a" class="direction">
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Agricultural Institute of Marin</div>
+      <h1>Meet the market</h1>
+      <p>Farms, food makers, and artisans at AIM farmers markets across the Bay Area.</p>
+    </header>
+    <div class="markets scroll-x" id="a-markets"></div>
+  </div>
+  <div class="bar">
+    <div class="wrap">
+      <div class="row1">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="a-q" placeholder="Search farms, food, products, or a city">
+        </div>
+        <div class="seg"><button aria-pressed="true">Grid</button><button aria-pressed="false">Map</button></div>
+      </div>
+      <div class="row2">
+        <div class="scroll-x" id="a-cats"></div>
+        <div class="accepts"><label>Accepts</label><button class="pill small" aria-pressed="false">EBT</button><button class="pill small" aria-pressed="false">WIC</button><button class="pill small" aria-pressed="false">SFMNB</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="count" id="a-count"></div>
+    <div class="grid" id="a-grid"></div>
+  </div>
+</section>
+
+<!-- ── B: Market day ── -->
+<section id="b" class="direction">
+  <div id="b-pick">
+    <div class="wrap">
+      <header class="intro">
+        <div class="eyebrow">Agricultural Institute of Marin</div>
+        <h1>Which market are you visiting?</h1>
+        <p>Pick a market to see who&rsquo;s there on the day you go.</p>
+      </header>
+      <div class="mgrid" id="b-markets"></div>
+      <div class="or">
+        <span>Or search all 456 participants</span>
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input placeholder="A farm, a product, or a city">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="b-market" hidden>
+    <div class="band" id="b-band">
+      <div class="wrap">
+        <button class="back" id="b-back">&larr; All markets</button>
+        <div class="mhead" id="b-head"></div>
+        <div class="days scroll-x" id="b-days"></div>
+      </div>
+    </div>
+    <div class="tools">
+      <div class="wrap">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="b-q" placeholder="Search this market">
+        </div>
+        <div class="scroll-x" id="b-cats"></div>
+      </div>
+    </div>
+    <div class="wrap groups" id="b-groups"></div>
+  </div>
+</section>
+
+<!-- ── C: Market guide ── -->
+<section id="c" class="direction">
+  <div class="wrap">
+    <header class="masthead">
+      <div>
+        <div class="eyebrow">Agricultural Institute of Marin</div>
+        <h1>Market Participant Directory</h1>
+      </div>
+      <p>Every farm, food maker, and artisan selling at AIM farmers markets, A to Z, with the next date you can find them.</p>
+    </header>
+    <div class="layout">
+      <aside id="c-side"></aside>
+      <main>
+        <div class="alpha" id="c-alpha"></div>
+        <div class="top" style="padding-top:16px">
+          <div class="search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="c-q" placeholder="Search by name, product, or city">
+          </div>
+          <button class="pill filters-btn" id="c-filters">Filters</button>
+          <div class="seg"><button aria-pressed="true">List</button><button aria-pressed="false">Map</button></div>
+        </div>
+        <div id="c-list"></div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<script>
+const VENDORS = [{"id": 369163, "name": "Bakery 6", "city": "San Anselmo, CA", "desc": "Bakery 6 is 100% vegan and an award winning cottage home bakery that makes super yummy vegan cookies using the finest local ingredients. Based in Marin County, Bakery 6's seasonal cookie won the Vegan Chef Challenge in Marin 2025 for Best Comfort Food.", "photo": "", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-08", "2026-11-22", "2026-12-06", "2026-12-20"]}, "cat": "prepacked"}, {"id": 343087, "name": "Balakian Farms", "city": "Reedley, CA", "desc": "We are a fourth generation family farm. Our farm is about the people who work together as a family farm to bring the best organic produce we have to offer the consumer. Farming is our way of life. It's the way we live.", "photo": "", "markets": [7776, 7786], "next": null, "nextISO": null, "dates": {"7776": [], "7786": []}, "cat": "certified"}, {"id": 17785, "name": "Barbagelata Farms", "city": "Linden, CA", "desc": "We are a small family farm that grows a diversified selection of vegetables, fruit and walnut trees. We are located in the rural town of Linden, CA which is in San Joaquin County. Our goal is to grow fresh, healthy and tasty produce and deliver to your table a", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/17785_120420250450.jpg", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-12-06"]}, "cat": "certified"}, {"id": 203888, "name": "Bini's Kitchen", "city": "San Francisco, CA", "desc": "Binita Pradhan, the owner and chef of Bini’s Kitchen is a native of Kathmandu, Nepal. She is an Executive Chef by training and graduated with a Bachelor’s Degree in Hotel Management Catering. She brings years of experience working in the Nepali Food Industry a", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/203888_071720244153.jpg", "markets": [7776, 7783], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7783": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7776": ["2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29", "2026-12-06"]}, "cat": "tff"}, {"id": 322983, "name": "Bodega Trading Company", "city": "Alameda, CA", "desc": "Aaron Andrews, founder of Bodega Trading Co., believes home cooking should not be difficult, time-consuming or flavorless. After closing the doors of his restaurant Tapas Bar La Bodega, following a successful two decades, he has dedicated the next chapter to h", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/322983_061620244906.png", "markets": [7776], "next": "Sun, Nov 1", "nextISO": "2026-11-01", "dates": {"7776": ["2026-11-01", "2026-11-15", "2026-12-13"]}, "cat": "prepacked"}, {"id": 250973, "name": "Canteen Meats", "city": "Petaluma, CA", "desc": "We butcher, salt-cure, age, and package everything we sell in our cdfa inspected facility in San Rafael, CA with our small production team of four people.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/250973_111020221134.png", "markets": [7776, 7782, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7782": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "livestock"}, {"id": 211777, "name": "Chantelle's Granola", "city": "Muir Beach, CA", "desc": "Chantelle's Granola is a small family-owned business started in 2015 by Sally Li, Bryan Cheng and Chantelle Cheng. It all began in 2013 when Sally visited her daughter Chantelle in Santa Barbara, California. Chantelle, who is a nutritional chef, treated her to", "photo": "", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "prepacked"}, {"id": 247813, "name": "CMG Woodwork", "city": "San Francisco, CA", "desc": "Handmade exotic hardwood bowls, lidded boxes, rolling pins, clocks, coasters, bottle stoppers, charcuterie and cutting boards, holiday decor. We accept Venmo and credit cards through Square.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/247813_030920263338.jpeg", "markets": [7776, 7783], "next": "Sun, Dec 6", "nextISO": "2026-12-06", "dates": {"7783": ["2026-12-06", "2026-12-13"], "7776": []}, "cat": "artisan"}, {"id": 194814, "name": "Crane Creek Growers", "city": "Penngrove, CA", "desc": "We are a year-round cut flower farm at the base of Sonoma Mountain in Penngrove. Farmer Tom Turner has been growing flowers for 40 years, in the San Diego area and Sonoma County since 2008. We grow a host of cut flowers including dahlias, lilies, ranunculus, p", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/194814_070120204722.jpg", "markets": [7776, 7782, 7785, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7782": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7785": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "certified"}, {"id": 331872, "name": "CTK Empanadas", "city": "Livermore, CA", "desc": "We make warm, homemade-style empanadas inspired by my Peruvian roots. Each one is filled with flavorful ingredients and wrapped in our light, flaky dough that keeps people coming back for more. We offer a wide variety of options, including savory, sweet, veget", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/331872_091920244455.png", "markets": [7776, 7784], "next": "Sat, Oct 24", "nextISO": "2026-10-24", "dates": {"7784": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22"]}, "cat": "tff"}, {"id": 387547, "name": "Dirt Dog Farm", "city": "Petaluma, CA", "desc": "Dirt Dog Farm is a small-scale flower and herb farm that brings thoughtfully grown, seasonal products directly to market. We specialize in fresh cut flowers — offered as single-variety bunches and mixed bouquets — and small-batch dried medicinal herbs for tea.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/387547_021120263224.jpg", "markets": [7776, 7803], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7803": [], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "certified"}, {"id": 333752, "name": "Five of a Kind Brass Quintet", "city": "Hayward, CA", "desc": "Five of a Kind is a Brass Quintet made up of five Bay Area brass musicians. Sean and David play trumpet, Justin plays french horn, Jordan plays trombone, and Francis plays tuba.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/333752_101420241459.jpg", "markets": [7776, 7783, 7785], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7785": [], "7783": [], "7776": ["2026-10-25"]}, "cat": "entertainer"}, {"id": 200640, "name": "Kashiwase Farms", "city": "Winton, CA", "desc": "Grower of organic stonefruit, pears and almonds. Focus on farmers markets Selling tree ripe and the best varieties we can find to grow.", "photo": "", "markets": [7776, 7782, 7783, 7785, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7782": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15"], "7785": ["2026-11-07", "2026-11-14"], "7783": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19"]}, "cat": "certified"}, {"id": 351059, "name": "Land + Local", "city": "Healdsburg, CA", "desc": "Land + Local is a small, women-run business led by chef + herbalist Kim LaVere, based in Sonoma County. Our line of seasonal shrubs, syrups, and botanical pantry products feature the freshest local and organically grown ingredients (sourced straight from the f", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/351059_033020255508.jpg", "markets": [7776, 7786], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": []}, "cat": "prepacked"}, {"id": 336428, "name": "Mami's Crunch", "city": "Novato, CA", "desc": "With a focus on health and ecology, Mami's Crunch has the tastiest snacks enjoyed by all ages. The ready-to-enjoy delicious salads, dips, and crackers will not only taste good but change the way you look at snacking.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/336428_071320254040.jpeg", "markets": [7776, 7786, 7803], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7803": [], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "prepacked"}, {"id": 336442, "name": "Min-Hee Hill Gardens", "city": "Santa Rosa, CA", "desc": "We are located in beautiful Sonoma wine country in Sata Rosa. We grow most of vegetables and some fruit to process authentic Kimchi, fresh Pickles, Sauerkraut, Pepper sauces, and Sandwiches.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/336442_061520263727.jpg", "markets": [7776, 7783, 7785], "next": "Sat, Oct 24", "nextISO": "2026-10-24", "dates": {"7785": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7783": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "certified"}, {"id": 338610, "name": "Neve Bros", "city": "Petaluma, CA", "desc": "We are a 3rd generation, family owned and operated cut flower nursery. We specialize in roses, gerber daisies, dahlias, and all types of seasonal flowers. All our product is grown in Sonoma County !", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/338610_122320241201.png", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "certified"}, {"id": 258433, "name": "Nicco Tyson", "city": "Oakland, CA", "desc": "A refreshing and exciting blend of West African, Cuban, Brazilian, Classical, Pop, Folk and Blues music on Guitar, Voice and Harmonica.", "photo": "", "markets": [7776, 7781, 7782, 7784, 7785], "next": "Sun, Nov 8", "nextISO": "2026-11-08", "dates": {"7782": [], "7785": ["2026-11-21"], "7784": [], "7781": ["2026-11-08", "2026-11-29"], "7776": ["2026-12-13"]}, "cat": "entertainer"}, {"id": 347716, "name": "Niko Vassallo Music", "city": "Oakland, CA", "desc": "Niko Vassallo is a guitarist, vocalist, performing and recording musician and artist who loves to improvise and create in the moment", "photo": "", "markets": [7776, 7784, 7785, 7786, 7803], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7785": ["2026-12-12", "2026-12-26"], "7784": [], "7803": [], "7776": [], "7786": ["2026-10-22"]}, "cat": "entertainer"}, {"id": 334882, "name": "No Peach Flameworks", "city": "Sebastopol, CA", "desc": "No Peach Flameworks offers hand crafted carved and boldly painted ceramic wares. \"Not Your basic brown pots!\" All pieces are one of a kind, designed by Sonoma County local artist Kelly Scholes. Known for bringing bold and bright colors and designs with a humor", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/334882_102920245142.png", "markets": [7776, 7783, 7785, 7786], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7785": ["2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28", "2026-12-26"], "7783": ["2026-10-25", "2026-11-15", "2026-11-29", "2026-12-27"], "7776": ["2026-12-27"], "7786": ["2026-11-05", "2026-11-12", "2026-11-19", "2026-12-03", "2026-12-17", "2026-12-24"]}, "cat": "artisan"}, {"id": 336455, "name": "Norse Legend Mead", "city": "Whitethorn, CA", "desc": "At Norse Legend Mead we make a quality crafted honey mead. Using honey from our farm, spring water and yeast we create these exceptional and unique alcoholic beverages.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/336455_123020245958.jpg", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "prepacked"}, {"id": 379336, "name": "Nova Terra Plant Based Kitchen", "city": "Cotati, CA", "desc": "NOVA TERRA PLANT BASED KITCHEN + CREAMERY | NAPA VALLEY We believe in the power of food to nurture, inspire, and connect. Our commitment to sustainability and the use of thoughtfully sourced local and organic ingredients ensures that every offering provides a ", "photo": "", "markets": [7776], "next": "Sun, Nov 1", "nextISO": "2026-11-01", "dates": {"7776": ["2026-11-01", "2026-11-15", "2026-11-29", "2026-12-13", "2026-12-27"]}, "cat": "tff"}, {"id": 336142, "name": "Pasture 42", "city": "Guinda, CA", "desc": "We are a family farm dedicated to regenerative farming practices. We rotationally graze livestock on pasture and in our orchards. We sell directly to consumers who care about local food.", "photo": "", "markets": [7776, 7782, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7782": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "livestock"}, {"id": 197719, "name": "ROTI", "city": "Hayward, CA", "desc": "Malik Brothers LLC DBA ROTI is an authentic Pakistani Gourmet food. We try to buy our vegetables from farmers markets to give our customers healthy and fresh food. We get very good response of our products in farmers market and now we are doing 35 farmers mark", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/197719_091820201453.pdf", "markets": [7776], "next": "Sun, Oct 25", "nextISO": "2026-10-25", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"]}, "cat": "tff"}, {"id": 70679, "name": "Shoup Farms", "city": "Murietta, CA", "desc": "We grow outstanding California Hass, Zutano, GEM and Reed avocados mostly in Riverside counties. Our season ranges from early January through late September/early October. We sell our avocados at farmers markets as well as a small amount through the wholesale ", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/70679_062320253341.jpeg", "markets": [7776, 7782, 7783, 7785, 7786], "next": "Sun, Nov 8", "nextISO": "2026-11-08", "dates": {"7782": [], "7785": [], "7783": [], "7776": ["2026-11-08"], "7786": []}, "cat": "certified"}, {"id": 362886, "name": "Solano Mushroom", "city": "Vacaville, CA", "desc": "At Solano Mushroom, our journey began with a deep commitment to nature and wellness. On our family-owned farm, we’ve dedicated ourselves to growing organic mushrooms with care and respect for the earth. Each mushroom is hand-harvested at peak potency to ensure", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/362886_121520250642.png", "markets": [7776, 7785, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7785": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "certified"}, {"id": 278484, "name": "Straus Family Creamery", "city": "Petaluma, CA", "desc": "Albert Straus launched Straus Family Creamery in 1994 with a deep commitment to supporting a dairy farming system that is both environmentally friendly and economically viable. He envisioned a system that would help family farms thrive and support the revitali", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/278484_052220235353.jpg", "markets": [7776, 7786], "next": "Thu, Oct 22", "nextISO": "2026-10-22", "dates": {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"]}, "cat": "dairy"}, {"id": 377052, "name": "SuetCo", "city": "San Francisco, CA", "desc": "SuetCo is a 100% grass-fed beef tallow business, focused on producing a high-quality cooking ingredient using the highest quality California Beef. SuetCo's mission is to have cooking oil have the same amount of care and integrity as the products sold in farmer", "photo": "", "markets": [7776], "next": "Sun, Nov 1", "nextISO": "2026-11-01", "dates": {"7776": ["2026-11-01", "2026-11-15", "2026-11-29", "2026-12-13", "2026-12-27"]}, "cat": "prepacked"}, {"id": 339521, "name": "Three Plumes", "city": "Oakland, CA", "desc": "Three Plumes is a ceramics studio in Oakland, California specializing in heirloom quality housewares. We are dedicated to the exploration of color, texture, and form, using ceramic materials to create beautiful and functional wares for your home.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/339521_010520251300.png", "markets": [7776], "next": "Sun, Nov 8", "nextISO": "2026-11-08", "dates": {"7776": ["2026-11-08", "2026-11-15", "2026-12-06", "2026-12-13"]}, "cat": "artisan"}, {"id": 143246, "name": "Tonic", "city": "Pinole, CA", "desc": "We handcraft naturally decadent soaps and lotions from ingredients that are good for the skin and the earth. Our recipes are inspired and informed by the beauty and bounty surrounding our Northern California studio.", "photo": "https://s3-us-west-2.amazonaws.com/managemymarket.com/vendorfiles/143246.jpg", "markets": [7776, 7783], "next": "Sun, Nov 8", "nextISO": "2026-11-08", "dates": {"7783": ["2026-11-08", "2026-11-22", "2026-12-20"], "7776": []}, "cat": "artisan"}];
+const MARKET_DAYS = {"7776": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7781": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7782": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7783": ["2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], "7784": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7785": ["2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"], "7786": ["2026-10-22", "2026-10-29", "2026-11-05", "2026-11-12", "2026-11-19", "2026-11-25"], "7803": [], "8211": []};
+
+const LOGO = "https://images.squarespace-cdn.com/content/v1/5fd7b5e8b59b81291926f482";
+const MARKETS = {
+  7782: { name: "Clement St.", day: "Sundays", city: "San Francisco", count: 112, tint: "#eef07c", logo: LOGO + "/4b2c106f-4eda-4004-b832-a213b950eccd/clement.logo_on_yellow.jpg" },
+  7785: { name: "Grand Lake", day: "Saturdays", city: "Oakland", count: 164, tint: "#d7efcf", logo: LOGO + "/1607976402789-E45K4WYYS5OCMOE24XG4/grandlake.logo_on_green.jpg" },
+  7784: { name: "Hayward", day: "Saturdays", city: "Hayward", count: 81, tint: "#f7d6c9", logo: LOGO + "/9f0695f7-5bbf-497a-afec-e04e45870cda/hayward.logo_on_pink.jpg" },
+  7781: { name: "Newark", day: "Sundays", city: "Newark", count: 67, tint: "#f6c294", logo: LOGO + "/1607976531072-1VE3CAJJSAIRAFFE65Z7/newark.logo_on_peach.jpg" },
+  7803: { name: "Point Reyes", day: "Saturdays, seasonal", city: "Point Reyes Station", count: 39, tint: "#d3d1f0", logo: LOGO + "/040d3d2e-68cb-4196-be5e-b06e6090b108/pointreyes.logo_on_blue.jpg", off: true },
+  8211: { name: "San Rafael Summer", day: "Thursday evenings, seasonal", city: "San Rafael", count: 20, tint: "#c6e6ef", logo: LOGO + "/1607976583988-S19RDA6H1M7KI7F2WBGB/sanrafael.logo_on_blue.jpg", off: true },
+  7783: { name: "Stonestown", day: "Sundays", city: "San Francisco", count: 128, tint: "#cfeedd", logo: LOGO + "/1607976598459-TZZWCTC8QDCHJ7AS6L7T/stonestown.logo_on_green.jpg" },
+  7776: { name: "Sunday Marin", day: "Sundays", city: "San Rafael", count: 238, tint: "#f4ee6a", logo: LOGO + "/10074cb7-fd6e-4c7c-8629-4fb8a71fa9ea/marin.logo_on_yellow.jpg" },
+  7786: { name: "Thursday Marin", day: "Thursdays", city: "San Rafael", count: 138, tint: "#f4ee6a", logo: LOGO + "/10074cb7-fd6e-4c7c-8629-4fb8a71fa9ea/marin.logo_on_yellow.jpg" },
+};
+const ORDER = [7782, 7785, 7784, 7781, 7783, 7776, 7786, 7803, 8211];
+const CATS = {
+  certified: "Farms and produce", livestock: "Meat and poultry", dairy: "Dairy", tff: "Prepared food",
+  prepacked: "Packaged foods", artisan: "Artisans and crafts", entertainer: "Music and entertainment",
+};
+const CAT_ORDER = ["certified", "livestock", "dairy", "tff", "prepacked", "artisan", "entertainer"];
+// Tile colors for participants with no image, one per category.
+const SIGN = {
+  certified: ["#dcefd6", "#0d8240"], livestock: ["#f6dccf", "#a3401d"], dairy: ["#e3edf6", "#2f6690"],
+  tff: ["#fde7cf", "#c25e12"], prepacked: ["#f3ecd0", "#7a6414"], artisan: ["#ece3f3", "#6a4592"],
+  entertainer: ["#fbe0e6", "#b23358"],
+};
+const TODAY = new Date(2026, 9, 22);
+// Some MMM uploads are PDFs; those count as no image.
+for (const v of VENDORS) if (!/\.(jpe?g|png|gif|webp)$/i.test(v.photo)) v.photo = "";
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const parse = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+const fmt = (d, o) => d.toLocaleDateString("en-US", o);
+const initials = (n) => n.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
+function nextDate(v, mid) {
+  const all = Object.entries(v.dates).filter(([k]) => !mid || Number(k) === mid).flatMap(([, ds]) => ds).map(parse).filter((d) => d >= TODAY);
+  all.sort((a, b) => a - b);
+  return all[0] || null;
+}
+function marks(v, max = 5) {
+  const seen = new Set(), out = [];
+  for (const id of ORDER) if (v.markets.includes(id) && MARKETS[id] && !seen.has(MARKETS[id].logo)) { seen.add(MARKETS[id].logo); out.push(MARKETS[id]); }
+  const shown = out.slice(0, max).map((m) => `<img src="${m.logo}" alt="" title="${esc(m.name)}">`).join("");
+  return `<div class="marks">${shown}${out.length > max ? `<span>+${out.length - max}</span>` : ""}</div>`;
+}
+function matches(v, q) {
+  q = q.trim().toLowerCase();
+  return !q || v.name.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q) || v.city.toLowerCase().includes(q);
+}
+function catPills(el, state, key, render, counts) {
+  const ids = ["", ...CAT_ORDER];
+  el.innerHTML = ids.map((id) => `<button class="pill" data-cat="${id}" aria-pressed="${state[key] === id}">${id ? CATS[id] : "Everything"}${counts && id ? ` <span style="opacity:.6">${counts[id] || 0}</span>` : ""}</button>`).join("");
+  el.onclick = (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; state[key] = b.dataset.cat; render(); };
+}
+
+/* ── A ── */
+const A = { market: 0, cat: "", q: "" };
+function renderA() {
+  const mk = document.getElementById("a-markets");
+  mk.classList.toggle("picked", !!A.market);
+  mk.innerHTML = `<button class="mk all" data-m="0" aria-pressed="${!A.market}"><div class="logo">All</div><b>All markets</b><small>456 vendors</small></button>` +
+    ORDER.map((id) => { const m = MARKETS[id]; return `<button class="mk" data-m="${id}" aria-pressed="${A.market === id}"><div class="logo"><img src="${m.logo}" alt=""></div><b>${esc(m.name)}</b><small>${m.count} vendors</small></button>`; }).join("");
+  mk.onclick = (e) => { const b = e.target.closest("[data-m]"); if (!b) return; A.market = Number(b.dataset.m) === A.market ? 0 : Number(b.dataset.m); renderA(); };
+  catPills(document.getElementById("a-cats"), A, "cat", renderA);
+  const list = VENDORS.filter((v) => (!A.market || v.markets.includes(A.market)) && (!A.cat || v.cat === A.cat) && matches(v, A.q));
+  document.getElementById("a-count").innerHTML = `<span><b>${list.length}</b> of 456 market participants${A.market ? ` at ${esc(MARKETS[A.market].name)}` : ""}</span><span>A to Z</span>`;
+  document.getElementById("a-grid").innerHTML = list.map((v) => {
+    const n = nextDate(v, A.market);
+    const [bg, fg] = SIGN[v.cat];
+    const len = v.name.length;
+    const img = v.photo
+      ? `<div class="img"><img src="${esc(v.photo)}" alt="" loading="lazy"></div>`
+      : `<div class="img sign" style="background:${bg};color:${fg};font-size:clamp(18px, ${len > 18 ? 2.1 : 2.8}vw, ${len > 18 ? 28 : 38}px)">${esc(v.name)}</div>`;
+    return `<article class="card">${img}<div class="cat">${CATS[v.cat]}</div><h3>${esc(v.name)}</h3>
+      <div class="meta">${esc(v.city.replace(/, CA$/, ""))} · ${n ? `<span class="date">${fmt(n, { weekday: "short", month: "short", day: "numeric" })}</span>` : `<span class="tbd">Dates TBD</span>`}</div>${marks(v, 4)}</article>`;
+  }).join("");
+}
+document.getElementById("a-q").oninput = (e) => { A.q = e.target.value; renderA(); };
+
+/* ── B ── */
+const B = { market: 0, day: "", cat: "", q: "" };
+const marketDays = (id) => MARKET_DAYS[id] || [];
+function renderB() {
+  const pick = document.getElementById("b-pick"), mv = document.getElementById("b-market");
+  pick.hidden = !!B.market; mv.hidden = !B.market;
+  if (!B.market) {
+    const el = document.getElementById("b-markets");
+    el.innerHTML = ORDER.map((id) => {
+      const m = MARKETS[id];
+      const days = marketDays(id);
+      const next = days[0] ? parse(days[0]) : null;
+      const isToday = next && next.getTime() === TODAY.getTime();
+      return `<button class="mcard${m.off ? " off" : ""}" data-m="${id}" ${m.off ? "disabled" : ""}>
+        <img src="${m.logo}" alt=""><div><h3>${esc(m.name)}</h3><div class="when">${m.day} · ${esc(m.city)}</div>
+        <div class="next">${m.off ? `<span class="tbd">Back next season</span>` : `<span class="date">${isToday ? "Today" : "Next: " + fmt(next, { weekday: "short", month: "short", day: "numeric" })}</span> <span style="color:var(--muted)">· ${m.count} vendors</span>`}</div></div>
+        ${m.off ? "" : `<span class="arrow">&rarr;</span>`}</button>`;
+    }).join("");
+    el.onclick = (e) => { const b = e.target.closest("[data-m]"); if (!b || b.disabled) return; B.market = Number(b.dataset.m); B.day = marketDays(B.market)[0] || ""; B.cat = ""; B.q = ""; renderB(); window.scrollTo(0, 0); };
+    return;
+  }
+  const m = MARKETS[B.market];
+  document.getElementById("b-band").style.background = m.tint;
+  document.getElementById("b-head").innerHTML = `<img src="${m.logo}" alt=""><div><div class="eyebrow" style="color:#000">${m.day} · ${esc(m.city)}</div><h1>${esc(m.name)} Farmers Market</h1><p>${m.count} market participants this season</p></div>`;
+  const days = marketDays(B.market);
+  const dEl = document.getElementById("b-days");
+  dEl.innerHTML = days.map((iso, i) => { const d = parse(iso); const label = d.getTime() === TODAY.getTime() ? "Today" : i === 0 ? "Next" : fmt(d, { weekday: "short" });
+    return `<button class="day" data-d="${iso}" aria-pressed="${B.day === iso}"><small>${label}</small><b>${d.getDate()}</b><span>${fmt(d, { month: "short" })}</span></button>`; }).join("");
+  dEl.onclick = (e) => { const b = e.target.closest("[data-d]"); if (!b) return; B.day = b.dataset.d; renderB(); };
+  const base = VENDORS.filter((v) => (v.dates[B.market] || []).includes(B.day) && matches(v, B.q));
+  const counts = {}; for (const v of base) counts[v.cat] = (counts[v.cat] || 0) + 1;
+  catPills(document.getElementById("b-cats"), B, "cat", renderB, counts);
+  const list = base.filter((v) => !B.cat || v.cat === B.cat);
+  const groups = CAT_ORDER.map((c) => [c, list.filter((v) => v.cat === c)]).filter(([, vs]) => vs.length);
+  document.getElementById("b-groups").innerHTML = groups.length ? groups.map(([c, vs]) => `<section class="group"><h2>${CATS[c]} <span>${vs.length}</span></h2><div class="rows">${vs.map((v) => {
+    const [bg, fg] = SIGN[v.cat];
+    const th = v.photo ? `<div class="thumb"><img src="${esc(v.photo)}" alt="" loading="lazy"></div>` : `<div class="thumb sign" style="background:${bg};color:${fg}">${initials(v.name)}</div>`;
+    return `<div class="vrow">${th}<div style="min-width:0"><h3>${esc(v.name)}</h3><div class="city">${esc(v.city)}</div><p>${esc(v.desc)}</p></div><span class="go">&rsaquo;</span></div>`;
+  }).join("")}</div></section>`).join("") : `<p style="padding:60px 0;text-align:center;color:var(--muted)">No one in the sample is listed for this date.</p>`;
+}
+document.getElementById("b-back").onclick = () => { B.market = 0; renderB(); window.scrollTo(0, 0); };
+document.getElementById("b-q").oninput = (e) => { B.q = e.target.value; renderB(); };
+
+/* ── C ── */
+const C = { markets: new Set(), cats: new Set(), q: "" };
+function renderC() {
+  const side = document.getElementById("c-side");
+  const opt = (kind, id, label, img, n) => `<button class="opt" data-k="${kind}" data-id="${id}" aria-pressed="${C[kind].has(id)}">${img ? `<img src="${img}" alt="">` : `<span class="box"></span>`}<span>${label}</span>${n != null ? `<em>${n}</em>` : ""}</button>`;
+  side.innerHTML = `<h4>Market</h4>${ORDER.map((id) => opt("markets", id, esc(MARKETS[id].name) + (MARKETS[id].off ? ` <span style="color:#a3a194;font-size:12px">· seasonal</span>` : ""), MARKETS[id].logo, MARKETS[id].count)).join("")}
+    <h4>What they sell</h4>${CAT_ORDER.map((c) => opt("cats", c, CATS[c], null, VENDORS.filter((v) => v.cat === c).length)).join("")}
+    <h4>Accepts</h4>${["EBT", "WIC", "SFMNB"].map((p) => `<button class="opt"><span class="box"></span><span>${p}</span></button>`).join("")}`;
+  side.querySelectorAll(".opt[data-k=markets]").forEach((b) => { if (C.markets.size && !C.markets.has(Number(b.dataset.id))) b.classList.add("off"); });
+  side.onclick = (e) => { const b = e.target.closest("[data-k]"); if (!b) return; const k = b.dataset.k; const id = k === "markets" ? Number(b.dataset.id) : b.dataset.id; C[k].has(id) ? C[k].delete(id) : C[k].add(id); renderC(); };
+  const list = VENDORS.filter((v) => (!C.markets.size || v.markets.some((m) => C.markets.has(m))) && (!C.cats.size || C.cats.has(v.cat)) && matches(v, C.q));
+  const byL = {};
+  for (const v of list) { const L = /[A-Z]/i.test(v.name[0]) ? v.name[0].toUpperCase() : "#"; (byL[L] = byL[L] || []).push(v); }
+  document.getElementById("c-alpha").innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => `<a href="#c-${L}" class="${byL[L] ? "" : "none"}">${L}</a>`).join("");
+  const mid = C.markets.size === 1 ? [...C.markets][0] : 0;
+  document.getElementById("c-list").innerHTML = Object.keys(byL).sort().map((L) => `<div class="letter" id="c-${L}"><b>${L}</b><div>${byL[L].map((v) => {
+    const n = nextDate(v, mid);
+    const [bg, fg] = SIGN[v.cat];
+    const pic = v.photo ? `<div class="pic"><img src="${esc(v.photo)}" alt="" loading="lazy"></div>` : `<div class="pic sign" style="background:${bg};color:${fg}">${initials(v.name)}</div>`;
+    const cal = n
+      ? `<div class="cal"><small>${fmt(n, { weekday: "short" })}</small><b>${n.getDate()}</b><span>${fmt(n, { month: "short" })}</span></div><div class="cal-label">Next market</div>`
+      : `<div class="cal none"><small>Dates</small><b style="color:#c9c7b8">&mdash;</b><span>TBD</span></div>`;
+    return `<article class="entry">${pic}<div style="min-width:0"><h3>${esc(v.name)}</h3><div class="sub"><i>${CATS[v.cat]}</i> · ${esc(v.city)}</div><p>${esc(v.desc)}</p>${marks(v, 6)}</div><div class="when">${cal}</div></article>`;
+  }).join("")}</div></div>`).join("") || `<p style="padding:60px 0;text-align:center;color:var(--muted)">No market participants match.</p>`;
+}
+document.getElementById("c-q").oninput = (e) => { C.q = e.target.value; renderC(); };
+document.getElementById("c-filters").onclick = () => document.getElementById("c-side").classList.toggle("open");
+
+/* ── Switcher ── */
+function show(id) {
+  document.querySelectorAll(".direction").forEach((s) => s.classList.toggle("on", s.id === id));
+  document.querySelectorAll("[data-go]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.go === id));
+  try { history.replaceState(null, "", "#" + id); } catch {}
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => show(b.dataset.go)));
+renderA(); renderB(); renderC();
+show(["a", "b", "c"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "a");
+</script>
+</body>
+</html>
