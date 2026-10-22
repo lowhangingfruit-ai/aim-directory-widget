@@ -1,6 +1,7 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
 import { PaymentMap } from "@/lib/payments";
+import { CategoryMap } from "@/lib/categories";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -36,6 +37,7 @@ export default async function Page({
   // Filled from the intake Sheet once it's connected. Empty means no payment
   // badges or filter are shown.
   const payments: PaymentMap = {};
+  const categories: CategoryMap = {};
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
@@ -97,8 +99,8 @@ export default async function Page({
               <p style={{ margin: 0 }}>
                 <strong>What&rsquo;s new.</strong>{" "}This directory replaces our previous vendor list.
                 It adds each vendor&rsquo;s next market date, filters by market and date, and a map
-                of where vendors are based. We&rsquo;ll also add the payment types each booth
-                accepts, such as EBT and WIC, as vendors share them with us.
+                of where vendors are based. We&rsquo;ll also add each vendor&rsquo;s category and the
+                payment types each booth accepts, such as EBT and WIC, as vendors share them with us.
               </p>
               <p style={{ margin: 0 }}>
                 <strong>Why.</strong>{" "}Shoppers and market managers asked for an easier way to plan a
@@ -125,6 +127,7 @@ export default async function Page({
           marketName={marketName}
           allMarkets={MARKETS}
           payments={payments}
+          categories={categories}
         />
       </div>
     </div>

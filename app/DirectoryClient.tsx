@@ -4,7 +4,9 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Vendor, VendorMarket } from "@/lib/types";
-import type { PaymentID } from "@/lib/intake";
+import type { CategoryID, PaymentID, ProductID } from "@/lib/intake";
+import { CATEGORY_OPTIONS } from "@/lib/intake";
+import { CATEGORY_LABELS, CategoryMap, PRODUCT_LABELS, productsFor } from "@/lib/categories";
 import { BENEFIT_IDS, PAYMENT_LABELS, PAYMENT_SHORT, PaymentMap } from "@/lib/payments";
 
 const VendorMap = dynamic(() => import("./VendorMap"), { ssr: false });
@@ -15,6 +17,7 @@ interface Props {
   marketName?: string;
   allMarkets: Record<number, string>;
   payments: PaymentMap;
+  categories: CategoryMap;
 }
 
 const TODAY = new Date();
@@ -215,11 +218,13 @@ function FadeRow({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function DirectoryClient({ vendors, marketID, allMarkets, payments }: Props) {
+export default function DirectoryClient({ vendors, marketID, allMarkets, payments, categories }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [paymentFilter, setPaymentFilter] = useState<Set<PaymentID>>(new Set());
+  const [categoryFilter, setCategoryFilter] = useState<CategoryID | null>(null);
+  const [productFilter, setProductFilter] = useState<Set<ProductID>>(new Set());
   const [openID, setOpenID] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -228,6 +233,8 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
   const { cols, px, narrow, logoSize } = useLayout();
 
   const hasPayments = Object.keys(payments).length > 0;
+  const hasCategories = Object.keys(categories).length > 0;
+  const categoryProducts = categoryFilter ? productsFor(categoryFilter) : [];
   const openVendor = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
 
   useEffect(() => {
@@ -285,6 +292,13 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
         })
       );
     }
+    if (categoryFilter) {
+      list = list.filter((v) => categories[v.vendorID]?.categories.includes(categoryFilter));
+    }
+    // Within a category, a booth matches if it sells any of the chosen products.
+    if (productFilter.size > 0) {
+      list = list.filter((v) => (categories[v.vendorID]?.products ?? []).some((p) => productFilter.has(p)));
+    }
     // A booth matches if it takes any of the chosen payment types.
     if (paymentFilter.size > 0) {
       list = list.filter((v) => (payments[v.vendorID] ?? []).some((p) => paymentFilter.has(p)));
@@ -300,7 +314,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
     }
 
     return list;
-  }, [vendors, selectedMarket, search, selectedDate, paymentFilter, payments]);
+  }, [vendors, selectedMarket, search, selectedDate, paymentFilter, payments, categoryFilter, productFilter, categories]);
 
   // Alphabetical, with names starting in a digit after Z. One continuous grid,
   // so rows never break where the letter changes.
@@ -316,6 +330,20 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
     setSearch("");
   };
 
+  const selectCategory = (id: CategoryID) => {
+    setCategoryFilter((prev) => (prev === id ? null : id));
+    setProductFilter(new Set());
+  };
+
+  const toggleProduct = (id: ProductID) => {
+    setProductFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const togglePayment = (id: PaymentID) => {
     setPaymentFilter((prev) => {
       const next = new Set(prev);
@@ -325,7 +353,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
     });
   };
 
-  const hasActiveFilter = !!(selectedDate || search || paymentFilter.size > 0);
+  const hasActiveFilter = !!(selectedDate || search || paymentFilter.size > 0 || categoryFilter);
 
   return (
     <div id="aim-directory-root" style={{ fontFamily: "var(--font-body)", position: "relative" }}>
@@ -454,6 +482,24 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
           )}
         </div>
 
+        {/* Category filter, with product follow-ups for the two broad categories */}
+        {hasCategories && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, overflowX: "auto", scrollbarWidth: "none" }}>
+            <span style={{ fontSize: 13, color: "#555", marginRight: 4, whiteSpace: "nowrap" }}>Category</span>
+            {CATEGORY_OPTIONS.map((c) => (
+              <FilterPill key={c.id} label={c.label} active={categoryFilter === c.id} onClick={() => selectCategory(c.id)} />
+            ))}
+          </div>
+        )}
+        {hasCategories && categoryProducts.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, overflowX: "auto", scrollbarWidth: "none" }}>
+            <span style={{ fontSize: 13, color: "#555", marginRight: 4, whiteSpace: "nowrap" }}>Sells</span>
+            {categoryProducts.map((p) => (
+              <FilterPill key={p.id} label={p.label} active={productFilter.has(p.id)} onClick={() => toggleProduct(p.id)} />
+            ))}
+          </div>
+        )}
+
         {/* Payment filter */}
         {hasPayments && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, overflowX: "auto", scrollbarWidth: "none" }}>
@@ -475,12 +521,14 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
             {" "}{filtered.length === 1 ? "market participant" : "market participants"}
             {selectedMarket && !selectedDate && ` at ${allMarkets[selectedMarket]}`}
             {selectedDate && ` attending ${selectedDate}`}
+            {categoryFilter && ` in ${CATEGORY_LABELS[categoryFilter]}`}
+            {productFilter.size > 0 && ` selling ${[...productFilter].map((p) => PRODUCT_LABELS[p].toLowerCase()).join(" or ")}`}
             {paymentFilter.size > 0 && ` accepting ${[...paymentFilter].map((p) => PAYMENT_SHORT[p]).join(" or ")}`}
             {search ? ` matching "${search}"` : ""}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {hasActiveFilter && (
-              <button onClick={() => { setSelectedDate(null); setSearch(""); setPaymentFilter(new Set()); }}
+              <button onClick={() => { setSelectedDate(null); setSearch(""); setPaymentFilter(new Set()); setCategoryFilter(null); setProductFilter(new Set()); }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#0d8240", fontSize: 12, padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}>
                 Clear filters
               </button>
@@ -545,6 +593,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
           selectedMarket={selectedMarket}
           allMarkets={allMarkets}
           payments={payments[openVendor.vendorID]}
+          categories={categories[openVendor.vendorID]}
         />
       )}
 
@@ -783,13 +832,14 @@ const PANEL_LABEL: React.CSSProperties = {
   fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 16, color: "#000", margin: "0 0 8px",
 };
 
-function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments }: {
+function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments, categories }: {
   vendor: Vendor;
   onClose: () => void;
   narrow: boolean;
   selectedMarket: number | null;
   allMarkets: Record<number, string>;
   payments?: PaymentID[];
+  categories?: CategoryMap[number];
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { closeRef.current?.focus(); }, [vendor.vendorID]);
@@ -835,6 +885,16 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
                 {name}
               </h2>
               {location && <div style={{ fontSize: 14, color: "#666" }}>{location}</div>}
+              {categories && categories.categories.length > 0 && (
+                <div style={{ fontSize: 13.5, color: "#0d8240", fontWeight: 600, marginTop: 4 }}>
+                  {categories.categories.map((c) => CATEGORY_LABELS[c]).join(" · ")}
+                  {categories.products.length > 0 && (
+                    <span style={{ color: "#555", fontWeight: 400 }}>
+                      {" "}({categories.products.map((p) => PRODUCT_LABELS[p]).join(", ")})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

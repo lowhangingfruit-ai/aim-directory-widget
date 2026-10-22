@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PAYMENT_OPTIONS, PaymentID, IntakeVendorOption } from "@/lib/intake";
+import { CATEGORY_OPTIONS, CategoryID, PAYMENT_OPTIONS, PaymentID, PRODUCT_OPTIONS, ProductID, IntakeVendorOption } from "@/lib/intake";
 
 interface Props {
   vendors: IntakeVendorOption[];
@@ -59,6 +59,29 @@ function Field({ children }: { children: React.ReactNode }) {
   return <div style={{ marginBottom: 26 }}>{children}</div>;
 }
 
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button type="button" aria-pressed={active} onClick={onClick} style={{
+      padding: "7px 16px", borderRadius: 300, cursor: "pointer",
+      fontFamily: "var(--font-body)", fontSize: 13.5,
+      border: `1.5px solid ${active ? AIM_GREEN : BORDER}`,
+      backgroundColor: active ? AIM_GREEN : "#fff",
+      color: active ? "#fff" : "#333",
+      fontWeight: active ? 600 : 400,
+      transition: "all 0.12s ease",
+    }}>
+      {label}
+    </button>
+  );
+}
+
+function toggleIn<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
+}
+
 function newSubmissionID(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -74,6 +97,8 @@ export default function IntakeForm({ vendors }: Props) {
   const [unlistedName, setUnlistedName] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [categories, setCategories] = useState<Set<CategoryID>>(new Set());
+  const [products, setProducts] = useState<Set<ProductID>>(new Set());
   const [payments, setPayments] = useState<Set<PaymentID>>(new Set());
   const [otherPayment, setOtherPayment] = useState("");
   const [originCity, setOriginCity] = useState("");
@@ -90,14 +115,15 @@ export default function IntakeForm({ vendors }: Props) {
     return vendors.filter((v) => v.company.toLowerCase().includes(q)).slice(0, 8);
   }, [query, vendor, vendors]);
 
-  const togglePayment = (id: PaymentID) => {
-    setPayments((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const togglePayment = (id: PaymentID) => setPayments((prev) => toggleIn(prev, id));
+  const toggleProduct = (id: ProductID) => setProducts((prev) => toggleIn(prev, id));
+  const toggleCategory = (id: CategoryID) => {
+    const next = toggleIn(categories, id);
+    setCategories(next);
+    // Drop follow-up answers for a category that was unchecked.
+    setProducts((p) => new Set([...p].filter((pid) => next.has(PRODUCT_OPTIONS.find((o) => o.id === pid)!.category))));
   };
+  const productChoices = PRODUCT_OPTIONS.filter((o) => categories.has(o.category));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +131,7 @@ export default function IntakeForm({ vendors }: Props) {
     const businessName = unlisted ? unlistedName.trim() : vendor?.company ?? "";
     if (!businessName) return setError("Please choose or enter your business.");
     if (!contactName.trim()) return setError("Please add your name.");
+    if (categories.size === 0) return setError("Please choose your AIM category.");
     if (payments.size === 0 && !otherPayment.trim()) return setError("Please choose at least one payment type.");
     if (!agreed) return setError("Please check the box so AIM can show your answers in the directory.");
     setError(null);
@@ -120,6 +147,8 @@ export default function IntakeForm({ vendors }: Props) {
           businessName,
           contactName,
           contactEmail,
+          categories: [...categories],
+          products: [...products],
           payments: [...payments],
           otherPayment,
           originCity,
@@ -194,7 +223,7 @@ export default function IntakeForm({ vendors }: Props) {
           </h2>
           <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.65, listStyle: "disc", display: "flex", flexDirection: "column", gap: 4 }}>
             <li>From your Manage My Market profile: your business name, description, city, phone, website and social links, and your market dates.</li>
-            <li>From this form: the payment types you accept and where you grow or make your products.</li>
+            <li>From this form: your category, what you mainly sell, the payment types you accept, and where you grow or make your products.</li>
             <li>It never shows your email or street address.</li>
             <li>
               Only businesses that checked the box in Manage My Market allowing AIM to share
@@ -284,6 +313,31 @@ export default function IntakeForm({ vendors }: Props) {
           </Field>
 
           <Field>
+            <label style={labelStyle}>Your AIM category</label>
+            <p style={helperStyle}>
+              Choose the category you applied under. If you sell across more than one, choose
+              each that applies.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              {CATEGORY_OPTIONS.map((c) => (
+                <Chip key={c.id} label={c.aimName} active={categories.has(c.id)} onClick={() => toggleCategory(c.id)} />
+              ))}
+            </div>
+          </Field>
+
+          {productChoices.length > 0 && (
+            <Field>
+              <label style={labelStyle}>What do you mainly sell? (optional)</label>
+              <p style={helperStyle}>Choose all that apply. This helps shoppers looking for something specific find you.</p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                {productChoices.map((o) => (
+                  <Chip key={o.id} label={o.label} active={products.has(o.id)} onClick={() => toggleProduct(o.id)} />
+                ))}
+              </div>
+            </Field>
+          )}
+
+          <Field>
             <label style={labelStyle}>Which payment types do you accept?</label>
             <p style={helperStyle}>Choose all that apply. Shoppers will be able to filter the directory by these.</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
@@ -336,8 +390,8 @@ export default function IntakeForm({ vendors }: Props) {
               <input id="agreed" type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
                 style={{ width: 18, height: 18, marginTop: 2, accentColor: AIM_GREEN, flexShrink: 0 }} />
               <label htmlFor="agreed" style={{ fontSize: 13.5, lineHeight: 1.6, color: "#333", cursor: "pointer" }}>
-                AIM can show the payment types and location I entered here in the Market
-                Participant Directory. My name and email are only for AIM staff.
+                AIM can show my category, products, payment types and location from this form
+                in the Market Participant Directory. My name and email are only for AIM staff.
               </label>
             </div>
           </Field>
