@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Vendor, VendorMarket } from "@/lib/types";
@@ -19,6 +20,8 @@ interface Props {
   payments: PaymentMap;
   categories: CategoryMap;
   origins: Record<number, string>;
+  coords: Record<number, [number, number]>;
+  embedded?: boolean;
   otherPayments: Record<number, string>;
 }
 
@@ -222,7 +225,7 @@ function FadeRow({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function DirectoryClient({ vendors, marketID, allMarkets, payments, categories, origins, otherPayments }: Props) {
+export default function DirectoryClient({ vendors, marketID, allMarkets, payments, categories, origins, coords, otherPayments, embedded = false }: Props) {
   const [search, setSearch] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<number | null>(marketID ?? null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -247,6 +250,22 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
     const target = el ?? window;
     target.addEventListener("scroll", onScroll);
     return () => target.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Inside the Squarespace iframe the page itself never scrolls; the parent
+  // page does. The parent snippet sends which slice of the iframe is on
+  // screen, so the side panel can open there.
+  const frame = useEmbedFrame(embedded);
+
+  // Fetch the map code in the background so the Map view opens quickly.
+  useEffect(() => {
+    const load = () => { void import("./VendorMap"); };
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(load, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = globalThis.setTimeout(load, 2000);
+    return () => globalThis.clearTimeout(t);
   }, []);
 
   // While the side panel is open the page behind it doesn't scroll, and Esc closes it.
@@ -364,7 +383,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
 
       {/* ── Sticky filter header ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 20,
+        position: embedded ? "static" : "sticky", top: 0, zIndex: 20,
         backgroundColor: "#f6f5ea",
         borderTop: "1px solid #e8e7dc",
         borderBottom: "1px solid #e8e7dc",
@@ -560,6 +579,7 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
           <VendorMap
             vendors={filtered}
             origins={origins}
+            coords={coords}
             selectedMarket={selectedMarket}
             allMarkets={allMarkets}
             marketColor={selectedMarket ? MARKET_COLORS[selectedMarket] : "#0d8240"}
@@ -600,12 +620,14 @@ export default function DirectoryClient({ vendors, marketID, allMarkets, payment
           payments={payments[openVendor.vendorID]}
           categories={categories[openVendor.vendorID]}
           origin={origins[openVendor.vendorID]}
+          embedded={embedded}
+          frame={frame}
           otherPayment={otherPayments[openVendor.vendorID]}
         />
       )}
 
       {/* Back to top */}
-      {showBackToTop && !openVendor && (
+      {showBackToTop && !openVendor && !embedded && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
@@ -834,12 +856,60 @@ function ContactLinks({ vendor }: { vendor: Vendor }) {
   );
 }
 
+// ── Embed support ──────────────────────────────────────────────────────────────
+// Messages between this page and the snippet on AIM's Squarespace page.
+//   out: { type: "aim-directory-height", height } so the iframe fits the content
+//   in:  { type: "aim-directory-viewport", top, height } the visible slice
+interface EmbedFrame { top: number; height: number }
+
+function useEmbedFrame(embedded: boolean): EmbedFrame | null {
+  const [frame, setFrame] = useState<EmbedFrame | null>(null);
+
+  useEffect(() => {
+    if (!embedded || window.parent === window) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== window.parent) return;
+      const d = e.data as { type?: string; top?: unknown; height?: unknown } | null;
+      if (d?.type !== "aim-directory-viewport") return;
+      if (typeof d.top !== "number" || typeof d.height !== "number" || !isFinite(d.top) || !isFinite(d.height)) return;
+      setFrame({ top: Math.max(0, d.top), height: Math.max(320, d.height) });
+    };
+    window.addEventListener("message", onMessage);
+
+    // Posted on several triggers: ResizeObserver is missing in some webviews,
+    // and fonts and images change the height after first paint.
+    let last = -1;
+    const post = () => {
+      const height = document.body.scrollHeight;
+      if (height === last) return;
+      last = height;
+      window.parent.postMessage({ type: "aim-directory-height", height }, "*");
+    };
+    post();
+    window.parent.postMessage({ type: "aim-directory-ready" }, "*");
+    window.addEventListener("resize", post);
+    window.addEventListener("load", post);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(post);
+    observer?.observe(document.body);
+    const timers = [100, 400, 1200, 3000].map((ms) => window.setTimeout(post, ms));
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener("resize", post);
+      window.removeEventListener("load", post);
+      observer?.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, [embedded]);
+
+  return frame;
+}
+
 // ── Side panel ─────────────────────────────────────────────────────────────────
 const PANEL_LABEL: React.CSSProperties = {
   fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 16, color: "#000", margin: "0 0 8px",
 };
 
-function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments, categories, origin, otherPayment }: {
+function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, payments, categories, origin, otherPayment, embedded, frame }: {
   vendor: Vendor;
   onClose: () => void;
   narrow: boolean;
@@ -849,6 +919,8 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
   categories?: CategoryMap[number];
   origin?: string;
   otherPayment?: string;
+  embedded: boolean;
+  frame: EmbedFrame | null;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { closeRef.current?.focus(); }, [vendor.vendorID]);
@@ -866,8 +938,13 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
       return nextDateTimestamp({ ...vendor, markets: [a] }, null) - nextDateTimestamp({ ...vendor, markets: [b] }, null);
     });
 
-  return (
-    <div role="dialog" aria-modal="true" aria-label={name} style={{ position: "fixed", inset: 0, zIndex: 100 }}>
+  const panel = (
+    <div role="dialog" aria-modal="true" aria-label={name} style={embedded ? {
+      // Placed over the part of the iframe the visitor can see. Without word
+      // from the parent page, it opens near the top of the list.
+      position: "absolute", left: 0, right: 0, zIndex: 100,
+      top: frame?.top ?? 0, height: frame?.height ?? 720,
+    } : { position: "fixed", inset: 0, zIndex: 100 }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.32)" }} />
       <aside style={{
         position: "absolute", top: 0, right: 0, bottom: 0,
@@ -977,4 +1054,5 @@ function VendorPanel({ vendor, onClose, narrow, selectedMarket, allMarkets, paym
       </aside>
     </div>
   );
+  return embedded ? createPortal(panel, document.body) : panel;
 }

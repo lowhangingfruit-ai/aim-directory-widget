@@ -1,0 +1,53 @@
+<!--
+  AIM Market Participant Directory: Squarespace code block.
+
+  Paste everything below this comment into a Code block on the directory page
+  (Edit page > Add block > Code, with "Display Source" off). Scripts only run
+  on the published page, not while logged in and editing.
+
+  What it does:
+  - sizes the iframe to the directory's height, so the page scrolls as one
+  - tells the directory which part of it is on screen, so a vendor's details
+    open where the visitor is looking, below Squarespace's fixed header
+-->
+<iframe id="aimDirectory"
+  src="https://aim-directory-widget.vercel.app/?embed=1"
+  title="AIM Market Participant Directory"
+  scrolling="no"
+  style="width:100%;border:0;height:1600px;display:block;overflow:hidden"></iframe>
+<script>
+(function () {
+  var ORIGIN = 'https://aim-directory-widget.vercel.app';
+  var frame = document.getElementById('aimDirectory');
+
+  // Squarespace's header covers the top of the window when it is fixed.
+  function headerBottom() {
+    var h = document.querySelector('#header, header');
+    if (!h) return 0;
+    var pos = getComputedStyle(h).position;
+    return pos === 'fixed' || pos === 'sticky' ? Math.max(0, h.getBoundingClientRect().bottom) : 0;
+  }
+
+  function sendViewport() {
+    if (!frame.contentWindow) return;
+    var r = frame.getBoundingClientRect();
+    var top = headerBottom();
+    frame.contentWindow.postMessage({
+      type: 'aim-directory-viewport',
+      top: Math.max(0, top - r.top),
+      height: window.innerHeight - top
+    }, ORIGIN);
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.origin !== ORIGIN || !e.data) return;
+    if (e.data.type === 'aim-directory-height' && typeof e.data.height === 'number') {
+      frame.style.height = e.data.height + 'px';
+      sendViewport();
+    }
+    if (e.data.type === 'aim-directory-ready') sendViewport();
+  });
+  window.addEventListener('scroll', sendViewport, { passive: true });
+  window.addEventListener('resize', sendViewport);
+})();
+</script>

@@ -1,6 +1,7 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
 import { getIntakeAnswers } from "@/lib/intakeAnswers";
+import { lookupPlace } from "@/lib/placeCoords";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -27,17 +28,28 @@ async function getVendors(marketID?: string): Promise<Vendor[]> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ marketID?: string }>;
+  searchParams: Promise<{ marketID?: string; embed?: string }>;
 }) {
-  const { marketID } = await searchParams;
+  const { marketID, embed } = await searchParams;
+  // ?embed=1 is the version for the Squarespace code block (docs/squarespace-embed.html).
+  const embedded = embed === "1";
   const [vendors, answers] = await Promise.all([getVendors(marketID), getIntakeAnswers()]);
   const marketName = marketID ? MARKETS[Number(marketID)] : undefined;
+
+  // Map positions: where the vendor grows or makes products if they told us,
+  // otherwise their Manage My Market city. Unmatched cities are looked up in
+  // the browser.
+  const coords: Record<number, [number, number]> = {};
+  for (const v of vendors) {
+    const hit = lookupPlace(answers.origins[v.vendorID] ?? v.city ?? "", v.state ?? "");
+    if (hit) coords[v.vendorID] = hit;
+  }
 
   // Answers from the intake Sheet. Until it's connected these are empty, and
   // the directory shows no payment, category or origin details.
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
+    <div style={{ minHeight: embedded ? undefined : "100vh", backgroundColor: "#fff" }}>
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <header style={{
           padding: "clamp(28px, 5vw, 48px) 20px clamp(20px, 3vw, 28px)",
@@ -126,6 +138,8 @@ export default async function Page({
           payments={answers.payments}
           categories={answers.categories}
           origins={answers.origins}
+          coords={coords}
+          embedded={embedded}
           otherPayments={answers.otherPayments}
         />
       </div>
