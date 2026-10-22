@@ -1,6 +1,6 @@
 import { Vendor, MARKETS, ORG_ID } from "@/lib/types";
 import { parseVendorFeed } from "@/lib/vendors";
-import { PaymentMap, samplePayments } from "@/lib/payments";
+import { PaymentMap } from "@/lib/payments";
 import DirectoryClient from "./DirectoryClient";
 
 async function getVendors(marketID?: string): Promise<Vendor[]> {
@@ -27,28 +27,18 @@ async function getVendors(marketID?: string): Promise<Vendor[]> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ marketID?: string; preview?: string }>;
+  searchParams: Promise<{ marketID?: string }>;
 }) {
-  const { marketID, preview } = await searchParams;
+  const { marketID } = await searchParams;
   const vendors = await getVendors(marketID);
   const marketName = marketID ? MARKETS[Number(marketID)] : undefined;
 
-  // Real payment answers arrive with the intake Sheet. Until then, payment
-  // badges and filters only appear on the review link, with sample data.
-  const paymentPreview = preview === "payments";
-  const payments: PaymentMap = paymentPreview ? samplePayments(vendors.map((v) => v.vendorID)) : {};
+  // Filled from the intake Sheet once it's connected. Empty means no payment
+  // badges or filter are shown.
+  const payments: PaymentMap = {};
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
-      {paymentPreview && (
-        <div style={{
-          backgroundColor: "#4db547", color: "#000", padding: "9px 16px",
-          fontSize: 14, textAlign: "center", lineHeight: 1.4,
-        }}>
-          Preview for AIM review: payment types are sample data until vendors fill in the intake form
-        </div>
-      )}
-
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <header style={{
           padding: "clamp(28px, 5vw, 48px) 20px clamp(20px, 3vw, 28px)",
