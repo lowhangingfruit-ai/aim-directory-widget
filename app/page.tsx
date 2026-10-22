@@ -73,7 +73,7 @@ export default async function Page({
             lineHeight: 1.6,
           }}>
             Find farms, food makers, and artisans at AIM farmers markets across the Bay Area.
-            Filter by market or date, or search for a product.
+            Pick a market to see its upcoming dates, or search for a product.
           </p>
 
           <details className="aim-about" style={{ maxWidth: 640, margin: "16px auto 0", textAlign: "left" }}>
