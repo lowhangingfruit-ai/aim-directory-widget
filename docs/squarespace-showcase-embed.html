@@ -1,0 +1,61 @@
+<!--
+  AIM Farm & Food Program Showcase: Squarespace code block.
+
+  For the Farm and Food Business Resources page
+  (agriculturalinstitute.org/food-farm-business-resources).
+
+  Paste everything below this comment into a Code block on that page
+  (Edit page > Add block > Code, with "Display Source" off), in place of the
+  old program and participant content. Scripts only run on the published
+  page, not while logged in and editing.
+
+  What it does:
+  - sizes the iframe to the showcase's height, so the page scrolls as one
+  - tells the showcase which part of it is on screen, so a participant's
+    story opens where the visitor is looking, below Squarespace's fixed header
+
+  It uses its own message names and element id, so it can share a page with
+  the market directory block (docs/squarespace-embed.html) without either
+  resizing the other.
+-->
+<iframe id="aimShowcase"
+  src="https://aim-directory-widget.vercel.app/showcase?embed=1"
+  title="AIM Farm & Food Program Showcase"
+  scrolling="no"
+  style="width:100%;border:0;height:2400px;display:block;overflow:hidden"></iframe>
+<script>
+(function () {
+  var ORIGIN = 'https://aim-directory-widget.vercel.app';
+  var frame = document.getElementById('aimShowcase');
+
+  // Squarespace's header covers the top of the window when it is fixed.
+  function headerBottom() {
+    var h = document.querySelector('#header, header');
+    if (!h) return 0;
+    var pos = getComputedStyle(h).position;
+    return pos === 'fixed' || pos === 'sticky' ? Math.max(0, h.getBoundingClientRect().bottom) : 0;
+  }
+
+  function sendViewport() {
+    if (!frame.contentWindow) return;
+    var r = frame.getBoundingClientRect();
+    var top = headerBottom();
+    frame.contentWindow.postMessage({
+      type: 'aim-showcase-viewport',
+      top: Math.max(0, top - r.top),
+      height: window.innerHeight - top
+    }, ORIGIN);
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.origin !== ORIGIN || e.source !== frame.contentWindow || !e.data) return;
+    if (e.data.type === 'aim-showcase-height' && typeof e.data.height === 'number') {
+      frame.style.height = e.data.height + 'px';
+      sendViewport();
+    }
+    if (e.data.type === 'aim-showcase-ready') sendViewport();
+  });
+  window.addEventListener('scroll', sendViewport, { passive: true });
+  window.addEventListener('resize', sendViewport);
+})();
+</script>

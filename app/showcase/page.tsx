@@ -30,10 +30,18 @@ async function getVendors(): Promise<Vendor[]> {
   }
 }
 
-export default async function ShowcasePage() {
+export default async function ShowcasePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ embed?: string }>;
+}) {
+  const { embed } = await searchParams;
+  // ?embed=1 is the version for AIM's Squarespace code block
+  // (docs/squarespace-showcase-embed.html).
+  const embedded = embed === "1";
   const vendors = await getVendors();
   const profiles = buildProfiles(vendors, [...ROSTER_2026, ...FOODMAKERS_CURRENT]);
   const alumni = buildProfiles(vendors, [...ALUMNI, ...FARMER_ALUMNI, ...FOODMAKER_ALUMNI]);
 
-  return <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} />;
+  return <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} embedded={embedded} />;
 }

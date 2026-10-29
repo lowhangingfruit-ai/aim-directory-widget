@@ -66,3 +66,19 @@ After editing the script, use Deploy > Manage deployments > Edit > New version t
 
 Without these, local dev accepts submissions as a dry run and stores nothing; production returns
 a generic error.
+
+## Farm & Food Program Showcase (`/showcase`)
+
+The participant showcase for AIM's Farm and Food Business Resources page. `?embed=1` is the
+version for the Squarespace code block in `docs/squarespace-showcase-embed.html` (no mockup
+banner, iframe sized to its content, stories open in the visible part of the page).
+
+Participants and bios live in code, not a Sheet:
+
+- `lib/showcase.ts`: one line per participant in `ROSTER_2026` / `FOODMAKERS_CURRENT`
+  (current cohort) or the `*ALUMNI` lists, with program, cohort year, a `match` string for
+  their Manage My Market company name, and an optional `photo` and `story`.
+- `lib/showcaseDetails.ts`: bios, "what they sell" and links, keyed `program:match`.
+- `public/participants/`: portraits, 1080x1350 JPG, named after the business.
+
+`/showcase/intake` is still a design mockup: it doesn't save submissions.

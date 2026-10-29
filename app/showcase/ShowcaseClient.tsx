@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Profile, ProgramID, PROGRAMS } from "@/lib/showcase";
+import { Profile, ProgramID, PROGRAMS, TECHNICAL_ASSISTANCE } from "@/lib/showcase";
 
 interface Props {
   profiles: Profile[];
   alumni: Profile[];
   allMarkets: Record<number, string>;
+  // ?embed=1: the version for AIM's Squarespace code block
+  // (docs/squarespace-showcase-embed.html).
+  embedded?: boolean;
 }
 
 const AIM_GREEN = "#0d8240";
@@ -26,8 +29,29 @@ const MARKET_LOGOS: Record<number, string> = {
   8211: `${LOGO_BASE}/1607976583988-S19RDA6H1M7KI7F2WBGB/sanrafael.logo_on_blue.jpg`,
 };
 
+// Shayla's order for the program squares (2026-10-28).
 const PROGRAM_ORDER: ProgramID[] = ["maf", "farmer", "foodmaker"];
 type Tab = ProgramID | "all";
+
+// Program-square design from Shayla's reference (screenshot 1.19.36).
+const INK = "#17261b";
+const SQUARE_CREAM = "#f1efe5";
+const SQUARE_FONT = "'Archivo', var(--font-heading)";
+
+// Shown under the squares when "All Farm & Food Programs" is selected.
+const ALL_PROGRAMS_COPY =
+  "AIM operates three programs geared toward producers within their first five years of operation. These programs provide financial, technical, and marketing support to foster sustainable growth, expand market opportunities, and strengthen local food systems. Additional programming is available to businesses at any stage.";
+
+// Hero strip: close-up, daylight, in-the-field portraits from AIM's photo
+// set, chosen for a matching look (Shayla, 2026-10-28).
+const HERO_PHOTOS = [
+  "/participants/shao-shan-farm.jpg",
+  "/participants/induchucuiti-organic-farm-maf.jpg",
+  "/participants/salazar-organic-farm.jpg",
+  "/participants/dragonspunk-gro.jpg",
+  "/participants/narcis-organic-farm.jpg",
+  "/participants/vasquez-organic-farm.jpg",
+];
 
 // Full market names, per Shayla: "Hayward" alone wasn't clearly a market.
 const FULL_MARKETS: Record<number, string> = {
@@ -215,6 +239,108 @@ function SocialLinks({ profile, centered }: { profile: Profile; centered?: boole
   );
 }
 
+// Large program square: title bottom-left in heavy uppercase, as in Shayla's
+// reference. The selected square gets a dark frame. With `href` it is a link
+// out (Technical Assistance), not a filter.
+function ProgramSquare({ label, active, color, text, narrow, mid, wide, onClick, href }: {
+  label: string; active: boolean; color: string; text: string;
+  narrow: boolean; mid: boolean; wide?: boolean;
+  onClick?: () => void; href?: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const style: React.CSSProperties = {
+    position: "relative",
+    display: "flex", alignItems: "flex-end",
+    gridColumn: wide ? "1 / -1" : undefined,
+    aspectRatio: wide ? undefined : "3 / 2",
+    minHeight: wide ? 84 : undefined,
+    padding: narrow ? "12px 12px 12px" : mid ? "14px 14px" : "18px 20px",
+    backgroundColor: color,
+    color: text,
+    border: `${narrow ? 3 : 4}px solid ${active ? INK : "transparent"}`,
+    boxSizing: "border-box",
+    cursor: "pointer",
+    textAlign: "left",
+    textDecoration: "none",
+    fontFamily: SQUARE_FONT,
+    fontWeight: 800,
+    fontStretch: "125%",
+    textTransform: "uppercase",
+    fontSize: narrow ? 13.5 : mid ? 13 : 17,
+    lineHeight: 1.08,
+    letterSpacing: "0.01em",
+    transform: hovered && !active ? "translateY(-2px)" : "none",
+    boxShadow: hovered ? "0 8px 18px rgba(23,38,27,0.18)" : "none",
+    transition: "transform 0.12s ease, box-shadow 0.12s ease",
+    overflowWrap: "break-word",
+    hyphens: "manual",
+  };
+  const hover = { onMouseEnter: () => setHovered(true), onMouseLeave: () => setHovered(false) };
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" style={style} {...hover}
+        aria-label={`${label} (opens AIM's program page)`}>
+        <span aria-hidden="true" style={{ position: "absolute", top: narrow ? 8 : 12, right: narrow ? 10 : 14, fontSize: narrow ? 14 : 18, fontWeight: 700, lineHeight: 1 }}>↗</span>
+        <span>{label}</span>
+      </a>
+    );
+  }
+  return (
+    <button type="button" role="tab" aria-selected={active} onClick={onClick} style={style} {...hover}>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+// ── Embed support ──────────────────────────────────────────────────────────────
+// Messages between this page and the snippet on AIM's Squarespace page. These
+// use their own names so the showcase and the market directory can sit on the
+// same Squarespace page without resizing each other.
+//   out: { type: "aim-showcase-height", height } so the iframe fits the content
+//   out: { type: "aim-showcase-ready" }
+//   in:  { type: "aim-showcase-viewport", top, height } the visible slice
+interface EmbedFrame { top: number; height: number }
+
+function useEmbedFrame(embedded: boolean): EmbedFrame | null {
+  const [frame, setFrame] = useState<EmbedFrame | null>(null);
+
+  useEffect(() => {
+    if (!embedded || window.parent === window) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== window.parent) return;
+      const d = e.data as { type?: string; top?: unknown; height?: unknown } | null;
+      if (d?.type !== "aim-showcase-viewport") return;
+      if (typeof d.top !== "number" || typeof d.height !== "number" || !isFinite(d.top) || !isFinite(d.height)) return;
+      setFrame({ top: Math.max(0, d.top), height: Math.max(360, d.height) });
+    };
+    window.addEventListener("message", onMessage);
+
+    let last = -1;
+    const post = () => {
+      const height = document.body.scrollHeight;
+      if (height === last) return;
+      last = height;
+      window.parent.postMessage({ type: "aim-showcase-height", height }, "*");
+    };
+    post();
+    window.parent.postMessage({ type: "aim-showcase-ready" }, "*");
+    window.addEventListener("resize", post);
+    window.addEventListener("load", post);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(post);
+    observer?.observe(document.body);
+    const timers = [100, 400, 1200, 3000].map((ms) => window.setTimeout(post, ms));
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener("resize", post);
+      window.removeEventListener("load", post);
+      observer?.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, [embedded]);
+
+  return frame;
+}
+
 // ── Participant tile (photo + centered caption, like AIM's cohort grid) ────────
 
 function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
@@ -299,11 +425,13 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
 
 // ── Detail overlay ─────────────────────────────────────────────────────────────
 
-function ProfileModal({ profile, allMarkets, narrow, onClose }: {
+function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }: {
   profile: Profile;
   allMarkets: Record<number, string>;
   narrow: boolean;
   onClose: () => void;
+  embedded: boolean;
+  frame: EmbedFrame | null;
 }) {
   const program = PROGRAMS[profile.program];
   const photo = bestPhoto(profile);
@@ -314,23 +442,28 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    if (!embedded) document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, embedded]);
 
   return (
     <div onClick={onClose} style={{
-      position: "fixed", inset: 0, zIndex: 100,
+      // Embedded, the iframe is as tall as the page, so the overlay sits over
+      // the slice the visitor can see (sent by the Squarespace snippet).
+      ...(embedded
+        ? { position: "absolute", left: 0, right: 0, top: frame?.top ?? 0, height: frame?.height ?? 760 }
+        : { position: "fixed", inset: 0 }),
+      zIndex: 100,
       backgroundColor: "rgba(20,30,20,0.5)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: narrow ? 12 : 32,
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
         backgroundColor: "#fff",
-        width: "100%", maxWidth: 760, maxHeight: "90vh", overflowY: "auto",
+        width: "100%", maxWidth: 760, maxHeight: embedded ? "100%" : "90vh", overflowY: "auto",
         display: "flex", flexDirection: narrow ? "column" : "row",
         boxShadow: "0 24px 60px rgba(0,0,0,0.28)",
         position: "relative",
@@ -345,13 +478,17 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
         <div style={{
           flex: narrow ? undefined : "0 0 42%",
           backgroundColor: program.tint,
-          minHeight: narrow ? 240 : 380,
+          minHeight: narrow ? 320 : 380,
           position: "relative",
+          overflow: "hidden",
         }}>
           {photo ? (
+            // Fill the whole photo side with no tint showing (Shayla,
+            // 2026-10-28). Only an off-shape logo from the vendor feed,
+            // with no AIM portrait, is still fitted inside the frame.
             <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
-              tint={program.tint} detect={false} forceContain={!profile.photo}
-              style={{ position: "absolute", inset: 0, height: "100%", padding: 0 }} />
+              tint={program.tint} detect={!profile.photo && !profile.aimPhoto}
+              style={{ position: "absolute", inset: 0, height: "100%", objectPosition: "center 30%" }} />
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex",
@@ -453,13 +590,14 @@ function ProfileModal({ profile, allMarkets, narrow, onClose }: {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
-export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) {
+export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded = false }: Props) {
   const [tab, setTab] = useState<Tab>("all");
   // Each program's archive defaults to its most recent class so it opens
   // curated, not dense. Keyed per program; null means "all".
   const [alumYearByProgram, setAlumYearByProgram] = useState<Partial<Record<ProgramID, string | null>>>({});
   const [openProfile, setOpenProfile] = useState<Profile | null>(null);
   const { narrow, mid } = useNarrow();
+  const frame = useEmbedFrame(embedded);
   // Shayla asked for slightly larger participant photos: 3-up on desktop
   const cols = narrow ? 2 : 3;
   const px = narrow ? 20 : 40;
@@ -469,15 +607,15 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
   const sectionInner: React.CSSProperties = { maxWidth: 1060, margin: "0 auto", padding: `0 ${px}px` };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000" }}>
+    <div style={{ minHeight: embedded ? undefined : "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000", position: "relative" }}>
 
-      {/* Announcement-style mockup bar (AIM bright green, black text) */}
-      <div style={{
+      {/* Announcement-style mockup bar (AIM bright green, black text); left off the embed */}
+      {!embedded && <div style={{
         backgroundColor: AIM_BRIGHT, color: "#000",
         padding: "9px 16px", fontSize: 14, textAlign: "center", lineHeight: 1.4,
       }}>
         Design mockup for AIM review — participant info comes from AIM&rsquo;s public program pages and market directory
-      </div>
+      </div>}
 
       {/* ── Title block (white, centered, like AIM program pages) ── */}
       <div style={{ backgroundColor: "#fff", padding: `${narrow ? 44 : 64}px 0 ${narrow ? 30 : 40}px` }}>
@@ -496,16 +634,6 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             AIM&rsquo;s Farm &amp; Food Business Resources support food and agricultural
             business growth to strengthen California&rsquo;s regional food system.
           </p>
-          <p style={{
-            margin: "0 auto", fontSize: narrow ? 14 : 15, color: "#333",
-            maxWidth: 640, lineHeight: 1.65,
-          }}>
-            AIM operates three programs geared toward producers within their first five
-            years of operation. These programs provide financial, technical, and marketing
-            support to foster sustainable growth, expand market opportunities, and
-            strengthen local food systems. Additional programming is available to
-            businesses at any stage.
-          </p>
 
           {/* Hero photo strip: participant portraits as overlapping prints */}
           <div style={{
@@ -513,24 +641,24 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
             marginTop: narrow ? 30 : 42, padding: "6px 0",
           }}>
             {(() => {
-              const picks = ["blooming maria", "salvirican", "nobunaga", "luna's good", "dangerously delicious", "maldoni"];
-              const heroProfiles = picks
-                .map((m) => profiles.find((p) => p.match === m))
-                .filter((p): p is Profile => !!p && !!bestPhoto(p))
+              const everyone = [...profiles, ...alumni];
+              const hero = HERO_PHOTOS
+                .map((src) => ({ src, profile: everyone.find((p) => p.photo === src) }))
                 .slice(0, narrow ? 4 : 6);
-              return heroProfiles.map((p, i) => (
-                <div key={p.business} style={{
+              return hero.map(({ src, profile }, i) => (
+                <div key={src} style={{
                   backgroundColor: "#fff",
                   padding: narrow ? 4 : 6,
-                  boxShadow: "0 4px 14px rgba(30,40,25,0.18)",
-                  transform: `rotate(${i % 2 === 0 ? -2.5 : 2.5}deg) translateY(${i % 3 === 1 ? -6 : 4}px)`,
-                  marginLeft: i === 0 ? 0 : narrow ? -10 : -14,
+                  // One shadow and a gentle tilt for every print, so the strip reads as a set
+                  boxShadow: "0 6px 16px rgba(30,40,25,0.16)",
+                  transform: `rotate(${i % 2 === 0 ? -1.5 : 1.5}deg)`,
+                  marginLeft: i === 0 ? 0 : narrow ? -8 : -10,
                   zIndex: i % 2 === 0 ? 1 : 2,
                   flexShrink: 1, minWidth: 0,
                 }}>
-                  <img src={bestPhoto(p)!} alt={p.business} style={{
+                  <img src={src} alt={profile ? `${profile.person}, ${profile.business}` : ""} style={{
                     width: narrow ? "20vw" : 150, maxWidth: 150, aspectRatio: "1 / 1",
-                    objectFit: "cover", display: "block",
+                    objectFit: "cover", objectPosition: "center 22%", display: "block",
                   }} />
                 </div>
               ));
@@ -560,31 +688,48 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
         </div>
       </div>
 
-      {/* ── Sticky program tabs (pill buttons) ── */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 20,
-        backgroundColor: CREAM, borderTop: "1px solid #e4e2d4", borderBottom: "1px solid #e4e2d4",
-        padding: "12px 16px",
+      {/* ── Program squares (Shayla's design, 2026-10-28) ── */}
+      <div id="aim-programs" style={{
+        backgroundColor: "#eaece6", borderTop: "1px solid #e1e3db",
+        padding: `${narrow ? 20 : 28}px 0`,
       }}>
-        <div style={{
-          display: "flex", gap: 8, justifyContent: narrow ? "flex-start" : "center",
-          overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+        <div role="tablist" aria-label="Farm & Food programs" style={{
+          maxWidth: 1180, margin: "0 auto", padding: `0 ${narrow ? 16 : 32}px`,
+          display: "grid",
+          gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(5, 1fr)",
+          gap: narrow ? 10 : mid ? 12 : 18,
         }}>
-          <PillButton label="All Farm & Food Programs" active={tab === "all"} color={AIM_GREEN} textOnColor="#fff" onClick={() => setTab("all")} />
+          <ProgramSquare label="All Farm & Food Programs" active={tab === "all"}
+            color={SQUARE_CREAM} text={INK} narrow={narrow} mid={mid} wide={narrow}
+            onClick={() => setTab("all")} />
           {PROGRAM_ORDER.map((id) => {
             const p = PROGRAMS[id];
-            const count = profiles.filter((x) => x.program === id).length;
             return (
-              <PillButton key={id}
-                label={`${p.shortName} (${count})`}
-                active={tab === id}
-                color={p.color}
-                textOnColor={p.textOnColor}
+              <ProgramSquare key={id} label={p.name} active={tab === id}
+                color={p.color} text={p.squareText} narrow={narrow} mid={mid}
                 onClick={() => setTab(tab === id ? "all" : id)} />
             );
           })}
+          <ProgramSquare label={TECHNICAL_ASSISTANCE.name} active={false}
+            color={TECHNICAL_ASSISTANCE.color} text={TECHNICAL_ASSISTANCE.squareText}
+            narrow={narrow} mid={mid} href={TECHNICAL_ASSISTANCE.url} />
         </div>
       </div>
+
+      {/* "All" selected: Shayla's program overview copy */}
+      {tab === "all" && (
+        <div style={{ backgroundColor: "#fff", padding: `${narrow ? 30 : 44}px 0 ${narrow ? 34 : 48}px` }}>
+          <div style={{ ...sectionInner, textAlign: "center" }}>
+            <p style={{
+              margin: "0 auto", maxWidth: 720,
+              fontFamily: "var(--font-heading)", fontWeight: 500,
+              fontSize: narrow ? 18 : 21, lineHeight: 1.55, color: "#000",
+            }}>
+              {ALL_PROGRAMS_COPY}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Program sections (white / cream alternating) ── */}
       {visiblePrograms.map((id, idx) => {
@@ -743,6 +888,32 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
         );
       })}
 
+      {/* ── Technical Assistance and Education (no cohort; links to AIM's page) ── */}
+      {tab === "all" && (
+        <section style={{
+          backgroundColor: visiblePrograms.length % 2 === 0 ? CREAM : "#fff",
+          padding: `${narrow ? 40 : 56}px 0 ${narrow ? 44 : 60}px`,
+        }}>
+          <div style={{ ...sectionInner, textAlign: "center" }}>
+            <h2 style={{
+              fontFamily: "var(--font-heading)", fontWeight: 500,
+              fontSize: narrow ? 28 : 36, color: "#000", lineHeight: 1.2, marginBottom: 10,
+            }}>
+              {TECHNICAL_ASSISTANCE.name}
+            </h2>
+            <p style={{ margin: "0 auto 10px", fontSize: 14.5, color: "#333", maxWidth: 600, lineHeight: 1.65 }}>
+              {TECHNICAL_ASSISTANCE.blurb}
+            </p>
+            <a href={TECHNICAL_ASSISTANCE.url} target="_blank" rel="noopener noreferrer" style={{
+              fontSize: 14, color: AIM_GREEN, fontWeight: 600,
+              textDecoration: "underline", textUnderlineOffset: 3,
+            }}>
+              About the program
+            </a>
+          </div>
+        </section>
+      )}
+
       {/* ── Testimonial (white) ── */}
       <div style={{ backgroundColor: "#fff", padding: `${narrow ? 44 : 64}px 0` }}>
         <div style={{ ...sectionInner, textAlign: "center" }}>
@@ -780,7 +951,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
           margin: "0 auto", maxWidth: 720, fontSize: 12.5, color: "#8a8878",
           lineHeight: 1.6, textAlign: "center",
         }}>
-          Design mockup prepared by Aioli Consulting for the Agricultural Institute of Marin.
+          {!embedded && "Design mockup prepared by Aioli Consulting for the Agricultural Institute of Marin. "}
           Participant details come from AIM&rsquo;s public program pages and the Manage My Market
           directory, and only include vendors who have opted in to information sharing.
         </p>
@@ -792,6 +963,8 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets }: Props) 
           allMarkets={allMarkets}
           narrow={narrow}
           onClose={() => setOpenProfile(null)}
+          embedded={embedded}
+          frame={frame}
         />
       )}
     </div>
