@@ -82,3 +82,8 @@ Participants and bios live in code, not a Sheet:
 - `public/participants/`: portraits, 1080x1350 JPG, named after the business.
 
 `/showcase/intake` is still a design mockup: it doesn't save submissions.
+
+`/showcase/directions` holds four alternative layouts of the showcase for review with AIM (Field
+Journal, Class Portraits, Program Chapters, Market Day), switched from the green bar at the bottom
+(`#a`–`#d` in the URL opens one directly). It reads the same data as `/showcase`, isn't linked from
+it, and is marked noindex.
