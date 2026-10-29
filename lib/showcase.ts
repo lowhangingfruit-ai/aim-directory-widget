@@ -12,8 +12,14 @@ export interface Program {
   id: ProgramID;
   name: string;
   shortName: string;
-  color: string; // AIM palette: deep green, bright green, orange
+  // Program square palette from Shayla's 2026-10-28 design reference
+  // (screenshot 1.19.36): lime, mid green, deep green, near-black.
+  color: string;
+  // Small text (badges, pills) on `color`. Kept dark where white would fail
+  // contrast on the lighter greens.
   textOnColor: string;
+  // Title color on the large program square, as in the reference design.
+  squareText: string;
   tint: string;
   blurb: string;
   url: string;
@@ -29,11 +35,10 @@ export const PROGRAMS: Record<ProgramID, Program> = {
     id: "maf",
     name: "Market Access Fund",
     shortName: "Market Access Fund",
-    // Gold, so the MAF tab reads distinctly from the dark-green All tab.
-    // Swap for the final flyer hex when Shayla confirms it.
-    color: "#d29c13",
-    textOnColor: "#3c2e00",
-    tint: "#f7efd7",
+    color: "#99c455",
+    textOnColor: "#17261b",
+    squareText: "#17261b",
+    tint: "#f0f6e4",
     blurb:
       "The Market Access Fund is designed to grow existing Black, Indigenous, and people of color (BIPOC)-owned businesses who have been in AIM markets less than five years. Many Incubator Booth graduates use this program as a next step in their growth.",
     url: "https://www.agriculturalinstitute.org/market-access-fund",
@@ -44,9 +49,10 @@ export const PROGRAMS: Record<ProgramID, Program> = {
     id: "farmer",
     name: "Farmer Incubator Booth",
     shortName: "Farmer Incubator",
-    color: "#4db547",
-    textOnColor: "#0b3d1e",
-    tint: "#edf6e9",
+    color: "#3b783b",
+    textOnColor: "#ffffff",
+    squareText: "#ffffff",
+    tint: "#e7efe5",
     blurb:
       "The Farmer Incubator Booth brings new farmers into our markets, free of charge. AIM partners with Kitchen Table Advisors (KTA) and Agriculture and Land-Based Training Association (ALBA) to create new agriculture business.",
     url: "https://www.agriculturalinstitute.org/farmers-market-incubator-booth",
@@ -56,14 +62,27 @@ export const PROGRAMS: Record<ProgramID, Program> = {
     id: "foodmaker",
     name: "Food Maker Incubator Booth",
     shortName: "Food Maker Incubator",
-    color: "#de752c",
-    textOnColor: "#ffffff",
-    tint: "#faeee1",
+    color: "#6ab657",
+    textOnColor: "#17261b",
+    squareText: "#ffffff",
+    tint: "#ebf5e7",
     blurb:
       "The Food Maker Incubator Booth brings Marin food businesses into our Marin markets, free of charge. We focus on uplifting West Marin, Marin City, San Rafael's Canal neighborhood, and Southern Novato food makers.",
     url: "https://www.agriculturalinstitute.org/food-maker-incubator-booth",
     applyWindow: "open January 2027 for the 2027 cohort",
   },
+};
+
+// Technical Assistance and Education has no cohort, so it is a link out to
+// AIM's own page rather than a ProgramID. Blurb is AIM's wording from the
+// Farm & Food Business Resources page (2026-10-29).
+export const TECHNICAL_ASSISTANCE = {
+  name: "Technical Assistance and Education",
+  color: "#17261b",
+  squareText: "#99c455",
+  blurb:
+    "Technical Assistance and Education is a series of webinars and an annual in-person Resource Fair. These resources are for all farmers and food makers—all business stages, whether or not they participate in AIM farmers markets.",
+  url: "https://www.agriculturalinstitute.org/technical-assistance-and-education",
 };
 
 export interface RosterEntry {
