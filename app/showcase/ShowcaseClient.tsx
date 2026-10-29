@@ -48,7 +48,7 @@ const HERO_PHOTOS = [
   "/participants/shao-shan-farm.jpg",
   "/participants/induchucuiti-organic-farm-maf.jpg",
   "/participants/salazar-organic-farm.jpg",
-  "/participants/dragonspunk-gro.jpg",
+  "/participants/coyo-organics.jpg",
   "/participants/narcis-organic-farm.jpg",
   "/participants/vasquez-organic-farm.jpg",
 ];
