@@ -635,9 +635,11 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
             business growth to strengthen California&rsquo;s regional food system.
           </p>
 
-          {/* Hero photo strip: participant portraits as overlapping prints */}
+          {/* Hero photo strip: whole, uncropped participant photos so each
+              person and what they're holding stays in view (Meg, 2026-10-29) */}
           <div style={{
-            display: "flex", justifyContent: "center", alignItems: "center",
+            display: "flex", justifyContent: "center", alignItems: "flex-end",
+            gap: narrow ? 6 : 10, flexWrap: "nowrap",
             marginTop: narrow ? 30 : 42, padding: "6px 0",
           }}>
             {(() => {
@@ -645,22 +647,12 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
               const hero = HERO_PHOTOS
                 .map((src) => ({ src, profile: everyone.find((p) => p.photo === src) }))
                 .slice(0, narrow ? 4 : 6);
-              return hero.map(({ src, profile }, i) => (
-                <div key={src} style={{
-                  backgroundColor: "#fff",
-                  padding: narrow ? 4 : 6,
-                  // One shadow and a gentle tilt for every print, so the strip reads as a set
-                  boxShadow: "0 6px 16px rgba(30,40,25,0.16)",
-                  transform: `rotate(${i % 2 === 0 ? -1.5 : 1.5}deg)`,
-                  marginLeft: i === 0 ? 0 : narrow ? -8 : -10,
-                  zIndex: i % 2 === 0 ? 1 : 2,
-                  flexShrink: 1, minWidth: 0,
-                }}>
-                  <img src={src} alt={profile ? `${profile.person}, ${profile.business}` : ""} style={{
-                    width: narrow ? "20vw" : 150, maxWidth: 150, aspectRatio: "1 / 1",
-                    objectFit: "cover", objectPosition: "center 22%", display: "block",
-                  }} />
-                </div>
+              return hero.map(({ src, profile }) => (
+                <img key={src} src={src} alt={profile ? `${profile.person}, ${profile.business}` : ""} style={{
+                  height: narrow ? "auto" : 210, width: narrow ? "22vw" : "auto",
+                  maxWidth: narrow ? "22vw" : 200, minWidth: 0, flexShrink: 1,
+                  objectFit: "contain", display: "block", borderRadius: 4,
+                }} />
               ));
             })()}
           </div>
