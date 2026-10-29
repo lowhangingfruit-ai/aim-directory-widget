@@ -608,14 +608,6 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
   return (
     <div style={{ minHeight: embedded ? undefined : "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000", position: "relative" }}>
 
-      {/* Announcement-style mockup bar (AIM bright green, black text); left off the embed */}
-      {!embedded && <div style={{
-        backgroundColor: AIM_BRIGHT, color: "#000",
-        padding: "9px 16px", fontSize: 14, textAlign: "center", lineHeight: 1.4,
-      }}>
-        Design mockup for AIM review — participant info comes from AIM&rsquo;s public program pages and market directory
-      </div>}
-
       {/* ── Title block (white, centered, like AIM program pages) ── */}
       <div style={{ backgroundColor: "#fff", padding: `${narrow ? 44 : 64}px 0 ${narrow ? 30 : 40}px` }}>
         <div style={{ ...sectionInner, textAlign: "center" }}>
@@ -942,7 +934,6 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
           margin: "0 auto", maxWidth: 720, fontSize: 12.5, color: "#8a8878",
           lineHeight: 1.6, textAlign: "center",
         }}>
-          {!embedded && "Design mockup prepared by Aioli Consulting for the Agricultural Institute of Marin. "}
           Participant details come from AIM&rsquo;s public program pages and the Manage My Market
           directory, and only include vendors who have opted in to information sharing.
         </p>
