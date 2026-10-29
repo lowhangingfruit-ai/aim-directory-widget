@@ -36,7 +36,7 @@ type Tab = ProgramID | "all";
 // Program-square design from Shayla's reference (screenshot 1.19.36).
 const INK = "#17261b";
 const SQUARE_CREAM = "#f1efe5";
-const SQUARE_FONT = "'Archivo', var(--font-heading)";
+const SQUARE_FONT = "'Cocogoose Narrow', var(--font-heading)";
 
 // Shown under the squares when "All Farm & Food Programs" is selected.
 const ALL_PROGRAMS_COPY =
@@ -263,10 +263,9 @@ function ProgramSquare({ label, active, color, text, narrow, mid, wide, onClick,
     textAlign: "left",
     textDecoration: "none",
     fontFamily: SQUARE_FONT,
-    fontWeight: 800,
-    fontStretch: "125%",
+    fontWeight: 400,
     textTransform: "uppercase",
-    fontSize: narrow ? 13.5 : mid ? 13 : 17,
+    fontSize: narrow ? 15 : mid ? 14.5 : 19,
     lineHeight: 1.08,
     letterSpacing: "0.01em",
     transform: hovered && !active ? "translateY(-2px)" : "none",
