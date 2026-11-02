@@ -404,7 +404,7 @@ export const DETAILS: Record<string, ProfileDetails> = {
     "website": "https://www.marinprovisions.com"
   },
   "foodmaker:quitutez": {
-    "story": "Quitutez brings a taste of Brazil to your table with a personal twist! Inspired by owner Feranda's mom's delicious homemade pão de queijo (Brazilian cheese bread), she created Quitutez to share a cherished family recipe alongside her own unique flavor creations. In Brazil, cheese bread is more than just a snack; it's a tradition enjoyed with coffee, family, and friends throughout the day. Her hope is to bring that same warmth, joy, and togetherness to every bite, creating delicious moments and lasting memories.",
+    "story": "Quitutez brings a taste of Brazil to your table with a personal twist! Inspired by owner Fernanda's mom's delicious homemade pão de queijo (Brazilian cheese bread), she created Quitutez to share a cherished family recipe alongside her own unique flavor creations. In Brazil, cheese bread is more than just a snack; it's a tradition enjoyed with coffee, family, and friends throughout the day. Her hope is to bring that same warmth, joy, and togetherness to every bite, creating delicious moments and lasting memories.",
     "sells": "Pão de queijo (Brazilian cheese bread)"
   },
   "foodmaker:two pots": {

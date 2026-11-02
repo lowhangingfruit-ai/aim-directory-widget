@@ -229,7 +229,7 @@ export const FOODMAKERS_CURRENT: RosterEntry[] = [
   { person: "Elaine Blakeley", business: "Bakery 6", program: "foodmaker", cohort: "2026", match: "bakery 6", photo: "/participants/bakery-6.jpg" },
   { person: "Stephanie Rodriguez", business: "Sweet Treat Marin", program: "foodmaker", cohort: "2026", match: "sweet treat marin", photo: "/participants/sweet-treat-marin.jpg" },
   { person: "Alexis Haynes", business: "Fully'z VeSoul Cafe", program: "foodmaker", cohort: "2026", match: "vesoul", photo: "/participants/fullyz-vesoul-cafe.jpg" },
-  { person: "Feranda", business: "Quitutez", program: "foodmaker", cohort: "2026", match: "quitutez", photo: "/participants/quitutez.jpg", markets: [7776] },
+  { person: "Fernanda Bernardes", business: "Quitutez", program: "foodmaker", cohort: "2026", match: "quitutez", photo: "/participants/quitutez.jpg", markets: [7776] },
   { person: "Nickolaus Faibisch", business: "Suki / Marin Provisions", program: "foodmaker", cohort: "2026", match: "suki", photo: "/participants/suki.jpg" },
 ];
 
