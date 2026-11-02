@@ -90,7 +90,11 @@ function usableStory(desc: string | undefined): string | null {
 }
 
 function knownMarkets(profile: Profile, allMarkets: Record<number, string>) {
-  if (!profile.vendor) return [];
+  if (!profile.vendor) {
+    return (profile.markets ?? [])
+      .filter((id) => allMarkets[id])
+      .map((id) => ({ marketID: id, market: allMarkets[id], dates: [] as string[] }));
+  }
   const seen = new Set<number>();
   return profile.vendor.markets.filter((m) => {
     if (!allMarkets[m.marketID] || seen.has(m.marketID)) return false;

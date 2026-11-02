@@ -403,6 +403,10 @@ export const DETAILS: Record<string, ProfileDetails> = {
     "sells": "Japanese Yakitori, omusubi",
     "website": "https://www.marinprovisions.com"
   },
+  "foodmaker:quitutez": {
+    "story": "Quitutez brings a taste of Brazil to your table with a personal twist! Inspired by owner Feranda's mom's delicious homemade pão de queijo (Brazilian cheese bread), she created Quitutez to share a cherished family recipe alongside her own unique flavor creations. In Brazil, cheese bread is more than just a snack; it's a tradition enjoyed with coffee, family, and friends throughout the day. Her hope is to bring that same warmth, joy, and togetherness to every bite, creating delicious moments and lasting memories.",
+    "sells": "Pão de queijo (Brazilian cheese bread)"
+  },
   "foodmaker:two pots": {
     "story": "Twopotsandapan is a private catering company and a food truck. They specialize in authentic down home southern soul food. Their specialties are  special dishes such as Chittlings, ox tails, red beans and rice, smothered pork chops, greens, turnip, collard and mustard greens,  barbecue ribs and chicken, smoked turkey, Cajun turkey and fried turkey. They also serve a vegan menu, all natural menu and a vegetarian menu.",
     "sells": "BBQ"
