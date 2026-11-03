@@ -4,21 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Vendor } from "@/lib/types";
+import { MARKET_BY_ID, MARKET_LIST, Market, milesBetween } from "@/lib/markets";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-
-// Market lat/lng — fixed locations
-const MARKET_COORDS: Record<number, [number, number]> = {
-  7776: [37.9948, -122.5185], // Sunday Marin (Civic Center)
-  7781: [37.5297, -122.0402], // Newark
-  7782: [37.7822, -122.4644], // Clement St.
-  7783: [37.7286, -122.4757], // Stonestown
-  7784: [37.6688, -122.0808], // Hayward
-  7785: [37.8098, -122.2174], // Grand Lake
-  7786: [37.9948, -122.5185], // Thursday Marin
-  7803: [38.0721, -122.8005], // Point Reyes
-  8211: [37.9735, -122.5311], // San Rafael Summer
-};
 
 const DEFAULT_VIEW = { center: [-121.5, 37.7] as [number, number], zoom: 6 };
 
@@ -50,9 +38,7 @@ interface Props {
   vendors: Vendor[];
   origins?: Record<number, string>; // intake answer, used instead of the MMM city
   coords?: Record<number, [number, number]>; // from the server, keyed by vendor ID
-  selectedMarket: number | null;
-  allMarkets: Record<number, string>;
-  marketColor?: string;
+  selectedMarket: number | null; // null shows every market
 }
 
 interface PlaceGroup {
@@ -115,10 +101,10 @@ function popupContent(group: PlaceGroup): HTMLElement {
   return root;
 }
 
-export default function VendorMap({ vendors, origins = {}, coords = {}, selectedMarket, allMarkets, marketColor = "#0d8240" }: Props) {
+export default function VendorMap({ vendors, origins = {}, coords = {}, selectedMarket }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const marketMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const marketMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const groupsRef = useRef<PlaceGroup[]>([]);
   const [ready, setReady] = useState(false);
   const [fallback, setFallback] = useState<Map<number, [number, number]>>(new Map());
@@ -215,36 +201,49 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
     (map.getSource("vendors") as mapboxgl.GeoJSONSource | undefined)?.setData(toGeoJSON(groups));
   }, [ready, vendors, origins, coords, fallback]);
 
-  // Move to the selected market and mark it.
+  // Market logos as pins: every market on the all-markets map, one on a
+  // market's own map. The view fits the pins and that day's vendors.
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
-    marketMarkerRef.current?.remove();
-    marketMarkerRef.current = null;
-    const at = selectedMarket ? MARKET_COORDS[selectedMarket] : null;
-    if (at && selectedMarket) {
-      const el = document.createElement("div");
-      el.style.cssText = `width:18px;height:18px;border-radius:50%;background:${marketColor};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);`;
+    marketMarkersRef.current.forEach((m) => m.remove());
+    const seen = new Set<string>();
+    const shown: Market[] = selectedMarket
+      ? [MARKET_BY_ID[selectedMarket]].filter(Boolean)
+      : MARKET_LIST.filter((m) => !seen.has(m.logo) && seen.add(m.logo));
+    marketMarkersRef.current = shown.map((m) => {
+      const el = document.createElement("img");
+      el.src = m.logo;
+      el.alt = "";
+      el.style.cssText = "width:44px;height:44px;border-radius:12px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.35);object-fit:cover;";
       const label = document.createElement("div");
       label.style.cssText = "font-family:sans-serif;font-size:12px;font-weight:700;color:#111";
-      label.textContent = allMarkets[selectedMarket] ?? "";
+      // The two Marin markets share a logo and a site, so the all-markets map shows one pin for both.
+      label.textContent = !selectedMarket && m.name.includes("Marin") ? "Thursday and Sunday Marin" : m.name;
       const sub = document.createElement("div");
       sub.style.cssText = "font-size:11px;color:#666";
-      sub.textContent = "Market location";
+      sub.textContent = `${m.address}, ${m.city}`;
       const content = document.createElement("div");
       content.append(label, sub);
-      marketMarkerRef.current = new mapboxgl.Marker({ element: el })
-        .setLngLat([at[1], at[0]])
-        .setPopup(new mapboxgl.Popup({ offset: 12, closeButton: false }).setDOMContent(content))
+      return new mapboxgl.Marker({ element: el })
+        .setLngLat([m.lng, m.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 24, closeButton: false }).setDOMContent(content))
         .addTo(map);
-      map.easeTo({ center: [at[1], at[0]], zoom: 7 });
-    } else {
-      map.easeTo(DEFAULT_VIEW);
-    }
-  }, [ready, selectedMarket, marketColor, allMarkets]);
+    });
+
+    // A market's map fits that market and the vendors within 200 miles; the
+    // few from out of state are still drawn, just not zoomed out for.
+    const here = selectedMarket ? MARKET_BY_ID[selectedMarket] : undefined;
+    if (!here) { map.easeTo(DEFAULT_VIEW); return; }
+    const bounds = new mapboxgl.LngLatBounds([here.lng, here.lat], [here.lng, here.lat]);
+    groupsRef.current
+      .filter((g) => milesBetween([here.lat, here.lng], [g.lat, g.lng]) <= 200)
+      .forEach((g) => bounds.extend([g.lng, g.lat]));
+    map.fitBounds(bounds, { padding: 60, maxZoom: 9, duration: 600 });
+  }, [ready, selectedMarket, vendors, fallback]);
 
   return (
-    <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", height: 480, background: "#e8e6da" }}>
+    <div style={{ position: "relative", overflow: "hidden", height: "min(620px, 75vh)", background: "#e8e6da" }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
       {/* Loading overlay */}
@@ -267,12 +266,10 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
           fontFamily: "var(--font-body)", fontSize: 11, color: "#555",
           display: "flex", flexDirection: "column", gap: 6,
         }}>
-          {selectedMarket && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", background: marketColor, border: "2px solid #fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
-              <span>Market location</span>
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: "#ffec68", border: "2px solid #fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+            <span>{selectedMarket ? "Market location" : "AIM markets"}</span>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 12, height: 12, borderRadius: "50%", background: "rgba(13,130,64,0.75)", border: "2px solid #fff" }} />
             <span>Where vendors are based · size = # of vendors</span>
