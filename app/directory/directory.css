@@ -222,7 +222,7 @@
 .aimdir-scrim .season h2 { font-size: 26px; line-height: 1.1; margin: 0; }
 .aimdir-scrim .season .lede { font-size: 13.5px; color: #333; margin: 6px 0 10px; }
 .aimdir-scrim .season .season-art { width: 100%; max-width: 210px; margin-top: 6px; }
-.aimdir-scrim .season .groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; }
+.aimdir-scrim .season .groups { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 16px 24px; }
 .aimdir-scrim .season small { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
 .aimdir-scrim .season .crops { display: flex; flex-wrap: wrap; gap: 6px; }
 .aimdir-scrim .season .crop { border: 0; background: #fff; border-radius: 300px; padding: 5px 12px 5px 10px; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }

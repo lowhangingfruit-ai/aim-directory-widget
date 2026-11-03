@@ -26,6 +26,8 @@ export function SeasonStrip({ month, onPick, onOpen }: { month: number; onPick: 
 }
 
 export function SeasonGuide({ month, onPick, onClose }: { month: number; onPick: (crop: Crop) => void; onClose: () => void }) {
+  // Some months start nothing new (November, for one), so empty groups are left out.
+  const groups = seasonGroups(month).filter((g) => g.crops.length > 0);
   return (
     <div className="season-box" role="dialog" aria-modal="true" aria-label="What's in season">
       <button type="button" className="x" onClick={onClose} aria-label="Close" autoFocus>&times;</button>
@@ -35,8 +37,8 @@ export function SeasonGuide({ month, onPick, onClose }: { month: number; onPick:
           <p className="lede">Tap a crop to find the farms bringing it this month.</p>
           <span className="season-art"><Art name="season" /></span>
         </div>
-        <div className="groups">
-          {seasonGroups(month).map((g) => (
+        <div className="groups" style={{ "--cols": groups.length } as React.CSSProperties}>
+          {groups.map((g) => (
             <div key={g.title}>
               <small>{g.title}</small>
               <div className="crops">
