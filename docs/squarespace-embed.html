@@ -9,6 +9,7 @@
   - sizes the iframe to the directory's height, so the page scrolls as one
   - tells the directory which part of it is on screen, so a vendor's details
     open where the visitor is looking, below Squarespace's fixed header
+  - scrolls back to the top of the directory when a visitor opens a market
 -->
 <iframe id="aimDirectory"
   src="https://aim-directory-widget.vercel.app/?embed=1"
@@ -46,6 +47,11 @@
       sendViewport();
     }
     if (e.data.type === 'aim-directory-ready') sendViewport();
+    // Opening a market shows a new page inside the iframe; bring its top into view.
+    if (e.data.type === 'aim-directory-scroll-top') {
+      var y = frame.getBoundingClientRect().top + window.scrollY - headerBottom();
+      if (frame.getBoundingClientRect().top < headerBottom()) window.scrollTo({ top: y, behavior: 'smooth' });
+    }
   });
   window.addEventListener('scroll', sendViewport, { passive: true });
   window.addEventListener('resize', sendViewport);
