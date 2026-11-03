@@ -166,6 +166,20 @@ export default function DirectoryApp(props: Props) {
       <div className="wrap">
         <FollowAim />
         <EbtSection id="aimdir-ebt" />
+        {/* The notice AIM chose instead of asking participants for consent again. */}
+        {!current && (
+          <details className="about">
+            <summary>About this directory and the information it shows</summary>
+            <div>
+              <p><strong>What it shows.</strong>{" "}Business name, description, city, website and social links, and market
+                dates, all from each vendor&rsquo;s Manage My Market profile. It never shows email addresses, phone
+                numbers, or street addresses.</p>
+              <p><strong>Who is included.</strong>{" "}Only market participants who have agreed in Manage My Market to let AIM
+                share their information publicly. Market participants can change that answer, or update their details, in
+                their Manage My Market profile at any time.</p>
+            </div>
+          </details>
+        )}
       </div>
 
       {open && (

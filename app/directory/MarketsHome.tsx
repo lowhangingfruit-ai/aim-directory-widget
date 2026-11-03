@@ -35,17 +35,6 @@ export default function MarketsHome({ vendors, today, toolbar, beforeResults, fi
             Explore the market directory to discover vendors by market, market day, vendor type, or product. Vendor
             offerings and attendance vary by location and season, so there&rsquo;s always something new to discover.
           </p>
-          <details className="about">
-            <summary>About this directory and the information it shows</summary>
-            <div>
-              <p><strong>What it shows.</strong>{" "}Business name, description, city, website and social links, and market
-                dates, all from each vendor&rsquo;s Manage My Market profile. It never shows email addresses, phone
-                numbers, or street addresses.</p>
-              <p><strong>Who is included.</strong>{" "}Only market participants who have agreed in Manage My Market to let AIM
-                share their information publicly. Market participants can change that answer, or update their details, in
-                their Manage My Market profile at any time.</p>
-            </div>
-          </details>
         </header>
       </div>
 
