@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Vendor } from "@/lib/types";
 import type { CategoryMap } from "@/lib/categories";
+import type { Catalog } from "@/lib/catalog";
 import { CATEGORY_LABELS, categoryColors } from "@/lib/categories";
 import type { PaymentMap } from "@/lib/payments";
 import { BENEFIT_IDS, PAYMENT_SHORT } from "@/lib/payments";
@@ -59,9 +60,10 @@ function MarketMarks({ vendor, skip }: { vendor: Vendor; skip?: number }) {
   );
 }
 
-export default function ParticipantGrid({ vendors, categories, payments, marketID, onOpen }: {
+export default function ParticipantGrid({ vendors, categories, catalog, payments, marketID, onOpen }: {
   vendors: Vendor[];
   categories: CategoryMap;
+  catalog: Catalog;
   payments: PaymentMap;
   marketID?: number;
   onOpen: (id: number) => void;
@@ -75,6 +77,7 @@ export default function ParticipantGrid({ vendors, categories, payments, marketI
         const cats = categories[v.vendorID];
         const first = cats?.categories[0];
         const benefits = (payments[v.vendorID] ?? []).filter((p) => BENEFIT_IDS.includes(p));
+        const organic = catalog[v.vendorID]?.organic;
         return (
           <button key={v.vendorID} type="button" className="card" onClick={() => onOpen(v.vendorID)}>
             <Tile vendor={v} categories={cats} sizes="(max-width: 760px) 50vw, (max-width: 1100px) 33vw, 300px" />
@@ -86,8 +89,11 @@ export default function ParticipantGrid({ vendors, categories, payments, marketI
             <h3>{displayName(v.company)}</h3>
             <div className="meta">{formatCity(v.city, v.state).replace(/, CA$/, "")}</div>
             <MarketMarks vendor={v} skip={marketID} />
-            {benefits.length > 0 && (
-              <div className="badges">{benefits.map((p) => <span key={p}>{PAYMENT_SHORT[p]}</span>)}</div>
+            {(benefits.length > 0 || organic) && (
+              <div className="badges">
+                {organic && <span className="organic">Certified organic</span>}
+                {benefits.map((p) => <span key={p}>{PAYMENT_SHORT[p]}</span>)}
+              </div>
             )}
           </button>
         );

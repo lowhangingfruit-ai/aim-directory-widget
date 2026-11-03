@@ -87,3 +87,21 @@ Participants and bios live in code, not a Sheet:
 Journal, Class Portraits, Program Chapters, Market Day), switched from the green bar at the bottom
 (`#a`–`#d` in the URL opens one directly). It reads the same data as `/showcase`, isn't linked from
 it, and is marked noindex.
+
+## Categories, products and organic status (Manage My Market reports)
+
+The directory's categories, "What they sell" lists, certified organic badges and the in-season filter
+come from `lib/mmmCatalog.json`, built from AIM's Manage My Market reports. MMM's public feed doesn't
+include them, and the reports need a manager login, so refresh by hand when vendors change (for
+example each season):
+
+1. Sign in to Manage My Market as AIM's manager, open Reports.
+2. Organization > Approved Products > Download CSV. Save as `mmm-exports/Approved_Products.csv`.
+3. Vendor > Vendor Products by Market, once per current market > Download CSV. Save each as
+   `mmm-exports/products-<marketID>.csv` (marketIDs are in `lib/markets.ts`).
+4. Run `python3 -I scripts/build-mmm-catalog.py`, check its list of unmatched vendors, and commit
+   `lib/mmmCatalog.json`. `mmm-exports/` stays out of git.
+
+Only vendors in the public feed (who agreed to share their information) are written, and only their
+category, organic certification, and approved products with months. A vendor's own answer in the
+intake Sheet overrides their MMM category.

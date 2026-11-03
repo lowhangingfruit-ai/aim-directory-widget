@@ -50,6 +50,8 @@ test("a profile shows links by name and never a phone number", async ({ page }) 
   await expect(dialog).not.toContainText("555");
   await expect(dialog).not.toContainText("1 Private Lane");
   await expect(dialog.getByText(/about \d+ miles from Petaluma/).first()).toBeVisible();
+  await expect(dialog.getByText("Certified organic")).toBeVisible();
+  await expect(dialog.getByText("What they sell")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 });
@@ -67,7 +69,7 @@ test("the in-season guide opens and a crop searches the directory", async ({ pag
   await expect(guide).toBeVisible();
   await guide.locator(".crop").first().click();
   await expect(guide).toHaveCount(0);
-  await expect(page.getByRole("searchbox")).not.toHaveValue("");
+  await expect(page.getByRole("button", { name: /^Remove the .+ filter$/ })).toBeVisible();
 });
 
 test("the attendance job refuses callers without the secret, and writes nothing without storage", async ({ request }) => {
@@ -75,4 +77,13 @@ test("the attendance job refuses callers without the secret, and writes nothing 
   const res = await request.get("/api/cron/attendance", { headers: { authorization: "Bearer test-secret" } });
   expect(res.status()).toBe(500);
   expect(await res.json()).toEqual({ ok: false, error: "Run failed" });
+});
+
+test("categories and the organic filter come from Manage My Market", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Farms and produce" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Prepared food" })).toBeVisible();
+  await page.getByRole("button", { name: "Certified organic", exact: true }).click();
+  const names = await page.locator(".grid h3").allTextContents();
+  expect(names).toEqual(["Alder Creek Farm"]);
 });

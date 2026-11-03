@@ -50,6 +50,8 @@ export default function MarketsHome({ vendors, today, toolbar, beforeResults, fi
               <span>
                 <b>{filtered.length}</b> market participant{filtered.length === 1 ? "" : "s"}
                 {filters.category && ` in ${CATEGORY_LABELS[filters.category].toLowerCase()}`}
+                {filters.organic && " that are certified organic"}
+                {filters.crop && ` with ${filters.crop.name.toLowerCase()} this month`}
                 {filters.q && <> matching &ldquo;{filters.q}&rdquo;</>}
               </span>
               <button type="button" onClick={onClear}>Show all markets</button>

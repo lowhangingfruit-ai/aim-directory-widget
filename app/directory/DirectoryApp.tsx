@@ -7,6 +7,8 @@ import type { CategoryID } from "@/lib/intake";
 import { CATEGORY_LABELS, CategoryMap } from "@/lib/categories";
 import type { PaymentMap } from "@/lib/payments";
 import type { AttendanceHistory } from "@/lib/attendance";
+import type { Catalog } from "@/lib/catalog";
+import type { Crop } from "@/lib/season";
 import { MARKET_BY_ID } from "@/lib/markets";
 import Toolbar, { EMPTY_FILTERS, Filters } from "./Toolbar";
 import ParticipantGrid from "./ParticipantGrid";
@@ -29,6 +31,7 @@ interface Props {
   history: AttendanceHistory;
   payments: PaymentMap;
   categories: CategoryMap;
+  catalog: Catalog;
   origins: Record<number, string>;
   otherPayments: Record<number, string>;
   coords: Record<number, [number, number]>;
@@ -38,7 +41,7 @@ interface Props {
 const AIM_DIRECTORY_PAGE = "https://www.agriculturalinstitute.org/market-participant-directory";
 
 export default function DirectoryApp(props: Props) {
-  const { vendors, today, history, payments, categories, origins, otherPayments, coords, embedded } = props;
+  const { vendors, today, history, payments, categories, catalog, origins, otherPayments, coords, embedded } = props;
   const [market, setMarket] = useState(props.initialMarket ?? 0);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [openID, setOpenID] = useState<number | null>(null);
@@ -84,19 +87,30 @@ export default function DirectoryApp(props: Props) {
     [categories]
   );
   const showPayments = Object.keys(payments).length > 0;
+  const showOrganic = useMemo(() => Object.values(catalog).some((c) => c.organic), [catalog]);
 
   const applyFilters = useCallback((list: Vendor[]) => list.filter((v) => {
     const cats = categories[v.vendorID];
     if (filters.category && !cats?.categories.includes(filters.category)) return false;
     if (filters.products.size && !(cats?.products ?? []).some((p) => filters.products.has(p))) return false;
     if (filters.payments.size && !(payments[v.vendorID] ?? []).some((p) => filters.payments.has(p))) return false;
-    const text = (cats?.categories ?? []).map((c) => CATEGORY_LABELS[c]).join(" ");
+    const items = catalog[v.vendorID];
+    if (filters.organic && !items?.organic) return false;
+    // A crop from the in-season guide: the vendor lists it, available this month.
+    if (filters.crop) {
+      const term = filters.crop.term;
+      const has = items
+        ? items.products.some((p) => p.name.toLowerCase().includes(term) && (!p.months.length || p.months.includes(month)))
+        : (v.description ?? "").toLowerCase().includes(term);
+      if (!has) return false;
+    }
+    const text = [...(cats?.categories ?? []).map((c) => CATEGORY_LABELS[c]), ...(items?.products ?? []).map((p) => p.name)].join(" ");
     return matchesSearch(v, filters.q, text);
-  }), [filters, categories, payments]);
+  }), [filters, categories, payments, catalog, month]);
 
-  const pickCrop = (term: string) => {
+  const pickCrop = (crop: Crop) => {
     setSeasonOpen(false);
-    setFilters((f) => ({ ...f, q: term, view: "list" }));
+    setFilters((f) => ({ ...f, crop: { term: crop.term, name: crop.name }, view: "list" }));
     document.getElementById("aimdir-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const closeProfile = useCallback(() => setOpenID(null), []);
@@ -104,7 +118,7 @@ export default function DirectoryApp(props: Props) {
   const jumpToEbt = () => document.getElementById("aimdir-ebt")?.scrollIntoView({ behavior: "smooth" });
 
   const open = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
-  const filtering = !!(filters.q || filters.category || filters.payments.size);
+  const filtering = !!(filters.q || filters.category || filters.payments.size || filters.organic || filters.crop);
   const current = market ? MARKET_BY_ID[market] : undefined;
 
   const toolbar = (
@@ -114,6 +128,7 @@ export default function DirectoryApp(props: Props) {
       placeholder={current ? "Search this market by producer name or product type" : "Search by producer name, market day, or by product type"}
       categoriesShown={categoriesShown}
       showPayments={showPayments}
+      showOrganic={showOrganic}
     />
   );
   const beforeResults = (
@@ -141,7 +156,7 @@ export default function DirectoryApp(props: Props) {
           filter={applyFilters}
           view={filters.view}
           renderGrid={(list) => (
-            <ParticipantGrid vendors={list} categories={categories} payments={payments} marketID={current.id} onOpen={setOpenID} />
+            <ParticipantGrid vendors={list} categories={categories} catalog={catalog} payments={payments} marketID={current.id} onOpen={setOpenID} />
           )}
           renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={current.id} />}
         />
@@ -157,7 +172,7 @@ export default function DirectoryApp(props: Props) {
           onClear={() => setFilters((f) => ({ ...EMPTY_FILTERS, view: f.view }))}
           onOpenMarket={goTo}
           renderGrid={(list) => (
-            <ParticipantGrid vendors={list} categories={categories} payments={payments} onOpen={setOpenID} />
+            <ParticipantGrid vendors={list} categories={categories} catalog={catalog} payments={payments} onOpen={setOpenID} />
           )}
           renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={null} />}
         />
@@ -189,6 +204,8 @@ export default function DirectoryApp(props: Props) {
             today={today}
             marketID={current?.id}
             categories={categories[open.vendorID]}
+            items={catalog[open.vendorID]}
+            month={month}
             payments={payments[open.vendorID]}
             otherPayment={otherPayments[open.vendorID]}
             origin={origins[open.vendorID]}

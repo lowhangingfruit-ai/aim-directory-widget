@@ -4,6 +4,7 @@ import type { Vendor } from "@/lib/types";
 import type { CategoryMap } from "@/lib/categories";
 import { CATEGORY_LABELS, PRODUCT_LABELS, categoryColors } from "@/lib/categories";
 import type { PaymentID } from "@/lib/intake";
+import type { CatalogEntry } from "@/lib/catalog";
 import { BENEFIT_IDS, PAYMENT_LABELS } from "@/lib/payments";
 import { MARKET_BY_ID, MARKET_LIST, directionsUrl, milesBetween, readable } from "@/lib/markets";
 import { Tile } from "./ParticipantGrid";
@@ -14,6 +15,8 @@ interface Props {
   today: string;
   marketID?: number; // the market page it was opened from, if any
   categories?: CategoryMap[number];
+  items?: CatalogEntry; // products and organic status from Manage My Market
+  month: number; // this month, 0 = January
   payments?: PaymentID[];
   otherPayment?: string;
   origin?: string;
@@ -21,7 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-export default function ProfileModal({ vendor, today, marketID, categories, payments, otherPayment, origin, at, onClose }: Props) {
+export default function ProfileModal({ vendor, today, marketID, categories, items, month, payments, otherPayment, origin, at, onClose }: Props) {
   const name = displayName(vendor.company);
   const city = formatCity(vendor.city, vendor.state);
   const basedIn = origin?.trim() || formatCity(vendor.city ?? "", "");
@@ -72,6 +75,12 @@ export default function ProfileModal({ vendor, today, marketID, categories, paym
             {origin && origin.toLowerCase() !== (vendor.city ?? "").trim().toLowerCase() && (
               <div className="city">Grown or made in {origin}</div>
             )}
+            {(items?.organic || items?.naturallyGrown) && (
+              <div className="certs">
+                {items.organic && <span>Certified organic</span>}
+                {items.naturallyGrown && <span>Certified Naturally Grown</span>}
+              </div>
+            )}
           </div>
           <button type="button" className="x" onClick={onClose} aria-label="Close" autoFocus>&times;</button>
         </div>
@@ -94,6 +103,30 @@ export default function ProfileModal({ vendor, today, marketID, categories, paym
 
         {paragraphs.length > 0 && (
           <div className="desc">{paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
+        )}
+
+        {items && items.products.length > 0 && (
+          <div>
+            <div className="label">What they sell</div>
+            <div className="goods">
+              {Object.entries(Object.groupBy(items.products, (p) => p.category)).map(([category, products]) => (
+                <div key={category}>
+                  <small>{category}</small>
+                  <div className="chips">
+                    {products!.map((p) => {
+                      const now = !p.months.length || p.months.includes(month);
+                      return (
+                        <span key={p.name} className={now ? "now" : ""} title={now ? "Available this month" : undefined}>
+                          {p.name}{p.organic ? " · organic" : ""}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="goods-note">Highlighted items are available this month.</p>
+          </div>
         )}
 
         {markets.length > 0 && (

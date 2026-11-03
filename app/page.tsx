@@ -3,6 +3,7 @@ import { getIntakeAnswers } from "@/lib/intakeAnswers";
 import { lookupPlace } from "@/lib/placeCoords";
 import { MARKET_BY_ID } from "@/lib/markets";
 import { getAttendanceHistory } from "@/lib/attendance";
+import { catalogFor } from "@/lib/catalog";
 import DirectoryApp from "./directory/DirectoryApp";
 import { todayIso } from "./directory/vendorUtils";
 
@@ -28,6 +29,10 @@ export default async function Page({
   const today = todayIso();
   const [vendors, answers] = await Promise.all([getVendors(), getIntakeAnswers()]);
   const history = await getAttendanceHistory(today, new Set(vendors.map((v) => v.vendorID)));
+  // Categories and products come from AIM's Manage My Market reports; a
+  // vendor's own answer in the intake Sheet wins where there is one.
+  const mmm = catalogFor(vendors.map((v) => v.vendorID));
+  const categories = { ...mmm.categories, ...answers.categories };
   const initialMarket = marketID && MARKET_BY_ID[Number(marketID)] ? Number(marketID) : undefined;
 
   // Map positions and distances: where the vendor grows or makes products if
@@ -46,7 +51,8 @@ export default async function Page({
       today={today}
       history={history}
       payments={answers.payments}
-      categories={answers.categories}
+      categories={categories}
+      catalog={mmm.catalog}
       origins={answers.origins}
       otherPayments={answers.otherPayments}
       coords={coords}

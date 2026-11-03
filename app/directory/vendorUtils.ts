@@ -74,11 +74,12 @@ export function nextDate(v: Vendor, today: string, marketID?: number): { iso: st
   return best;
 }
 
-// Search covers the business name, description, city, category labels, and
-// the days the vendor is at market ("sunday" finds Sunday sellers).
-export function matchesSearch(v: Vendor, q: string, categoryText: string): boolean {
+// Search covers the business name, description, city, category labels and
+// products (extraText), and the days the vendor is at market ("sunday" finds
+// Sunday sellers).
+export function matchesSearch(v: Vendor, q: string, extraText: string): boolean {
   const query = q.trim().toLowerCase();
   if (!query) return true;
   const days = v.markets.map((m) => MARKET_BY_ID[m.marketID]?.day ?? "").join(" ");
-  return [v.company, v.description ?? "", v.city ?? "", categoryText, days].some((s) => s.toLowerCase().includes(query));
+  return [v.company, v.description ?? "", v.city ?? "", extraText, days].some((s) => s.toLowerCase().includes(query));
 }

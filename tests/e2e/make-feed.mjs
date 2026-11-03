@@ -1,6 +1,8 @@
 // Writes a small made-up Manage My Market feed for the end-to-end tests, with
 // market dates relative to today so the tests never go stale. The names are
-// invented; the live directory never shows this file.
+// invented; the live directory never shows this file. Two IDs are real MMM IDs
+// so the tests pick up their categories and products from lib/mmmCatalog.json
+// (an organic farm and a prepared-food vendor).
 import { writeFileSync } from "node:fs";
 
 const today = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date()) + "T12:00:00");
@@ -21,7 +23,7 @@ const vendor = (o) => ({
 
 const vendors = [
   vendor({
-    id: 900001, company: "Alder Creek Farm LLC", city: "PETALUMA", phone: "7075550101",
+    id: 383524, company: "Alder Creek Farm LLC", city: "PETALUMA", phone: "7075550101",
     description: "Family farm growing apples, persimmons, and winter greens.\n\nFind us at the north end of the market.",
     website: "aldercreek.example.com", instagram: "https://www.instagram.com/aldercreek",
     markets: [
@@ -30,7 +32,7 @@ const vendors = [
     ],
   }),
   vendor({
-    id: 900002, company: "Bayside Bakery", city: "Oakland", description: "Sourdough and pastries baked overnight.",
+    id: 336216, company: "Bayside Bakery", city: "Oakland", description: "Sourdough and pastries baked overnight.",
     markets: [{ marketID: 7785, market: "Grand Lake", dates: saturdays }],
   }),
   vendor({

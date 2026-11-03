@@ -11,10 +11,12 @@ export interface Filters {
   category: CategoryID | null;
   products: Set<ProductID>;
   payments: Set<PaymentID>;
+  organic: boolean;
+  crop: { term: string; name: string } | null; // picked from the in-season guide
   view: "list" | "map";
 }
 
-export const EMPTY_FILTERS: Filters = { q: "", category: null, products: new Set(), payments: new Set(), view: "list" };
+export const EMPTY_FILTERS: Filters = { q: "", category: null, products: new Set(), payments: new Set(), organic: false, crop: null, view: "list" };
 
 interface Props {
   filters: Filters;
@@ -22,6 +24,7 @@ interface Props {
   placeholder: string;
   categoriesShown: CategoryID[]; // only categories some vendor has answered
   showPayments: boolean;
+  showOrganic: boolean;
 }
 
 const pillStyle = (background: string, art: string) => ({
@@ -33,7 +36,7 @@ const pillStyle = (background: string, art: string) => ({
 
 const NEUTRAL = pillStyle("#e8e6d8", "#111111");
 
-export default function Toolbar({ filters, onChange, placeholder, categoriesShown, showPayments }: Props) {
+export default function Toolbar({ filters, onChange, placeholder, categoriesShown, showPayments, showOrganic }: Props) {
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
   const toggle = <T,>(s: Set<T>, v: T) => { const n = new Set(s); if (n.has(v)) n.delete(v); else n.add(v); return n; };
   const products = filters.category ? productsFor(filters.category) : [];
@@ -58,8 +61,14 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
           <button type="button" aria-pressed={filters.view === "map"} onClick={() => set({ view: "map" })}>Map</button>
         </div>
 
-        {(ordered.length > 0 || showPayments) && (
+        {(ordered.length > 0 || showPayments || showOrganic || filters.crop) && (
           <div className="pills">
+            {filters.crop && (
+              <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed onClick={() => set({ crop: null })}
+                aria-label={`Remove the ${filters.crop.name} filter`}>
+                In season: {filters.crop.name} &times;
+              </button>
+            )}
             {ordered.length > 0 && (
               <>
                 <button type="button" style={NEUTRAL} aria-pressed={!filters.category}
@@ -86,6 +95,12 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
                 </button>
               );
             })}
+            {showOrganic && (
+              <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed={filters.organic}
+                onClick={() => set({ organic: !filters.organic })}>
+                Certified organic
+              </button>
+            )}
             {showPayments && (
               <>
                 <span className="label">Accepts</span>
