@@ -115,3 +115,22 @@ test("picking a crop from the in-season guide moves focus to the results", async
   await expect(page.locator("#aimdir-count")).toBeFocused();
   await expect(page.locator("main")).toHaveJSProperty("inert", false);
 });
+
+test("the search field has a visible label", async ({ page }) => {
+  await page.goto("/");
+  const label = page.locator("label[for=aimdir-q]");
+  await expect(label).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search market participants" })).toBeVisible();
+});
+
+test("map dots are named buttons that open their vendor list from the keyboard", async ({ page }) => {
+  await page.goto("/?marketID=7776");
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  const dot = page.locator(".vendor-dot", { has: page.locator("span") }).first();
+  await expect(dot).toBeVisible({ timeout: 15_000 });
+  await expect(dot).toHaveAttribute("role", "button");
+  await expect(dot).toHaveAccessibleName(/: \d+ vendors?\. /);
+  await dot.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".mapboxgl-popup")).toBeVisible();
+});

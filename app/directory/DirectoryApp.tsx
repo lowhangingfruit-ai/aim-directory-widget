@@ -152,7 +152,7 @@ export default function DirectoryApp(props: Props) {
     <Toolbar
       filters={filters}
       onChange={setFilters}
-      placeholder={current ? "Search this market by producer name or product type" : "Search by producer name, market day, or by product type"}
+      placeholder={current ? "Producer name or product" : "Name, market day, or product"}
       categoriesShown={categoriesShown}
       showPayments={showPayments}
       showOrganic={showOrganic}

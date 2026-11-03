@@ -46,15 +46,18 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
     <div className="tools">
       <div className="wrap">
         <div className="search" role="search">
+          <label htmlFor="aimdir-q">Search market participants</label>
+          <div className="field">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
+            id="aimdir-q"
             type="search"
             value={filters.q}
             onChange={(e) => set({ q: e.target.value })}
             placeholder={placeholder}
-            aria-label="Search market participants"
           />
           {filters.q && <button type="button" className="clear" onClick={() => set({ q: "" })} aria-label="Clear search"><span aria-hidden="true">&times;</span></button>}
+          </div>
         </div>
         <div className="seg" role="group" aria-label="View">
           <button type="button" aria-pressed={filters.view === "list"} onClick={() => set({ view: "list" })}>List</button>

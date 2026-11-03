@@ -63,13 +63,15 @@
 /* Toolbar: search and list or map, then colored categories */
 .aimdir .tools { position: sticky; top: 0; z-index: 20; background: var(--cream); border-bottom: 1px solid var(--line); }
 .aimdir.embedded .tools { position: static; }
-.aimdir .tools .wrap { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; padding-block: 14px; }
-.aimdir .search { position: relative; flex: 1; min-width: 0; max-width: 560px; }
+.aimdir .tools .wrap { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: flex-end; padding-block: 12px 14px; }
+.aimdir .search { flex: 1; min-width: 0; max-width: 560px; display: flex; flex-direction: column; gap: 4px; }
+.aimdir .search label { padding-left: 18px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.aimdir .search .field { position: relative; }
 .aimdir .search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .aimdir .search input { width: 100%; border: 2px solid var(--line); border-radius: 300px; padding: 10px 40px 10px 42px; font: inherit; font-size: 14px; background: var(--white); color: var(--ink); outline: none; }
 .aimdir .search input:focus { border-color: var(--ink); }
 .aimdir .search .clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--muted); }
-.aimdir .seg { margin-left: auto; display: inline-flex; border: 2px solid var(--line); border-radius: 300px; padding: 3px; background: var(--white); flex-shrink: 0; }
+.aimdir .seg { margin-left: auto; margin-bottom: 2px; display: inline-flex; border: 2px solid var(--line); border-radius: 300px; padding: 3px; background: var(--white); flex-shrink: 0; }
 .aimdir .seg button { border: 0; background: none; border-radius: 300px; padding: 5px 14px; font-size: 13px; cursor: pointer; color: var(--muted); }
 .aimdir .seg button[aria-pressed="true"] { background: var(--ink); color: var(--white); font-weight: 600; }
 .aimdir .pills { order: 3; flex-basis: 100%; min-width: 0; display: flex; gap: 8px; overflow-x: auto; }
@@ -77,6 +79,14 @@
 .aimdir .pills button { flex-shrink: 0; border: 0; border-radius: 300px; padding: 7px 15px; font-size: 13.5px; font-weight: 600; cursor: pointer; background: var(--ct); color: var(--ci); white-space: nowrap; transition: background .12s, color .12s; }
 .aimdir .pills button[aria-pressed="true"] { background: var(--ca); color: var(--con); }
 .aimdir .pills .label { align-self: center; font-size: 13px; color: var(--muted); flex-shrink: 0; padding-left: 6px; }
+/* On phones the search gets its own row, so the placeholder isn't cut off,
+   and List or Map sits at the start of the row of pills. */
+@media (max-width: 640px) {
+  .aimdir .search { flex-basis: 100%; max-width: none; }
+  .aimdir .tools .wrap { align-items: center; gap: 10px; }
+  .aimdir .seg { order: 2; margin: 0; }
+  .aimdir .pills { order: 3; flex: 1 1 0; }
+}
 .aimdir .pre { display: flex; flex-direction: column; gap: 14px; padding-top: 24px; }
 
 /* Markets grouped by region */
@@ -166,6 +176,10 @@
 
 /* Map */
 .aimdir .mapbox { margin-top: 24px; margin-bottom: 40px; border-radius: 22px; overflow: hidden; background: var(--white); }
+/* Vendor dots (VendorMap.tsx), same look as the old canvas dots */
+.aimdir .vendor-dot { display: grid; place-items: center; border-radius: 50%; cursor: pointer; }
+.aimdir .vendor-dot span { box-sizing: border-box; border-radius: 50%; border: 2px solid #fff; background: rgba(13,130,64,.75); color: #fff; display: grid; place-items: center; font: 700 10px/1 Arial, sans-serif; }
+.aimdir .mapboxgl-marker:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 
 /* Overlays: profile pop-up and the in-season guide */
 .aimdir-scrim { position: fixed; inset: 0; z-index: 100; background: rgba(20, 20, 10, .45); display: flex; align-items: center; justify-content: center; padding: 32px 16px; }

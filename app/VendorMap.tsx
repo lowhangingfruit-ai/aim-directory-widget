@@ -68,15 +68,29 @@ function groupByPlace(
   return [...groups.values()];
 }
 
-function toGeoJSON(groups: PlaceGroup[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
-  return {
-    type: "FeatureCollection",
-    features: groups.map((g, i) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [g.lng, g.lat] },
-      properties: { index: i, count: g.vendors.length },
-    })),
-  };
+// One dot per place, drawn as an HTML marker rather than on the canvas so a
+// keyboard can reach it: Tab moves between dots, Enter or Space opens the
+// list. The dot looks as the canvas dots did (radius 4 + 1.5 per vendor, 5 to
+// 14px), inside a target at least 24px across so it's easier to tap.
+function placeDot(group: PlaceGroup): HTMLElement {
+  const n = group.vendors.length;
+  const size = 2 * Math.min(14, Math.max(5, 4 + 1.5 * n)) + 4; // plus the white ring
+  const el = document.createElement("div");
+  el.className = "vendor-dot";
+  el.style.width = el.style.height = `${Math.max(24, size)}px`;
+  const dot = document.createElement("span");
+  dot.style.width = dot.style.height = `${size}px`;
+  if (n > 1) dot.textContent = String(n);
+  el.append(dot);
+  return el;
+}
+
+// What a screen reader hears on a dot: the place, the count and the names.
+function dotLabel(group: PlaceGroup): string {
+  const n = group.vendors.length;
+  const names = group.vendors.slice(0, 8).join(", ");
+  const more = n > 8 ? `, and ${n - 8} more` : "";
+  return `${group.label || "Vendors"}: ${n} vendor${n > 1 ? "s" : ""}. ${names}${more}`;
 }
 
 // Popup built from DOM nodes, so vendor names from MMM are never parsed as HTML.
@@ -91,6 +105,13 @@ function popupContent(group: PlaceGroup): HTMLElement {
   count.textContent = `${group.vendors.length} vendor${group.vendors.length > 1 ? "s" : ""}`;
   const list = document.createElement("div");
   list.style.cssText = "font-size:11px;color:#333;line-height:1.5;max-height:180px;overflow-y:auto";
+  // A long list scrolls, so it takes focus (Mapbox focuses it when the popup
+  // opens) and the arrow keys can scroll it.
+  if (group.vendors.length > 10) {
+    list.tabIndex = 0;
+    list.setAttribute("role", "region");
+    list.setAttribute("aria-label", `Vendors based in ${group.label || "this place"}`);
+  }
   for (const name of group.vendors) {
     const row = document.createElement("span");
     row.style.display = "block";
@@ -105,6 +126,7 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const marketMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const dotMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const groupsRef = useRef<PlaceGroup[]>([]);
   const [ready, setReady] = useState(false);
   const [fallback, setFallback] = useState<Map<number, [number, number]>>(new Map());
@@ -127,45 +149,6 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
     // "style.load" fires once the style is ready, before every background tile
     // has arrived, so dots can appear sooner than with "load".
     map.once("style.load", () => {
-      map.addSource("vendors", { type: "geojson", data: toGeoJSON([]) });
-      map.addLayer({
-        id: "vendor-dots",
-        type: "circle",
-        source: "vendors",
-        paint: {
-          "circle-radius": ["min", 14, ["max", 5, ["+", 4, ["*", 1.5, ["get", "count"]]]]],
-          "circle-color": "rgba(13,130,64,0.75)",
-          "circle-stroke-color": "#fff",
-          "circle-stroke-width": 2,
-        },
-      });
-      map.addLayer({
-        id: "vendor-counts",
-        type: "symbol",
-        source: "vendors",
-        filter: [">", ["get", "count"], 1],
-        layout: {
-          "text-field": ["to-string", ["get", "count"]],
-          "text-size": 10,
-          "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
-          "text-allow-overlap": true,
-        },
-        paint: { "text-color": "#fff" },
-      });
-
-      map.on("click", "vendor-dots", (e) => {
-        const feature = e.features?.[0];
-        const group = feature ? groupsRef.current[Number(feature.properties?.index)] : undefined;
-        if (!feature || !group) return;
-        const [lng, lat] = (feature.geometry as GeoJSON.Point).coordinates;
-        new mapboxgl.Popup({ offset: 12, closeButton: false, maxWidth: "220px" })
-          .setLngLat([lng, lat])
-          .setDOMContent(popupContent(group))
-          .addTo(map);
-      });
-      map.on("mouseenter", "vendor-dots", () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", "vendor-dots", () => { map.getCanvas().style.cursor = ""; });
-
       setReady(true);
     });
 
@@ -198,7 +181,16 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
     if (!ready || !map) return;
     const groups = groupByPlace(vendors, origins, coords, fallback);
     groupsRef.current = groups;
-    (map.getSource("vendors") as mapboxgl.GeoJSONSource | undefined)?.setData(toGeoJSON(groups));
+    dotMarkersRef.current.forEach((m) => m.remove());
+    dotMarkersRef.current = groups.map((g) => {
+      const el = placeDot(g);
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([g.lng, g.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 12, closeButton: false, maxWidth: "220px" }).setDOMContent(popupContent(g)))
+        .addTo(map);
+      el.setAttribute("aria-label", dotLabel(g)); // after Mapbox sets its own "Map marker"
+      return marker;
+    });
   }, [ready, vendors, origins, coords, fallback]);
 
   // Market logos as pins: every market on the all-markets map, one on a
@@ -218,6 +210,7 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
       el.src = m.logo;
       // Mapbox makes each pin a button named "Map marker"; name it after the market.
       el.alt = `${name} Farmers Market`;
+      el.style.zIndex = "2"; // market logos sit above the vendor dots
       el.style.cssText = "width:44px;height:44px;border-radius:12px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.35);object-fit:cover;";
       const label = document.createElement("div");
       label.style.cssText = "font-family:sans-serif;font-size:12px;font-weight:700;color:#111";
@@ -248,11 +241,6 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
 
   return (
     <div style={{ position: "relative", overflow: "hidden", height: "min(620px, 75vh)", background: "#e8e6da" }}>
-      {/* The vendor dots are drawn on a canvas that a keyboard or screen reader can't reach. */}
-      <p className="sr-only">
-        The map shows where vendors are based. The List view shows the same vendors and works with a keyboard and
-        screen reader.
-      </p>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
       {/* Loading overlay */}
