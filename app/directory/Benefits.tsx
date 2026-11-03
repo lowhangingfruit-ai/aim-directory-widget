@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Art } from "./art";
 
 // Wording follows AIM's Farm Fresh Nutrition Access page. The WIC deadline and
@@ -53,9 +54,38 @@ export function EbtSection({ id }: { id: string }) {
   );
 }
 
-// Instagram and Facebook are AIM's own accounts from its site footer. The
-// newsletter button waits for AIM's signup link.
-export function FollowAim({ logos }: { logos: string[] }) {
+// AIM's own newsletter form: the Flodesk form AIM embeds on its About,
+// Community and Events pages, loaded the same way AIM's site loads it.
+// Flodesk has no standalone signup page for it. Instagram and Facebook are
+// AIM's accounts from its site footer.
+const NEWSLETTER_FORM = "657a05eabfecc716e8607d86";
+
+type Flodesk = ((...args: unknown[]) => void) & { q?: unknown[][] };
+
+function useFlodeskForm(formId: string, containerEl: string) {
+  useEffect(() => {
+    const w = window as unknown as { fd?: Flodesk; FlodeskObject?: string };
+    if (!w.fd) {
+      w.FlodeskObject = "fd";
+      const fd: Flodesk = (...args) => { (fd.q = fd.q ?? []).push(args); };
+      w.fd = fd;
+      const v = `?v=${Math.floor(Date.now() / 120000) * 60}`;
+      const mod = document.createElement("script");
+      mod.async = true;
+      mod.type = "module";
+      mod.src = `https://assets.flodesk.com/universal.mjs${v}`;
+      const legacy = document.createElement("script");
+      legacy.async = true;
+      legacy.noModule = true;
+      legacy.src = `https://assets.flodesk.com/universal.js${v}`;
+      document.head.append(mod, legacy);
+    }
+    w.fd!("form", { formId, containerEl });
+  }, [formId, containerEl]);
+}
+
+export function FollowAim() {
+  useFlodeskForm(NEWSLETTER_FORM, `#fd-form-${NEWSLETTER_FORM}`);
   return (
     <section className="follow">
       <div>
@@ -66,9 +96,7 @@ export function FollowAim({ logos }: { logos: string[] }) {
           <a className="ghost" href="https://www.facebook.com/AIMFarmersMarkets/" target="_blank" rel="noopener noreferrer">Follow on Facebook</a>
         </div>
       </div>
-      <div className="logos" aria-hidden="true">
-        {logos.map((l) => <img key={l} src={l} alt="" />)}
-      </div>
+      <div className="newsletter" id={`fd-form-${NEWSLETTER_FORM}`} />
     </section>
   );
 }

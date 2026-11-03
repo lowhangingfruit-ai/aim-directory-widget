@@ -7,7 +7,7 @@ import type { CategoryID } from "@/lib/intake";
 import { CATEGORY_LABELS, CategoryMap } from "@/lib/categories";
 import type { PaymentMap } from "@/lib/payments";
 import type { AttendanceHistory } from "@/lib/attendance";
-import { MARKET_BY_ID, MARKET_LIST } from "@/lib/markets";
+import { MARKET_BY_ID } from "@/lib/markets";
 import Toolbar, { EMPTY_FILTERS, Filters } from "./Toolbar";
 import ParticipantGrid from "./ParticipantGrid";
 import ProfileModal from "./ProfileModal";
@@ -105,7 +105,6 @@ export default function DirectoryApp(props: Props) {
 
   const open = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
   const filtering = !!(filters.q || filters.category || filters.payments.size);
-  const logos = [...new Set(MARKET_LIST.map((m) => m.logo))];
   const current = market ? MARKET_BY_ID[market] : undefined;
 
   const toolbar = (
@@ -165,7 +164,7 @@ export default function DirectoryApp(props: Props) {
       )}
 
       <div className="wrap">
-        <FollowAim logos={logos} />
+        <FollowAim />
         <EbtSection id="aimdir-ebt" />
       </div>
 

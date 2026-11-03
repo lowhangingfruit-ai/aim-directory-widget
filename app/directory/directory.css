@@ -242,12 +242,10 @@
 .aimdir .follow .btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .aimdir .follow .btns a { background: var(--ink); color: var(--white); border-radius: 300px; padding: 9px 18px; font-size: 14px; font-weight: 700; text-decoration: none; }
 .aimdir .follow .btns a.ghost { background: var(--white); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.aimdir .follow .logos { display: grid; grid-template-columns: repeat(4, 64px); gap: 8px; }
-.aimdir .follow .logos img { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; }
+.aimdir .follow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.aimdir .follow .newsletter { min-width: 0; min-height: 120px; }
 @media (max-width: 760px) {
   .aimdir .follow { grid-template-columns: minmax(0, 1fr); padding: 24px 18px; }
-  .aimdir .follow .logos { grid-template-columns: repeat(8, 1fr); }
-  .aimdir .follow .logos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 8px; }
 }
 
 /* EBT, WIC, and senior benefits */
