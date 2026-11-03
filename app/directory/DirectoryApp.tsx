@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Vendor } from "@/lib/types";
 import type { CategoryID } from "@/lib/intake";
@@ -9,13 +9,13 @@ import type { PaymentMap } from "@/lib/payments";
 import type { AttendanceHistory } from "@/lib/attendance";
 import type { Catalog } from "@/lib/catalog";
 import type { Crop } from "@/lib/season";
-import { MARKET_BY_ID } from "@/lib/markets";
+import { DIRECTORY_TITLE, MARKET_BY_ID, marketTitle } from "@/lib/markets";
 import Toolbar, { EMPTY_FILTERS, Filters } from "./Toolbar";
 import ParticipantGrid from "./ParticipantGrid";
 import ProfileModal from "./ProfileModal";
 import { SeasonGuide, SeasonStrip } from "./Season";
 import { EbtBanner, EbtSection, FollowAim } from "./Benefits";
-import { Overlay, scrollToTop, useEmbedFrame } from "./embed";
+import { Overlay, scrollBehavior, scrollToTop, useEmbedFrame } from "./embed";
 import MarketsHome from "./MarketsHome";
 import MarketView from "./MarketView";
 import { displayName, matchesSearch } from "./vendorUtils";
@@ -51,7 +51,11 @@ export default function DirectoryApp(props: Props) {
 
   // The market lives in the URL (?marketID=), so a market page can be linked,
   // embedded on its own, and left with the browser's back button.
+  // After a market change, focus goes to the new page's heading, so keyboard
+  // and screen reader users start from the top of what changed.
+  const moved = useRef(false);
   const goTo = useCallback((id: number) => {
+    moved.current = true;
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("marketID", String(id));
     else url.searchParams.delete("marketID");
@@ -62,10 +66,30 @@ export default function DirectoryApp(props: Props) {
   }, [embedded]);
 
   useEffect(() => {
-    const onPop = () => setMarket(Number(new URL(window.location.href).searchParams.get("marketID")) || 0);
+    const onPop = () => {
+      moved.current = true;
+      setMarket(Number(new URL(window.location.href).searchParams.get("marketID")) || 0);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  useEffect(() => {
+    const m = market ? MARKET_BY_ID[market] : undefined;
+    document.title = m ? marketTitle(m.name) : DIRECTORY_TITLE;
+    if (!moved.current) return;
+    moved.current = false;
+    document.querySelector<HTMLElement>(".aimdir h1")?.focus({ preventScroll: true });
+  }, [market]);
+
+  // Picking a crop moves focus to the results line, once it has rendered.
+  const [focusResults, setFocusResults] = useState(0);
+  useEffect(() => {
+    if (!focusResults) return;
+    const target = document.getElementById("aimdir-count") ?? document.getElementById("aimdir-results");
+    target?.focus({ preventScroll: true });
+    document.getElementById("aimdir-results")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+  }, [focusResults]);
 
   // Fetch the map code in the background so the Map view opens quickly.
   useEffect(() => {
@@ -111,11 +135,14 @@ export default function DirectoryApp(props: Props) {
   const pickCrop = (crop: Crop) => {
     setSeasonOpen(false);
     setFilters((f) => ({ ...f, crop: { term: crop.term, name: crop.name }, view: "list" }));
-    document.getElementById("aimdir-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFocusResults((n) => n + 1);
   };
   const closeProfile = useCallback(() => setOpenID(null), []);
   const closeSeason = useCallback(() => setSeasonOpen(false), []);
-  const jumpToEbt = () => document.getElementById("aimdir-ebt")?.scrollIntoView({ behavior: "smooth" });
+  const jumpToEbt = () => {
+    document.getElementById("aimdir-ebt-title")?.focus({ preventScroll: true });
+    document.getElementById("aimdir-ebt")?.scrollIntoView({ behavior: scrollBehavior() });
+  };
 
   const open = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
   const filtering = !!(filters.q || filters.category || filters.payments.size || filters.organic || filters.crop);
@@ -141,7 +168,7 @@ export default function DirectoryApp(props: Props) {
   );
 
   return (
-    <div className={`aimdir${embedded ? " embedded" : ""}`}>
+    <main className={`aimdir${embedded ? " embedded" : ""}`}>
       {current ? (
         <MarketView
           key={current.id}
@@ -219,6 +246,6 @@ export default function DirectoryApp(props: Props) {
           <SeasonGuide month={month} onPick={pickCrop} onClose={closeSeason} />
         </Overlay>
       )}
-    </div>
+    </main>
   );
 }

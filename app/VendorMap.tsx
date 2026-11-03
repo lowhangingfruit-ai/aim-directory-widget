@@ -212,23 +212,27 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
       ? [MARKET_BY_ID[selectedMarket]].filter(Boolean)
       : MARKET_LIST.filter((m) => !seen.has(m.logo) && seen.add(m.logo));
     marketMarkersRef.current = shown.map((m) => {
+      // The two Marin markets share a logo and a site, so the all-markets map shows one pin for both.
+      const name = !selectedMarket && m.name.includes("Marin") ? "Thursday and Sunday Marin" : m.name;
       const el = document.createElement("img");
       el.src = m.logo;
-      el.alt = "";
+      // Mapbox makes each pin a button named "Map marker"; name it after the market.
+      el.alt = `${name} Farmers Market`;
       el.style.cssText = "width:44px;height:44px;border-radius:12px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.35);object-fit:cover;";
       const label = document.createElement("div");
       label.style.cssText = "font-family:sans-serif;font-size:12px;font-weight:700;color:#111";
-      // The two Marin markets share a logo and a site, so the all-markets map shows one pin for both.
-      label.textContent = !selectedMarket && m.name.includes("Marin") ? "Thursday and Sunday Marin" : m.name;
+      label.textContent = name;
       const sub = document.createElement("div");
       sub.style.cssText = "font-size:11px;color:#666";
       sub.textContent = `${m.address}, ${m.city}`;
       const content = document.createElement("div");
       content.append(label, sub);
-      return new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([m.lng, m.lat])
         .setPopup(new mapboxgl.Popup({ offset: 24, closeButton: false }).setDOMContent(content))
         .addTo(map);
+      el.setAttribute("aria-label", `${name} Farmers Market, ${m.address}, ${m.city}`);
+      return marker;
     });
 
     // A market's map fits that market and the vendors within 200 miles; the
@@ -244,6 +248,11 @@ export default function VendorMap({ vendors, origins = {}, coords = {}, selected
 
   return (
     <div style={{ position: "relative", overflow: "hidden", height: "min(620px, 75vh)", background: "#e8e6da" }}>
+      {/* The vendor dots are drawn on a canvas that a keyboard or screen reader can't reach. */}
+      <p className="sr-only">
+        The map shows where vendors are based. The List view shows the same vendors and works with a keyboard and
+        screen reader.
+      </p>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
       {/* Loading overlay */}

@@ -10,6 +10,9 @@
   --white: #fff;
   --scrim: rgba(20, 20, 10, .45);
   --purple: #533180;
+  /* AIM green is 4.47:1 on cream, just under the 4.5:1 minimum for small
+     text, so text on cream uses this slightly darker shade (4.77:1). */
+  --green-text: #0c7d3d;
   --head: var(--font-heading);
   --text: var(--font-body);
   background: var(--cream);
@@ -28,11 +31,23 @@
 .aimdir a { color: var(--green); }
 .aimdir button:focus-visible, .aimdir a:focus-visible, .aimdir input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .aimdir * { transition: none !important; } }
+/* Headings and the results line take focus from script after a market
+   change or a crop pick; they aren't controls, so no ring. */
+.aimdir [tabindex="-1"]:focus { outline: none; }
+/* Rows that scroll sideways: no scrollbar on touch screens, a thin one
+   with a mouse, which otherwise has no way to scroll them. */
+@media (pointer: coarse) {
+  .aimdir .pills, .aimdir .days, .aimdir .season-strip .crops { scrollbar-width: none; }
+  .aimdir .pills::-webkit-scrollbar, .aimdir .days::-webkit-scrollbar, .aimdir .season-strip .crops::-webkit-scrollbar { display: none; }
+}
+@media (pointer: fine) {
+  .aimdir .pills, .aimdir .days, .aimdir .season-strip .crops { scrollbar-width: thin; scrollbar-color: #c8c6b8 transparent; }
+}
 
 .aimdir .wrap { max-width: 1240px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
 @media (max-width: 640px) { .aimdir .wrap { padding-left: 16px; padding-right: 16px; } }
 .aimdir .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
-.aimdir .tbd { color: #9a998d; }
+.aimdir .tbd { color: var(--muted); }
 .aimdir .empty { padding: 60px 0; text-align: center; color: var(--muted); grid-column: 1 / -1; }
 
 /* Page header, matching AIM's other pages */
@@ -40,7 +55,7 @@
 .aimdir .head h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.02; margin-bottom: 22px; max-width: 760px; }
 .aimdir .head p { margin: 0 0 14px; max-width: 700px; font-size: 17px; line-height: 1.65; color: #2c2b26; }
 .aimdir .about { max-width: 700px; margin: -24px 0 64px; }
-.aimdir .about summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.aimdir .about summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--green-text); text-decoration: underline; text-underline-offset: 3px; }
 .aimdir .about div { margin-top: 12px; padding: 16px 20px; background: var(--white); border-radius: 14px; font-size: 14px; line-height: 1.65; display: flex; flex-direction: column; gap: 10px; }
 .aimdir .about div p { margin: 0; font-size: 14px; }
 @media (max-width: 640px) { .aimdir .head { padding-block: 32px 24px; } .aimdir .head p { font-size: 16px; } }
@@ -50,15 +65,15 @@
 .aimdir.embedded .tools { position: static; }
 .aimdir .tools .wrap { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; padding-block: 14px; }
 .aimdir .search { position: relative; flex: 1; min-width: 0; max-width: 560px; }
-.aimdir .search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #9a998d; pointer-events: none; }
+.aimdir .search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .aimdir .search input { width: 100%; border: 2px solid var(--line); border-radius: 300px; padding: 10px 40px 10px 42px; font: inherit; font-size: 14px; background: var(--white); color: var(--ink); outline: none; }
 .aimdir .search input:focus { border-color: var(--ink); }
-.aimdir .search .clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; cursor: pointer; font-size: 18px; color: #9a998d; }
+.aimdir .search .clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--muted); }
 .aimdir .seg { margin-left: auto; display: inline-flex; border: 2px solid var(--line); border-radius: 300px; padding: 3px; background: var(--white); flex-shrink: 0; }
 .aimdir .seg button { border: 0; background: none; border-radius: 300px; padding: 5px 14px; font-size: 13px; cursor: pointer; color: var(--muted); }
 .aimdir .seg button[aria-pressed="true"] { background: var(--ink); color: var(--white); font-weight: 600; }
-.aimdir .pills { order: 3; flex-basis: 100%; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
-.aimdir .pills::-webkit-scrollbar { display: none; }
+.aimdir .pills { order: 3; flex-basis: 100%; min-width: 0; display: flex; gap: 8px; overflow-x: auto; }
+.aimdir .pills > div { display: flex; gap: 8px; flex-shrink: 0; }
 .aimdir .pills button { flex-shrink: 0; border: 0; border-radius: 300px; padding: 7px 15px; font-size: 13.5px; font-weight: 600; cursor: pointer; background: var(--ct); color: var(--ci); white-space: nowrap; transition: background .12s, color .12s; }
 .aimdir .pills button[aria-pressed="true"] { background: var(--ca); color: var(--con); }
 .aimdir .pills .label { align-self: center; font-size: 13px; color: var(--muted); flex-shrink: 0; padding-left: 6px; }
@@ -71,9 +86,14 @@
 .aimdir .mgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 @media (max-width: 980px) { .aimdir .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .aimdir .mgrid { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
-.aimdir .mcard { background: var(--white); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; transition: transform .15s, box-shadow .15s; }
+.aimdir .mcard { position: relative; background: var(--white); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; transition: transform .15s, box-shadow .15s; }
 .aimdir .mcard:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(40,40,20,.12); }
-.aimdir .mcard .open { border: 0; background: none; padding: 0; text-align: left; cursor: pointer; display: block; width: 100%; }
+/* The market name's button covers the whole card; the address link sits above it. */
+.aimdir .mcard .open { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.aimdir .mcard .open::after { content: ""; position: absolute; inset: 0; border-radius: 22px; }
+.aimdir .mcard .open:focus-visible { outline: none; }
+.aimdir .mcard .open:focus-visible::after { outline: 3px solid var(--green); outline-offset: -3px; }
+.aimdir .mcard .addr { position: relative; z-index: 1; }
 /* The square logo fills the card's width, trimmed a little top and bottom, so
    no edge of the logo file shows against the card. */
 .aimdir .mcard .logo { aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; }
@@ -88,7 +108,7 @@
 .aimdir .mcard.off .logo { filter: grayscale(1); opacity: .5; }
 .aimdir .count { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 28px 0 14px; font-size: 14px; color: var(--muted); }
 .aimdir .count b { color: var(--ink); }
-.aimdir .count button { border: 0; background: none; padding: 0; color: var(--green); font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.aimdir .count button { border: 0; background: none; padding: 0; color: var(--green-text); font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
 
 /* One market */
 .aimdir .band { padding-top: 22px; }
@@ -101,8 +121,7 @@
 .aimdir .mhead dd a, .aimdir .mhead .mlink { color: #111; text-decoration-color: rgba(0,0,0,.35); text-underline-offset: 3px; }
 .aimdir .mhead .mlink { font-weight: 700; font-size: 14.5px; }
 .aimdir .mhead .biglogo { width: 100%; aspect-ratio: 1; max-width: 100%; object-fit: cover; border-radius: 28px; border: 6px solid var(--white); }
-.aimdir .days { display: flex; gap: 10px; padding-bottom: 26px; overflow-x: auto; scrollbar-width: none; }
-.aimdir .days::-webkit-scrollbar { display: none; }
+.aimdir .days { display: flex; gap: 10px; padding-bottom: 26px; overflow-x: auto; }
 .aimdir .day { flex-shrink: 0; width: 86px; border: 0; border-radius: 16px; background: rgba(255,255,255,.65); padding: 10px 0 9px; text-align: center; cursor: pointer; transition: background .12s; }
 .aimdir .day:hover { background: var(--white); }
 .aimdir .day small { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
@@ -123,7 +142,12 @@
 .aimdir .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 22px; padding-bottom: 48px; }
 @media (max-width: 1100px) { .aimdir .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .aimdir .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; } }
-.aimdir .card { cursor: pointer; border: 0; background: none; padding: 0; text-align: left; display: block; width: 100%; }
+/* A vendor card: the name's button covers the whole card. */
+.aimdir .card { position: relative; cursor: pointer; display: block; width: 100%; }
+.aimdir .card h3 button { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.aimdir .card h3 button::after { content: ""; position: absolute; inset: 0; border-radius: 18px; }
+.aimdir .card h3 button:focus-visible { outline: none; }
+.aimdir .card h3 button:focus-visible::after { outline: 2px solid var(--green); outline-offset: 4px; }
 .aimdir .tile { aspect-ratio: 1; max-width: 100%; width: 100%; border-radius: 18px; overflow: hidden; background: var(--white); display: grid; place-items: center; position: relative; transition: transform .18s, box-shadow .18s; }
 .aimdir .tile img { object-fit: contain; }
 .aimdir .tile.sign { padding: 14%; text-align: center; font-family: var(--head); font-weight: 700; line-height: 1.02; letter-spacing: -.01em; }
@@ -134,7 +158,7 @@
 .aimdir .card .meta { font-size: 13.5px; color: var(--muted); margin: 3px 0 8px; }
 .aimdir .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .aimdir .badges span { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 300px; border: 1.5px solid var(--purple); color: var(--purple); }
-.aimdir .badges span.organic { border-color: #038670; color: #038670; }
+.aimdir .badges span.organic { border-color: #037a66; color: #037a66; }
 .aimdir .marks { display: flex; gap: 4px; align-items: center; }
 .aimdir .marks img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
 .aimdir .marks span { font-size: 12px; color: var(--muted); margin-left: 2px; }
@@ -205,8 +229,7 @@
 .aimdir .season-strip { display: flex; align-items: center; gap: 14px; padding: 8px 10px 8px 14px; border-radius: 16px; background: #fff; }
 .aimdir .season-strip .season-art { width: 64px; flex-shrink: 0; }
 .aimdir .season-strip > b { font-family: var(--head); font-weight: 700; font-size: 18px; white-space: nowrap; }
-.aimdir .season-strip .crops { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-.aimdir .season-strip .crops::-webkit-scrollbar { display: none; }
+.aimdir .season-strip .crops { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; }
 .aimdir .season-strip .crop { flex-shrink: 0; border: 0; background: var(--cream); border-radius: 300px; padding: 5px 12px; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
 .aimdir .season-strip .crop:hover { box-shadow: 0 0 0 1.5px var(--green); }
 .aimdir .season-strip .see { flex-shrink: 0; border: 0; border-radius: 300px; padding: 8px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; background: var(--ink); color: var(--white); }
@@ -257,7 +280,7 @@
 }
 
 /* EBT, WIC, and senior benefits */
-.aimdir .ebt-banner { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; text-align: left; cursor: pointer; background: #efe9f6; border-radius: 16px; padding: 12px 18px; font-size: 14.5px; color: var(--ink); }
+.aimdir .ebt-banner { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; text-align: left; text-decoration: none; cursor: pointer; background: #efe9f6; border-radius: 16px; padding: 12px 18px; font-size: 14.5px; color: var(--ink); }
 .aimdir .ebt-banner .coins { display: flex; flex-shrink: 0; }
 .aimdir .ebt-banner .coin { width: 36px; height: 36px; }
 .aimdir .ebt-banner .coin + .coin { margin-left: -10px; }

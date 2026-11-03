@@ -1,9 +1,10 @@
 import { fetchVendors } from "@/lib/vendors";
 import { getIntakeAnswers } from "@/lib/intakeAnswers";
 import { lookupPlace } from "@/lib/placeCoords";
-import { MARKET_BY_ID } from "@/lib/markets";
+import { DIRECTORY_TITLE, MARKET_BY_ID, marketTitle } from "@/lib/markets";
 import { getAttendanceHistory } from "@/lib/attendance";
 import { catalogFor } from "@/lib/catalog";
+import type { Metadata } from "next";
 import DirectoryApp from "./directory/DirectoryApp";
 import { todayIso } from "./directory/vendorUtils";
 
@@ -16,6 +17,18 @@ async function getVendors() {
     console.error(`[directory] feed read failed: ${err instanceof Error ? err.message : "unknown error"}`);
     return [];
   }
+}
+
+// A market page carries the market's name in the browser tab and in what a
+// screen reader announces on arrival.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ marketID?: string }>;
+}): Promise<Metadata> {
+  const { marketID } = await searchParams;
+  const market = marketID ? MARKET_BY_ID[Number(marketID)] : undefined;
+  return { title: market ? marketTitle(market.name) : DIRECTORY_TITLE };
 }
 
 export default async function Page({

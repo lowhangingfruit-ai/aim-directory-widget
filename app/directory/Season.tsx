@@ -2,6 +2,7 @@
 
 import { Crop, seasonGroups, seasonPicks } from "@/lib/season";
 import { Art } from "./art";
+import { NewTab } from "./a11y";
 
 const AIM_CALENDAR = "https://www.agriculturalinstitute.org/crop-calendar";
 
@@ -58,7 +59,7 @@ export function SeasonGuide({ month, onPick, onClose }: { month: number; onPick:
         </div>
         <div className="foot">
           <span>From AIM&rsquo;s Northern California harvest calendar. Dates vary with the weather.</span>
-          <a href={AIM_CALENDAR} target="_blank" rel="noopener noreferrer">See the full calendar</a>
+          <a href={AIM_CALENDAR} target="_blank" rel="noopener noreferrer">See the full calendar<NewTab /></a>
         </div>
       </section>
     </div>

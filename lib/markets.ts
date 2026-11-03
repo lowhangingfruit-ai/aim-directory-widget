@@ -127,3 +127,7 @@ export function readable(fg: string, bg: string, min: number): string {
 export function textOn(fill: string): string {
   return contrast("#ffffff", fill) >= contrast("#111111", fill) ? "#ffffff" : "#111111";
 }
+
+// Browser tab titles: the directory, or one market's page of it.
+export const DIRECTORY_TITLE = "AIM Market Participant Directory";
+export const marketTitle = (name: string) => `${name} Farmers Market | ${DIRECTORY_TITLE}`;

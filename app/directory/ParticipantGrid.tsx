@@ -13,6 +13,8 @@ import { displayName, formatCity } from "./vendorUtils";
 
 // MMM uploads are mostly logos in every shape, so the whole image is shown.
 // Some uploads are PDFs; those, and any image that fails, get a name tile.
+// The vendor's name is always in a heading next to the tile, so the logo
+// itself is decorative to a screen reader.
 const IMAGE_FILE = /\.(jpe?g|png|gif|webp)$/i;
 
 export function Tile({ vendor, categories, sizes, eager = false }: {
@@ -28,7 +30,7 @@ export function Tile({ vendor, categories, sizes, eager = false }: {
   if (src && IMAGE_FILE.test(src) && !failed) {
     return (
       <div className="tile">
-        <Image src={src} alt={`${name} logo`} fill sizes={sizes} loading={eager ? "eager" : "lazy"}
+        <Image src={src} alt="" fill sizes={sizes} loading={eager ? "eager" : "lazy"}
           onError={() => setFailed(true)} style={{ objectFit: "contain", padding: "12%" }} />
       </div>
     );
@@ -53,9 +55,10 @@ function MarketMarks({ vendor, skip }: { vendor: Vendor; skip?: number }) {
   if (!marks.length) return null;
   const label = marks.map((m) => m.name).join(", ");
   return (
-    <div className="marks" title={label} aria-label={`Also at ${label}`}>
+    <div className="marks" title={label}>
+      <span className="sr-only">Also at {label}</span>
       {marks.slice(0, 5).map((m) => <img key={m.id} src={m.logo} alt="" />)}
-      {marks.length > 5 && <span>+{marks.length - 5}</span>}
+      {marks.length > 5 && <span aria-hidden="true">+{marks.length - 5}</span>}
     </div>
   );
 }
@@ -71,22 +74,26 @@ export default function ParticipantGrid({ vendors, categories, catalog, payments
   if (!vendors.length) {
     return <div className="grid"><p className="empty">No market participants match.</p></div>;
   }
+  // Each card is a plain article with its name as a heading, so the names
+  // show up in a screen reader's list of headings. The button inside the
+  // heading stretches over the whole card (see .card h3 button in the CSS).
   return (
     <div className="grid">
+      <h2 className="sr-only">Market participants</h2>
       {vendors.map((v) => {
         const cats = categories[v.vendorID];
         const first = cats?.categories[0];
         const benefits = (payments[v.vendorID] ?? []).filter((p) => BENEFIT_IDS.includes(p));
         const organic = catalog[v.vendorID]?.organic;
         return (
-          <button key={v.vendorID} type="button" className="card" onClick={() => onOpen(v.vendorID)}>
+          <article key={v.vendorID} className="card">
             <Tile vendor={v} categories={cats} sizes="(max-width: 760px) 50vw, (max-width: 1100px) 33vw, 300px" />
             {first && (
               <div className="cat" style={{ color: readable(categoryColors(first).art, "#f6f5ea", 4.5) }}>
                 {cats!.categories.map((c) => CATEGORY_LABELS[c]).join(" · ")}
               </div>
             )}
-            <h3>{displayName(v.company)}</h3>
+            <h3><button type="button" onClick={() => onOpen(v.vendorID)}>{displayName(v.company)}</button></h3>
             <div className="meta">{formatCity(v.city, v.state).replace(/, CA$/, "")}</div>
             <MarketMarks vendor={v} skip={marketID} />
             {(benefits.length > 0 || organic) && (
@@ -95,7 +102,7 @@ export default function ParticipantGrid({ vendors, categories, catalog, payments
                 {benefits.map((p) => <span key={p}>{PAYMENT_SHORT[p]}</span>)}
               </div>
             )}
-          </button>
+          </article>
         );
       })}
     </div>

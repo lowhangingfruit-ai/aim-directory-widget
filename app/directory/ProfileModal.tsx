@@ -8,6 +8,7 @@ import type { CatalogEntry } from "@/lib/catalog";
 import { BENEFIT_IDS, PAYMENT_LABELS } from "@/lib/payments";
 import { MARKET_BY_ID, MARKET_LIST, directionsUrl, milesBetween, readable } from "@/lib/markets";
 import { Tile } from "./ParticipantGrid";
+import { NewTab, OutArrow } from "./a11y";
 import { cleanUrl, displayName, formatCity, longDate, nextDate, shortDate, vendorDates } from "./vendorUtils";
 
 interface Props {
@@ -41,7 +42,7 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
   const markets = MARKET_LIST.filter((m) => ids.has(m.id)).sort((a, b) => (a.id === marketID ? -1 : b.id === marketID ? 1 : 0));
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label={name}
+    <div className="modal" role="dialog" aria-modal="true" aria-labelledby="aimdir-profile-name"
       style={{ "--mtint": colors.background, "--mink": readable(colors.art, "#ffffff", 4.5) } as React.CSSProperties}>
       <div className="left">
         <Tile vendor={vendor} categories={categories} sizes="(max-width: 760px) 120px, 364px" eager />
@@ -70,7 +71,7 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
                 {categories.products.length > 0 && ` · ${categories.products.map((p) => PRODUCT_LABELS[p]).join(", ")}`}
               </div>
             )}
-            <h2>{name}</h2>
+            <h2 id="aimdir-profile-name">{name}</h2>
             {city && <div className="city">{city}</div>}
             {origin && origin.toLowerCase() !== (vendor.city ?? "").trim().toLowerCase() && (
               <div className="city">Grown or made in {origin}</div>
@@ -87,7 +88,7 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
 
         {links.length > 0 && (
           <div className="links">
-            {links.map((l) => <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>)}
+            {links.map((l) => <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}<NewTab /></a>)}
           </div>
         )}
 
@@ -118,6 +119,7 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
                       return (
                         <span key={p.name} className={now ? "now" : ""} title={now ? "Available this month" : undefined}>
                           {p.name}{p.organic ? " · organic" : ""}
+                          {now && <span className="sr-only">, available this month</span>}
                         </span>
                       );
                     })}
@@ -140,9 +142,9 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
                   <div key={m.id} className="mrow">
                     <img src={m.logo} alt="" />
                     <div>
-                      <b><a href={m.aimPage} target="_blank" rel="noopener noreferrer">{m.name} &#8599;</a></b>
+                      <b><a href={m.aimPage} target="_blank" rel="noopener noreferrer">{m.name}<OutArrow /><NewTab /></a></b>
                       <div className="where">
-                        {m.day}, {m.hours} · <a href={directionsUrl(m)} target="_blank" rel="noopener noreferrer">{m.address}, {m.city}</a>
+                        {m.day}, {m.hours} · <a href={directionsUrl(m)} target="_blank" rel="noopener noreferrer">{m.address}, {m.city}<NewTab /></a>
                         {miles !== null && basedIn && ` · about ${miles < 1 ? "1" : miles} mile${miles === 1 ? "" : "s"} from ${basedIn}`}
                       </div>
                       <div className="chips">

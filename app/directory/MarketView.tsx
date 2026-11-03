@@ -5,6 +5,7 @@ import type { Vendor } from "@/lib/types";
 import type { Market } from "@/lib/markets";
 import { directionsUrl } from "@/lib/markets";
 import { dateFromIso, longDate, vendorDates } from "./vendorUtils";
+import { NewTab, OutArrow } from "./a11y";
 
 interface Props {
   market: Market;
@@ -53,6 +54,7 @@ export default function MarketView({ market, vendors, today, history, backHref, 
     return vendors.filter((v) => vendorDates(v, market.id).includes(day));
   }, [day, today, history, vendors, market.id]);
   const shown = filter(atMarket);
+  const rest = ` market participant${shown.length === 1 ? "" : "s"} ${day < today ? "were at" : "at"} ${market.name} on ${day ? longDate(day) : ""}`;
 
   // Keep the chosen date in view in the scrolling row.
   const rowRef = useRef<HTMLDivElement>(null);
@@ -65,8 +67,8 @@ export default function MarketView({ market, vendors, today, history, backHref, 
   const tile = (iso: string, label: string, isPast: boolean) => {
     const d = dateFromIso(iso);
     return (
-      <button key={iso} type="button" className={`day${isPast ? " past" : ""}`} aria-pressed={day === iso} onClick={() => setDay(iso)}
-        aria-label={`${isPast ? "Past market, " : ""}${longDate(iso)}`}>
+      // Named by its visible text ("Next 7 Nov"), so voice control users can say what they see.
+      <button key={iso} type="button" className={`day${isPast ? " past" : ""}`} aria-pressed={day === iso} onClick={() => setDay(iso)}>
         <small>{label}</small>
         <b>{d.getDate()}</b>
         <span>{d.toLocaleDateString("en-US", { month: "short" })}</span>
@@ -79,20 +81,20 @@ export default function MarketView({ market, vendors, today, history, backHref, 
       <div className="band" style={{ background: market.background }}>
         <div className="wrap">
           {backHref
-            ? <a className="back" href={backHref} target="_top">&larr; All Farmers Markets</a>
-            : <button type="button" className="back" onClick={onBack}>&larr; All Farmers Markets</button>}
+            ? <a className="back" href={backHref} target="_top"><span aria-hidden="true">&larr; </span>All Farmers Markets</a>
+            : <button type="button" className="back" onClick={onBack}><span aria-hidden="true">&larr; </span>All Farmers Markets</button>}
           <div className="mhead">
             <div>
               <div className="eyebrow">AIM farmers market</div>
-              <h1>{market.name}</h1>
+              <h1 tabIndex={-1}>{market.name}</h1>
               <dl>
                 <dt>When</dt><dd>{market.day}, {market.hours}{market.seasonal ? "" : ", rain or shine"}</dd>
                 <dt>Where</dt>
-                <dd><a href={directionsUrl(market)} target="_blank" rel="noopener noreferrer">{market.address}, {market.city}</a></dd>
+                <dd><a href={directionsUrl(market)} target="_blank" rel="noopener noreferrer">{market.address}, {market.city}<NewTab /></a></dd>
               </dl>
-              <a className="mlink" href={market.aimPage} target="_blank" rel="noopener noreferrer">Parking, market map, and details &#8599;</a>
+              <a className="mlink" href={market.aimPage} target="_blank" rel="noopener noreferrer">Parking, market map, and details<OutArrow /><NewTab /></a>
             </div>
-            <img className="biglogo" src={market.logo} alt={`${market.name} Farmers Market logo`} />
+            <img className="biglogo" src={market.logo} alt="" />
           </div>
           {(past.length > 0 || upcoming.length > 0) && (
             <div className="days" ref={rowRef}>
@@ -107,15 +109,15 @@ export default function MarketView({ market, vendors, today, history, backHref, 
       {toolbar}
       {beforeResults}
 
-      <div className="wrap" id="aimdir-results">
+      <div className="wrap" id="aimdir-results" tabIndex={-1}>
+        {/* Always in the page, so screen readers announce each new count as the date or filters change. */}
+        <p className="sr-only" role="status" aria-atomic="true">{day ? `${shown.length}${rest}` : ""}</p>
         {view === "map" ? (
           <div className="mapbox">{renderMap(shown)}</div>
         ) : day ? (
           <>
             <div className="count">
-              <span>
-                <b>{shown.length}</b> market participant{shown.length === 1 ? "" : "s"} {day < today ? "were at" : "at"} {market.name} on {longDate(day)}
-              </span>
+              <span id="aimdir-count" tabIndex={-1}><b>{shown.length}</b>{rest}</span>
               <span>A to Z</span>
             </div>
             {renderGrid(shown)}

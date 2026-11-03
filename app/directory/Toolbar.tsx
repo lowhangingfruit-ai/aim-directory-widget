@@ -45,16 +45,16 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
   return (
     <div className="tools">
       <div className="wrap">
-        <div className="search">
+        <div className="search" role="search">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
             type="search"
             value={filters.q}
             onChange={(e) => set({ q: e.target.value })}
             placeholder={placeholder}
-            aria-label={placeholder}
+            aria-label="Search market participants"
           />
-          {filters.q && <button type="button" className="clear" onClick={() => set({ q: "" })} aria-label="Clear search">&times;</button>}
+          {filters.q && <button type="button" className="clear" onClick={() => set({ q: "" })} aria-label="Clear search"><span aria-hidden="true">&times;</span></button>}
         </div>
         <div className="seg" role="group" aria-label="View">
           <button type="button" aria-pressed={filters.view === "list"} onClick={() => set({ view: "list" })}>List</button>
@@ -66,11 +66,13 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
             {filters.crop && (
               <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed onClick={() => set({ crop: null })}
                 aria-label={`Remove the ${filters.crop.name} filter`}>
-                In season: {filters.crop.name} &times;
+                In season: {filters.crop.name} <span aria-hidden="true">&times;</span>
               </button>
             )}
+            {/* Each set of pills is its own labelled group, so a screen reader
+                says which set a pill belongs to. */}
             {ordered.length > 0 && (
-              <>
+              <div role="group" aria-label="Food or product">
                 <button type="button" style={NEUTRAL} aria-pressed={!filters.category}
                   onClick={() => set({ category: null, products: new Set() })}>
                   Food or product
@@ -84,17 +86,21 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
                     </button>
                   );
                 })}
-              </>
+              </div>
             )}
-            {products.map((p) => {
-              const c = categoryColors(filters.category!);
-              return (
-                <button key={p.id} type="button" style={pillStyle("#ffffff", c.art)} aria-pressed={filters.products.has(p.id)}
-                  onClick={() => set({ products: toggle(filters.products, p.id) })}>
-                  {p.label}
-                </button>
-              );
-            })}
+            {products.length > 0 && (
+              <div role="group" aria-label={`${CATEGORY_LABELS[filters.category!]}: product type`}>
+                {products.map((p) => {
+                  const c = categoryColors(filters.category!);
+                  return (
+                    <button key={p.id} type="button" style={pillStyle("#ffffff", c.art)} aria-pressed={filters.products.has(p.id)}
+                      onClick={() => set({ products: toggle(filters.products, p.id) })}>
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {showOrganic && (
               <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed={filters.organic}
                 onClick={() => set({ organic: !filters.organic })}>
@@ -102,15 +108,15 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
               </button>
             )}
             {showPayments && (
-              <>
-                <span className="label">Accepts</span>
+              <div role="group" aria-labelledby="aimdir-accepts">
+                <span className="label" id="aimdir-accepts">Accepts</span>
                 {[...BENEFIT_IDS, "card" as PaymentID].map((id) => (
                   <button key={id} type="button" style={pillStyle("#efe9f6", "#533180")} aria-pressed={filters.payments.has(id)}
                     onClick={() => set({ payments: toggle(filters.payments, id) })}>
                     {PAYMENT_SHORT[id]}
                   </button>
                 ))}
-              </>
+              </div>
             )}
           </div>
         )}

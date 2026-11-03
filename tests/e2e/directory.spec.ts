@@ -13,7 +13,7 @@ test("all markets are grouped by region, and unlisted vendors never appear", asy
   await expect(sunday.getByRole("link", { name: /3501 Civic Center Dr/ })).toHaveAttribute("href", /google\.com\/maps\/dir/);
 
   await page.getByRole("searchbox").fill("Delta Dairy");
-  await expect(page.getByText("0 market participants")).toBeVisible();
+  await expect(page.locator(".count")).toContainText("0 market participants");
 });
 
 test("searching by market day finds who sells that day", async ({ page }) => {
@@ -30,7 +30,7 @@ test("a market page lists who is there on the chosen date", async ({ page }) => 
   await page.locator(".mcard", { hasText: "Sunday Marin" }).getByRole("button").click();
   await expect(page).toHaveURL(/marketID=7776/);
   await expect(page.getByRole("heading", { level: 1, name: "Sunday Marin" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "← All Farmers Markets" }).or(page.getByRole("button", { name: "← All Farmers Markets" }))).toBeVisible();
+  await expect(page.getByRole("link", { name: "All Farmers Markets" }).or(page.getByRole("button", { name: "All Farmers Markets" }))).toBeVisible();
 
   // Next Sunday: only Alder Creek. The Sunday after: Alder Creek and Cedar Ridge.
   await expect(page.locator(".count")).toContainText("1 market participant at Sunday Marin");

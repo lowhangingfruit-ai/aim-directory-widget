@@ -2,18 +2,22 @@
 
 import { useEffect } from "react";
 import { Art } from "./art";
+import { NewTab, OutArrow } from "./a11y";
 
 // Wording follows AIM's Farm Fresh Nutrition Access page. The WIC deadline and
 // the Senior Match note are time-sensitive; AIM confirms them each season.
 const AIM_ACCESS = "https://www.agriculturalinstitute.org/farm-fresh-nutrition-access";
 
+// A link to the section further down. The click scrolls there and moves
+// focus, without adding a #fragment to the address (inside the Squarespace
+// iframe the fragment wouldn't scroll AIM's page).
 export function EbtBanner({ onJump }: { onJump: () => void }) {
   return (
-    <button type="button" className="ebt-banner" onClick={onJump}>
+    <a href="#aimdir-ebt" className="ebt-banner" onClick={(e) => { e.preventDefault(); onJump(); }}>
       <span className="coins"><Art name="coinSilver" /><Art name="coinPurple" /></span>
       <span><b>Using CalFresh EBT?</b> Market Match doubles your fruit and vegetable dollars, up to $15.</span>
-      <span className="go">How it works &darr;</span>
-    </button>
+      <span className="go">How it works<span aria-hidden="true"> &darr;</span></span>
+    </a>
   );
 }
 
@@ -22,7 +26,7 @@ export function EbtSection({ id }: { id: string }) {
     <section className="ebt" id={id}>
       <div className="intro">
         <div className="eyebrow">Food access</div>
-        <h2>Shopping with EBT, WIC, and senior benefits</h2>
+        <h2 id="aimdir-ebt-title" tabIndex={-1}>Shopping with EBT, WIC, and senior benefits</h2>
         <p>CalFresh shoppers can double their benefits for fruits and vegetables at AIM&rsquo;s farmers markets through Market Match.</p>
         <div className="tokens">
           <div><Art name="coinSilver" /><span><b>Silver tokens</b>Any food for human consumption except hot food.</span></div>
@@ -48,7 +52,7 @@ export function EbtSection({ id }: { id: string }) {
         </div>
       </div>
       <a className="outlink" href={AIM_ACCESS} target="_blank" rel="noopener noreferrer">
-        What EBT can buy, and each market&rsquo;s programs, on AIM&rsquo;s site &#8599;
+        What EBT can buy, and each market&rsquo;s programs, on AIM&rsquo;s site<OutArrow /><NewTab />
       </a>
     </section>
   );
@@ -92,8 +96,8 @@ export function FollowAim() {
         <h2>Want to know who&rsquo;s coming to market?</h2>
         <p>Follow AIM and subscribe to our newsletter for the latest vendor updates, seasonal offerings, and market news.</p>
         <div className="btns">
-          <a href="https://instagram.com/aginstituteofmarin" target="_blank" rel="noopener noreferrer">Follow on Instagram</a>
-          <a className="ghost" href="https://www.facebook.com/AIMFarmersMarkets/" target="_blank" rel="noopener noreferrer">Follow on Facebook</a>
+          <a href="https://instagram.com/aginstituteofmarin" target="_blank" rel="noopener noreferrer">Follow on Instagram<NewTab /></a>
+          <a className="ghost" href="https://www.facebook.com/AIMFarmersMarkets/" target="_blank" rel="noopener noreferrer">Follow on Facebook<NewTab /></a>
         </div>
       </div>
       <div className="newsletter" id={`fd-form-${NEWSLETTER_FORM}`} />
