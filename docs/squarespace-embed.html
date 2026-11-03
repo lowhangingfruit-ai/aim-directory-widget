@@ -31,12 +31,15 @@
 
   function sendViewport() {
     if (!frame.contentWindow) return;
+    // The slice of the iframe on screen: below the header and the iframe's
+    // own top, above the bottom of the window and of the iframe.
     var r = frame.getBoundingClientRect();
-    var top = headerBottom();
+    var from = Math.max(headerBottom(), r.top);
+    var to = Math.min(window.innerHeight, r.bottom);
     frame.contentWindow.postMessage({
       type: 'aim-directory-viewport',
-      top: Math.max(0, top - r.top),
-      height: window.innerHeight - top
+      top: Math.max(0, from - r.top),
+      height: Math.max(0, to - from)
     }, ORIGIN);
   }
 
