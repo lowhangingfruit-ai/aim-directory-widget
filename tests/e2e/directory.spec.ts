@@ -62,6 +62,27 @@ test("map view opens the map", async ({ page }) => {
   await expect(page.locator(".mapbox .mapboxgl-map, .mapbox canvas").first()).toBeVisible({ timeout: 15_000 });
 });
 
+test("a market's map shows the median distance, and a name in a dot's list opens that profile", async ({ page }) => {
+  await page.goto("/?marketID=7776");
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.locator(".map-summary")).toContainText(/\d+ miles/, { timeout: 15_000 });
+
+  const dot = page.locator(".vendor-dot").first();
+  await dot.focus();
+  await page.keyboard.press("Enter");
+  const first = page.locator(".dot-popup-list button").first();
+  await expect(first).toBeFocused();
+  const name = (await first.textContent())!;
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name });
+  await expect(dialog).toBeVisible();
+
+  // Closing the profile puts focus back on the name in the still-open list.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".dot-popup-list button", { hasText: name })).toBeFocused();
+});
+
 test("the in-season guide opens and a crop searches the directory", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "See what’s in season" }).click();

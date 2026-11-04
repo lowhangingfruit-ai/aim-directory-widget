@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Vendor } from "@/lib/types";
 import type { CategoryID } from "@/lib/intake";
-import { CATEGORY_LABELS, CategoryMap } from "@/lib/categories";
+import { CATEGORY_LABELS, CategoryMap, categoryColors } from "@/lib/categories";
 import type { PaymentMap } from "@/lib/payments";
 import type { AttendanceHistory } from "@/lib/attendance";
 import type { Catalog } from "@/lib/catalog";
@@ -147,6 +147,8 @@ export default function DirectoryApp(props: Props) {
   const open = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
   const filtering = !!(filters.q || filters.category || filters.payments.size || filters.organic || filters.crop);
   const current = market ? MARKET_BY_ID[market] : undefined;
+  // On the map, vendor dots take the picked category's color.
+  const accent = filters.category ? categoryColors(filters.category).art : null;
 
   const toolbar = (
     <Toolbar
@@ -185,7 +187,7 @@ export default function DirectoryApp(props: Props) {
           renderGrid={(list) => (
             <ParticipantGrid vendors={list} categories={categories} catalog={catalog} payments={payments} marketID={current.id} onOpen={setOpenID} />
           )}
-          renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={current.id} />}
+          renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={current.id} accent={accent} onOpenVendor={setOpenID} />}
         />
       ) : (
         <MarketsHome
@@ -201,7 +203,7 @@ export default function DirectoryApp(props: Props) {
           renderGrid={(list) => (
             <ParticipantGrid vendors={list} categories={categories} catalog={catalog} payments={payments} onOpen={setOpenID} />
           )}
-          renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={null} />}
+          renderMap={(list) => <VendorMap vendors={list} origins={origins} coords={coords} selectedMarket={null} accent={accent} onOpenVendor={setOpenID} />}
         />
       )}
 
