@@ -108,6 +108,8 @@ intake Sheet overrides their MMM category.
 
 ## Pictures from vendors' websites (`lib/websitePhotos.json`)
 
+For now these show only with `?photos=website` in the URL (for example `/?photos=website`), so AIM can review them before they appear for everyone. To turn them on for all visitors, drop the check in `app/page.tsx`.
+
 Many vendors haven't uploaded a photo to Manage My Market. For those who list a website there, the
 directory shows a picture taken from that site instead: its share image (`og:image`, then
 `twitter:image`), or else its logo (an `<img>` with "logo" in it, the apple-touch-icon, or a large

@@ -110,7 +110,7 @@ test("categories and the organic filter come from Manage My Market", async ({ pa
 });
 
 test("without an MMM photo, a picture from the vendor's website stands in, with its source named", async ({ page }) => {
-  await page.goto("/?marketID=7786");
+  await page.goto("/?marketID=7786&photos=website");
   const grid = page.locator(".grid");
   // A share photo fills the tile; a logo is shown whole.
   const photo = grid.getByRole("img", { name: "Image from Fernhill Orchard's website" });
@@ -127,7 +127,7 @@ test("without an MMM photo, a picture from the vendor's website stands in, with 
   await page.keyboard.press("Escape");
 
   // A vendor with neither keeps the name tile, and no credit line.
-  await page.goto("/?marketID=7776");
+  await page.goto("/?marketID=7776&photos=website");
   await page.getByRole("button", { name: "Alder Creek Farm" }).click();
   await expect(page.getByRole("dialog")).not.toContainText("from their website");
 });

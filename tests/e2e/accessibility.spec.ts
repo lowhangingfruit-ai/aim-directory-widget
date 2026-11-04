@@ -35,7 +35,7 @@ test("the home page, a filtered list, a market page and a profile have no axe vi
   expect(await axeViolations(page)).toEqual([]);
 
   // Pictures from vendors' websites, in the grid and in a profile.
-  await page.goto("/?marketID=7786");
+  await page.goto("/?marketID=7786&photos=website");
   await expect(page.locator(".grid")).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
   await page.getByRole("button", { name: "Garnet Creamery" }).click();

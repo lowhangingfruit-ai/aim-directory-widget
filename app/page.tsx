@@ -35,9 +35,12 @@ export async function generateMetadata({
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ marketID?: string; embed?: string }>;
+  searchParams: Promise<{ marketID?: string; embed?: string; photos?: string }>;
 }) {
-  const { marketID, embed } = await searchParams;
+  const { marketID, embed, photos } = await searchParams;
+  // Website photos for producers with no Manage My Market photo are a preview
+  // for AIM to review: shown only with ?photos=website until they approve.
+  const showWebsitePhotos = photos === "website";
   // ?embed=1 is the version for the Squarespace code block (docs/squarespace-embed.html).
   const embedded = embed === "1";
   const today = todayIso();
@@ -60,7 +63,7 @@ export default async function Page({
 
   return (
     <DirectoryApp
-      vendors={withWebsitePhotos(vendors)}
+      vendors={showWebsitePhotos ? withWebsitePhotos(vendors) : vendors}
       initialMarket={initialMarket}
       today={today}
       history={history}
