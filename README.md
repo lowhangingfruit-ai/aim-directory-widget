@@ -105,3 +105,22 @@ example each season):
 Only vendors in the public feed (who agreed to share their information) are written, and only their
 category, organic certification, and approved products with months. A vendor's own answer in the
 intake Sheet overrides their MMM category.
+
+## Pictures from vendors' websites (`lib/websitePhotos.json`)
+
+Many vendors haven't uploaded a photo to Manage My Market. For those who list a website there, the
+directory shows a picture taken from that site instead: its share image (`og:image`, then
+`twitter:image`), or else its logo (an `<img>` with "logo" in it, the apple-touch-icon, or a large
+icon). The MMM photo always comes first, then the website picture, then the name tile.
+
+- `scripts/fetch-website-photos.mjs` reads the public feed, fetches each site, checks and resizes the
+  pick, and saves it to `public/website-photos/<vendorID>.webp`, so no vendor site is hotlinked.
+  `lib/websitePhotos.json` maps vendor ID to the file, its source (`og` or `logo`), how to fit it
+  (photos fill the tile, logos are shown whole, light logos on a dark tile), the site and the
+  original image URL.
+- It skips favicons under 120px, placeholder and stock images, certifier and market logos, badges
+  and screenshots, images several sites share (a site builder's default), parked domains, and sites
+  that don't load. Picks that were wrong on review are listed in `EXCLUDE` at the top of the script.
+- Refresh: `node scripts/fetch-website-photos.mjs` (all), `--keep` (only vendors not yet in the
+  file) or `--only=ID,ID`. Look over the new images before committing the JSON and the folder.
+- The profile says "Image from their website" (or "Logo from their website") under the picture.

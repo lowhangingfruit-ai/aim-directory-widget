@@ -45,7 +45,12 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
     <div className="modal" role="dialog" aria-modal="true" aria-labelledby="aimdir-profile-name"
       style={{ "--mtint": colors.background, "--mink": readable(colors.art, "#ffffff", 4.5) } as React.CSSProperties}>
       <div className="left">
-        <Tile vendor={vendor} categories={categories} sizes="(max-width: 760px) 120px, 364px" eager />
+        <div className="tilebox">
+          <Tile vendor={vendor} categories={categories} sizes="(max-width: 760px) 120px, 364px" eager />
+          {vendor.sitePhoto && (
+            <p className="site-credit">{vendor.sitePhoto.source === "logo" ? "Logo" : "Image"} from their website</p>
+          )}
+        </div>
         <div className="nextbox">
           {next ? (
             <>

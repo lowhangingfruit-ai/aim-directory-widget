@@ -17,6 +17,15 @@ import { displayName, formatCity } from "./vendorUtils";
 // itself is decorative to a screen reader.
 const IMAGE_FILE = /\.(jpe?g|png|gif|webp)$/i;
 
+// Without an MMM upload, a picture from the vendor's own website stands in
+// (lib/websitePhotos.ts): a photo fills the tile, a logo is shown whole on a
+// light tile (dark for a light logo). It isn't the vendor's own pick for the
+// directory, so its alt text says what it is and where it came from.
+export function sitePhotoAlt(vendor: Vendor): string {
+  const name = displayName(vendor.company);
+  return vendor.sitePhoto?.source === "logo" ? `${name} logo` : `Image from ${name}'s website`;
+}
+
 export function Tile({ vendor, categories, sizes, eager = false }: {
   vendor: Vendor;
   categories?: CategoryMap[number];
@@ -24,14 +33,27 @@ export function Tile({ vendor, categories, sizes, eager = false }: {
   eager?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const [siteFailed, setSiteFailed] = useState(false);
   const src = vendor.photo?.trim();
   const name = displayName(vendor.company);
+  const site = vendor.sitePhoto;
 
   if (src && IMAGE_FILE.test(src) && !failed) {
     return (
       <div className="tile">
         <Image src={src} alt="" fill sizes={sizes} loading={eager ? "eager" : "lazy"}
           onError={() => setFailed(true)} style={{ objectFit: "contain", padding: "12%" }} />
+      </div>
+    );
+  }
+
+  if (site && !siteFailed) {
+    const contain = site.fit === "contain";
+    return (
+      <div className={`tile from-site${contain ? " logo" : ""}${site.background === "dark" ? " dark" : ""}`}>
+        <Image src={site.url} alt={sitePhotoAlt(vendor)} fill sizes={sizes} loading={eager ? "eager" : "lazy"}
+          onError={() => setSiteFailed(true)}
+          style={contain ? { objectFit: "contain", padding: "12%" } : { objectFit: "cover" }} />
       </div>
     );
   }

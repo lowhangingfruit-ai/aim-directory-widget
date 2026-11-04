@@ -33,6 +33,14 @@ test("the home page, a filtered list, a market page and a profile have no axe vi
   await page.getByRole("button", { name: "Alder Creek Farm" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
+
+  // Pictures from vendors' websites, in the grid and in a profile.
+  await page.goto("/?marketID=7786");
+  await expect(page.locator(".grid")).toBeVisible();
+  expect(await axeViolations(page)).toEqual([]);
+  await page.getByRole("button", { name: "Garnet Creamery" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(await axeViolations(page)).toEqual([]);
 });
 
 test("a profile keeps focus inside it, and hands it back to the card on close", async ({ page }) => {

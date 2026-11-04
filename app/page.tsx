@@ -4,6 +4,7 @@ import { lookupPlace } from "@/lib/placeCoords";
 import { DIRECTORY_TITLE, MARKET_BY_ID, marketTitle } from "@/lib/markets";
 import { getAttendanceHistory } from "@/lib/attendance";
 import { catalogFor } from "@/lib/catalog";
+import { withWebsitePhotos } from "@/lib/websitePhotos";
 import type { Metadata } from "next";
 import DirectoryApp from "./directory/DirectoryApp";
 import { todayIso } from "./directory/vendorUtils";
@@ -59,7 +60,7 @@ export default async function Page({
 
   return (
     <DirectoryApp
-      vendors={vendors}
+      vendors={withWebsitePhotos(vendors)}
       initialMarket={initialMarket}
       today={today}
       history={history}
