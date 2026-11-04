@@ -53,6 +53,10 @@ const EXCLUDE = {
   201036: "logos on the page are certifiers' (CCOF, Bee Friendly)",
   336463: "logos on the page are the markets' they play",
   379243: "logos on the page are certifiers' and partners'",
+  77483: "blurry, upscaled small icon",
+  301920: "faint, low-res logo",
+  365885: "faint logo, hard to read on the tile",
+  253008: "text banner rather than a photo or logo",
 };
 const PARKED = /domain (name )?(is|may be) for sale|buy this domain|this domain (has expired|is parked)|parked (free|domain)|hugedomains|sedoparking|dan\.com|afternic|domain has expired|website is coming soon|future home of/i;
 
