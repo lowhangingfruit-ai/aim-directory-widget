@@ -21,3 +21,28 @@ test("cherries leave out cherry tomatoes and ground cherries", () => {
   expect(cropMatches(crop("Cherries"), "Ground Cherries")).toBe(false);
   expect(cropMatches(crop("Tomatoes"), "Cherry Tomatoes")).toBe(true);
 });
+
+test("crops leave out products that only share a word with them", () => {
+  const cases: [string, string[], string[]][] = [
+    ["Corn", ["Corn", "Corn (Sweet)"], ["Popcorn", "Kettle Corn", "Corn Chips", "Corn Flour"]],
+    ["Peas", ["Peas - Snow"], ["Black-Eyed Peas"]],
+    ["Potatoes", ["Potatoes - Yukon Gold"], ["Sweet Potatoes"]],
+    ["Winter squash", ["Squash- Butternut", "Squash - Delicata"], ["Squash - Summer", "Squash Blossoms"]],
+    ["Apples", ["Apples"], ["Apple Butter", "Apple Chips", "Apple Juice"]],
+    ["Figs", ["Figs"], ["Trees - Fig"]],
+    ["Grapes", ["Grapes"], ["Grapefruit"]],
+    ["Melons", ["Melons"], ["Watermelon"]],
+    ["Pears", ["Asian Pears", "Pears"], ["Prickley Pear (Fruit)"]],
+    ["Raspberries", ["Black Raspberries"], ["Bushes - Raspberry"]],
+  ];
+  for (const [name, yes, no] of cases) {
+    for (const p of yes) expect(cropMatches(crop(name), p), `${name}: ${p}`).toBe(true);
+    for (const p of no) expect(cropMatches(crop(name), p), `${name}: ${p}`).toBe(false);
+  }
+});
+
+test("a description that mentions the crop and a lookalike still matches", () => {
+  expect(cropMatches(crop("Cherries"), "We grow cherries and cherry tomatoes")).toBe(true);
+  expect(cropMatches(crop("Figs"), "Fresh figs, and fig trees for your garden")).toBe(true);
+  expect(cropMatches(crop("Figs"), "Fig trees for your garden")).toBe(false);
+});
