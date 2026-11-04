@@ -1,11 +1,22 @@
 // AIM's Northern California harvest calendar
 // (agriculturalinstitute.org/crop-calendar). Months are 0 (January) to 11.
-// `term` is what the directory searches for when a shopper picks the crop.
+// `term` is what the directory searches for when a shopper picks the crop,
+// `also` lists other names vendors use for it, and `not` rules out products
+// that contain the term but are something else.
 
 export interface Crop {
   name: string;
   term: string;
+  also?: string[];
+  not?: string[];
   months: number[];
+}
+
+// Whether a product name (or a vendor description) is this crop.
+export function cropMatches(crop: Crop, text: string): boolean {
+  const t = text.toLowerCase();
+  if (crop.not?.some((n) => t.includes(n))) return false;
+  return [crop.term, ...(crop.also ?? [])].some((term) => t.includes(term));
 }
 
 const span = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
@@ -40,8 +51,14 @@ export const CROPS: Crop[] = [
   { name: "Apples", term: "apple", months: [...span(0, 1), ...span(7, 11)] },
   { name: "Apricots", term: "apricot", months: span(4, 6) },
   { name: "Blueberries", term: "blueberr", months: span(4, 7) },
-  { name: "Cherries", term: "cherr", months: span(3, 5) },
-  { name: "Citrus", term: "citrus", months: [...span(0, 2), 11] },
+  { name: "Cherries", term: "cherr", not: ["tomato", "ground cherr"], months: span(3, 5) },
+  {
+    name: "Citrus",
+    term: "citrus",
+    also: ["mandarin", "orange", "lemons", "limes", "kumquat", "tangerine", "grapefruit", "satsuma", "yuzu", "citron", "pomelo"],
+    not: ["lemonade", "juice", "marmalade"],
+    months: [...span(0, 2), 11],
+  },
   { name: "Figs", term: "fig", months: span(7, 10) },
   { name: "Grapes", term: "grape", months: span(8, 10) },
   { name: "Kiwifruit", term: "kiwi", months: [...span(0, 3), ...span(9, 11)] },

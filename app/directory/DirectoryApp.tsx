@@ -8,7 +8,7 @@ import { CATEGORY_LABELS, CategoryMap } from "@/lib/categories";
 import type { PaymentMap } from "@/lib/payments";
 import type { AttendanceHistory } from "@/lib/attendance";
 import type { Catalog } from "@/lib/catalog";
-import type { Crop } from "@/lib/season";
+import { type Crop, cropMatches } from "@/lib/season";
 import { DIRECTORY_TITLE, MARKET_BY_ID, marketTitle } from "@/lib/markets";
 import Toolbar, { EMPTY_FILTERS, Filters } from "./Toolbar";
 import ParticipantGrid from "./ParticipantGrid";
@@ -122,10 +122,10 @@ export default function DirectoryApp(props: Props) {
     if (filters.organic && !items?.organic) return false;
     // A crop from the in-season guide: the vendor lists it, available this month.
     if (filters.crop) {
-      const term = filters.crop.term;
+      const crop = filters.crop;
       const has = items
-        ? items.products.some((p) => p.name.toLowerCase().includes(term) && (!p.months.length || p.months.includes(month)))
-        : (v.description ?? "").toLowerCase().includes(term);
+        ? items.products.some((p) => cropMatches(crop, p.name) && (!p.months.length || p.months.includes(month)))
+        : cropMatches(crop, v.description ?? "");
       if (!has) return false;
     }
     const text = [...(cats?.categories ?? []).map((c) => CATEGORY_LABELS[c]), ...(items?.products ?? []).map((p) => p.name)].join(" ");
@@ -134,7 +134,7 @@ export default function DirectoryApp(props: Props) {
 
   const pickCrop = (crop: Crop) => {
     setSeasonOpen(false);
-    setFilters((f) => ({ ...f, crop: { term: crop.term, name: crop.name }, view: "list" }));
+    setFilters((f) => ({ ...f, crop, view: "list" }));
     setFocusResults((n) => n + 1);
   };
   const closeProfile = useCallback(() => setOpenID(null), []);

@@ -5,6 +5,7 @@ import { CATEGORY_OPTIONS } from "@/lib/intake";
 import { CATEGORY_LABELS, categoryColors, productsFor } from "@/lib/categories";
 import { BENEFIT_IDS, PAYMENT_SHORT } from "@/lib/payments";
 import { readable, textOn } from "@/lib/markets";
+import type { Crop } from "@/lib/season";
 
 export interface Filters {
   q: string;
@@ -12,7 +13,7 @@ export interface Filters {
   products: Set<ProductID>;
   payments: Set<PaymentID>;
   organic: boolean;
-  crop: { term: string; name: string } | null; // picked from the in-season guide
+  crop: Crop | null; // picked from the in-season guide
   view: "list" | "map";
 }
 
