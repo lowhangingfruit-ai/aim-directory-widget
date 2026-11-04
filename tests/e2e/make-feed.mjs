@@ -2,7 +2,8 @@
 // market dates relative to today so the tests never go stale. The names are
 // invented; the live directory never shows this file. Two IDs are real MMM IDs
 // so the tests pick up their categories and products from lib/mmmCatalog.json
-// (an organic farm and a prepared-food vendor).
+// (an organic farm and a prepared-food vendor), and two more pick up pictures
+// saved from their websites (lib/websitePhotos.json).
 import { writeFileSync } from "node:fs";
 
 const today = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date()) + "T12:00:00");
@@ -13,6 +14,7 @@ const nextWeekday = (weekday, weeksAhead) => {
 };
 const sundays = [0, 1, 2].map((w) => nextWeekday(0, w));
 const saturdays = [0, 1, 2].map((w) => nextWeekday(6, w));
+const thursdays = [0, 1, 2].map((w) => nextWeekday(4, w));
 
 const vendor = (o) => ({
   vendorID: o.id, company: o.company, type: "", phone1: o.phone ?? "", email: "private@example.com",
@@ -38,6 +40,16 @@ const vendors = [
   vendor({
     id: 900003, company: "Cedar Ridge Ranch", city: "Sebastopol", description: "Pasture-raised eggs and chicken.",
     markets: [{ marketID: 7776, market: "Sunday Marin", dates: sundays.slice(1) }],
+  }),
+  // No MMM photo: these two real IDs pick up the pictures saved from their
+  // websites in lib/websitePhotos.json (a share photo and a logo).
+  vendor({
+    id: 83173, company: "Fernhill Orchard", city: "Brentwood", description: "Stone fruit and dried fruit.",
+    website: "fernhill.example.com", markets: [{ marketID: 7786, market: "Thursday Marin", dates: thursdays }],
+  }),
+  vendor({
+    id: 200372, company: "Garnet Creamery", city: "Petaluma", description: "Fresh mozzarella and burrata.",
+    website: "garnet.example.com", markets: [{ marketID: 7786, market: "Thursday Marin", dates: thursdays }],
   }),
   vendor({
     id: 900004, company: "Delta Dairy", city: "Lodi", description: "Has not agreed to be listed.", permission: false,

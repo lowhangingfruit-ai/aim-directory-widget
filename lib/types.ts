@@ -4,6 +4,15 @@ export interface VendorMarket {
   dates: string[];
 }
 
+// A picture taken from the vendor's own website when they have no MMM photo
+// (lib/websitePhotos.ts). "og" is the site's share image, "logo" its logo.
+export interface WebsitePhoto {
+  url: string;
+  source: "og" | "logo";
+  fit: "cover" | "contain"; // logos are shown whole, photos fill the tile
+  background: "light" | "dark"; // dark only for light logos on a transparent background
+}
+
 export interface Vendor {
   vendorID: number;
   company: string;
@@ -19,6 +28,7 @@ export interface Vendor {
   instagram_profile: string;
   permission: boolean;
   markets: VendorMarket[];
+  sitePhoto?: WebsitePhoto; // added on the server, not part of the MMM feed
 }
 
 export const MARKETS: Record<number, string> = {

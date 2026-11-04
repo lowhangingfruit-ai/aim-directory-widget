@@ -108,3 +108,26 @@ test("categories and the organic filter come from Manage My Market", async ({ pa
   const names = await page.locator(".grid h3").allTextContents();
   expect(names).toEqual(["Alder Creek Farm"]);
 });
+
+test("without an MMM photo, a picture from the vendor's website stands in, with its source named", async ({ page }) => {
+  await page.goto("/?marketID=7786&photos=website");
+  const grid = page.locator(".grid");
+  // A share photo fills the tile; a logo is shown whole.
+  const photo = grid.getByRole("img", { name: "Image from Fernhill Orchard's website" });
+  await expect(photo).toBeVisible();
+  await expect(photo).toHaveCSS("object-fit", "cover");
+  const logo = grid.getByRole("img", { name: "Garnet Creamery logo" });
+  await expect(logo).toBeVisible();
+  await expect(logo).toHaveCSS("object-fit", "contain");
+
+  await page.getByRole("button", { name: "Fernhill Orchard" }).click();
+  const dialog = page.getByRole("dialog", { name: "Fernhill Orchard" });
+  await expect(dialog.getByRole("img", { name: "Image from Fernhill Orchard's website" })).toBeVisible();
+  await expect(dialog.getByText("Image from their website")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // A vendor with neither keeps the name tile, and no credit line.
+  await page.goto("/?marketID=7776&photos=website");
+  await page.getByRole("button", { name: "Alder Creek Farm" }).click();
+  await expect(page.getByRole("dialog")).not.toContainText("from their website");
+});
