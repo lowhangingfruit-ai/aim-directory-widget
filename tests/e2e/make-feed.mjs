@@ -19,7 +19,7 @@ const thursdays = [0, 1, 2].map((w) => nextWeekday(4, w));
 const vendor = (o) => ({
   vendorID: o.id, company: o.company, type: "", phone1: o.phone ?? "", email: "private@example.com",
   address1: "1 Private Lane", city: o.city, state: "CA", description: o.description, website: o.website ?? "",
-  photo: "", twitter_handle: "", facebook_profile: "", instagram_profile: o.instagram ?? "",
+  photo: o.photo ?? "", twitter_handle: "", facebook_profile: "", instagram_profile: o.instagram ?? "",
   permission: o.permission ?? true, markets: o.markets,
 });
 
@@ -50,6 +50,13 @@ const vendors = [
   vendor({
     id: 200372, company: "Garnet Creamery", city: "Petaluma", description: "Fresh mozzarella and burrata.",
     website: "garnet.example.com", markets: [{ marketID: 7786, market: "Thursday Marin", dates: thursdays }],
+  }),
+  // A real MMM entertainer ID, so it picks up the Music and Entertainers
+  // category. Its photo is never shown: musicians get a name tile.
+  vendor({
+    id: 338220, company: "Juniper String Trio", city: "San Rafael", description: "Old-time fiddle tunes.",
+    photo: "https://example.com/juniper.jpg",
+    markets: [{ marketID: 7786, market: "Thursday Marin", dates: thursdays }],
   }),
   vendor({
     id: 900004, company: "Delta Dairy", city: "Lodi", description: "Has not agreed to be listed.", permission: false,

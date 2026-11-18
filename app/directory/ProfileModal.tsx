@@ -114,6 +114,11 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
         {items && items.products.length > 0 && (
           <div>
             <div className="label">What they sell</div>
+            {/* What the two chip styles mean, before the chips. */}
+            <p className="goods-key">
+              <span className="chip now">Green</span> available in {new Date(2026, month, 1).toLocaleDateString("en-US", { month: "long" })}
+              <span className="chip">Grey</span> available in other months
+            </p>
             <div className="goods">
               {Object.entries(Object.groupBy(items.products, (p) => p.category)).map(([category, products]) => (
                 <div key={category}>
@@ -132,7 +137,6 @@ export default function ProfileModal({ vendor, today, marketID, categories, item
                 </div>
               ))}
             </div>
-            <p className="goods-note">Highlighted items are available this month.</p>
           </div>
         )}
 

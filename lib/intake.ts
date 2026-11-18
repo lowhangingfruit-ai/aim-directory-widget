@@ -19,16 +19,17 @@ export type PaymentID = (typeof PAYMENT_OPTIONS)[number]["id"];
 // Rules and Regulations. Vendors pick by AIM's name, the one they applied
 // under; shoppers see the plain label. Rules 5.11 allows more than one.
 export const CATEGORY_OPTIONS = [
-  { id: "certified", aimName: "Certified Producer", label: "Farms and produce" },
-  { id: "livestock", aimName: "Rancher/Livestock", label: "Meat and poultry" },
-  { id: "dairy", aimName: "Dairy", label: "Dairy" },
-  { id: "seafood", aimName: "Fisher/Seafood", label: "Seafood" },
-  { id: "tff", aimName: "Temporary Food Facility", label: "Prepared food" },
-  { id: "prepacked", aimName: "Prepacked", label: "Packaged foods" },
-  { id: "commercial", aimName: "Commercial", label: "Other goods and services" },
-  { id: "nonprofit", aimName: "Non-Profit", label: "Nonprofits" },
-  { id: "entertainer", aimName: "Entertainer", label: "Music and entertainment" },
-  { id: "artisan", aimName: "Artisan", label: "Artisans and crafts" },
+  // Labels and order as AIM asked for them (Nov 2026).
+  { id: "certified", aimName: "Certified Producer", label: "Certified Producers (Farmers)" },
+  { id: "livestock", aimName: "Rancher/Livestock", label: "Ranchers" },
+  { id: "dairy", aimName: "Dairy", label: "Dairy Farms" },
+  { id: "seafood", aimName: "Fisher/Seafood", label: "Fishers" },
+  { id: "tff", aimName: "Temporary Food Facility", label: "Hot Food Purveyors" },
+  { id: "prepacked", aimName: "Prepacked", label: "Food, Beverage, and Bakers or Prepackaged Foods" },
+  { id: "artisan", aimName: "Artisan", label: "Artisans" },
+  { id: "nonprofit", aimName: "Non-Profit", label: "Non-profits" },
+  { id: "entertainer", aimName: "Entertainer", label: "Music and Entertainers" },
+  { id: "commercial", aimName: "Commercial", label: "Other Goods & Services" },
 ] as const;
 
 export type CategoryID = (typeof CATEGORY_OPTIONS)[number]["id"];

@@ -18,6 +18,7 @@ import { EbtBanner, EbtSection, FollowAim } from "./Benefits";
 import { Overlay, scrollBehavior, scrollToTop, useEmbedFrame } from "./embed";
 import MarketsHome from "./MarketsHome";
 import MarketView from "./MarketView";
+import { MasterMapCard, MasterMapDialog } from "./MasterMap";
 import { displayName, matchesSearch } from "./vendorUtils";
 import "./directory.css";
 
@@ -40,12 +41,17 @@ interface Props {
 
 const AIM_DIRECTORY_PAGE = "https://www.agriculturalinstitute.org/market-participant-directory";
 
+// The note on what the directory shows and who is in it. AIM asked to hide
+// it from the public for now (Nov 2026); set to true to bring it back.
+const SHOW_ABOUT_NOTE = false;
+
 export default function DirectoryApp(props: Props) {
   const { vendors, today, history, payments, categories, catalog, origins, otherPayments, coords, embedded } = props;
   const [market, setMarket] = useState(props.initialMarket ?? 0);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [openID, setOpenID] = useState<number | null>(null);
   const [seasonOpen, setSeasonOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const frame = useEmbedFrame(embedded);
   const month = Number(today.slice(5, 7)) - 1;
 
@@ -54,14 +60,14 @@ export default function DirectoryApp(props: Props) {
   // After a market change, focus goes to the new page's heading, so keyboard
   // and screen reader users start from the top of what changed.
   const moved = useRef(false);
-  const goTo = useCallback((id: number) => {
+  const goTo = useCallback((id: number, keepQuery = false) => {
     moved.current = true;
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("marketID", String(id));
     else url.searchParams.delete("marketID");
     window.history.pushState(null, "", url);
     setMarket(id);
-    setFilters((f) => ({ ...EMPTY_FILTERS, view: f.view }));
+    setFilters((f) => ({ ...EMPTY_FILTERS, view: f.view, q: keepQuery ? f.q : "" }));
     scrollToTop(embedded);
   }, [embedded]);
 
@@ -118,6 +124,8 @@ export default function DirectoryApp(props: Props) {
     if (filters.category && !cats?.categories.includes(filters.category)) return false;
     if (filters.products.size && !(cats?.products ?? []).some((p) => filters.products.has(p))) return false;
     if (filters.payments.size && !(payments[v.vendorID] ?? []).some((p) => filters.payments.has(p))) return false;
+    // A market day: at a market that runs that day of the week.
+    if (filters.day !== null && !v.markets.some((m) => MARKET_BY_ID[m.marketID]?.weekday === filters.day)) return false;
     const items = catalog[v.vendorID];
     if (filters.organic && !items?.organic) return false;
     // A crop from the in-season guide: the vendor lists it, available this month.
@@ -139,12 +147,14 @@ export default function DirectoryApp(props: Props) {
   };
   const closeProfile = useCallback(() => setOpenID(null), []);
   const closeSeason = useCallback(() => setSeasonOpen(false), []);
+  const closeMap = useCallback(() => setMapOpen(false), []);
   const jumpToEbt = () => {
     document.getElementById("aimdir-ebt-title")?.focus({ preventScroll: true });
     document.getElementById("aimdir-ebt")?.scrollIntoView({ behavior: scrollBehavior() });
   };
 
   const open = openID === null ? null : vendors.find((v) => v.vendorID === openID) ?? null;
+  // A market day on its own just narrows the list of markets.
   const filtering = !!(filters.q || filters.category || filters.payments.size || filters.organic || filters.crop);
   const current = market ? MARKET_BY_ID[market] : undefined;
   // On the map, vendor dots take the picked category's color.
@@ -154,18 +164,18 @@ export default function DirectoryApp(props: Props) {
     <Toolbar
       filters={filters}
       onChange={setFilters}
-      placeholder={current ? "Producer name or product" : "Name, market day, or product"}
+      placeholder={current ? "Producer name or product" : "Producer name, product, or keyword"}
+      showDay={!current}
+      onSearchAll={current ? () => goTo(0, true) : undefined}
       categoriesShown={categoriesShown}
       showPayments={showPayments}
       showOrganic={showOrganic}
     />
   );
   const beforeResults = (
-    <div className="wrap">
-      <div className="pre">
-        <SeasonStrip month={month} onPick={pickCrop} onOpen={() => setSeasonOpen(true)} />
-        <EbtBanner onJump={jumpToEbt} />
-      </div>
+    <div className="pre">
+      <SeasonStrip month={month} onPick={pickCrop} onOpen={() => setSeasonOpen(true)} />
+      <EbtBanner onJump={jumpToEbt} />
     </div>
   );
 
@@ -195,6 +205,7 @@ export default function DirectoryApp(props: Props) {
           today={today}
           toolbar={toolbar}
           beforeResults={beforeResults}
+          aside={<MasterMapCard onOpen={() => setMapOpen(true)} />}
           filtering={filtering}
           filtered={applyFilters(sorted)}
           filters={filters}
@@ -208,10 +219,11 @@ export default function DirectoryApp(props: Props) {
       )}
 
       <div className="wrap">
-        <FollowAim />
         <EbtSection id="aimdir-ebt" />
-        {/* The notice AIM chose instead of asking participants for consent again. */}
-        {!current && (
+        <FollowAim />
+        {/* The notice AIM chose instead of asking participants for consent
+            again, hidden from the public for now (SHOW_ABOUT_NOTE). */}
+        {SHOW_ABOUT_NOTE && !current && (
           <details className="about">
             <summary>About this directory and the information it shows</summary>
             <div>
@@ -241,6 +253,13 @@ export default function DirectoryApp(props: Props) {
             at={coords[open.vendorID]}
             onClose={closeProfile}
           />
+        </Overlay>
+      )}
+      {mapOpen && (
+        <Overlay embedded={embedded} frame={frame} onClose={closeMap}>
+          <MasterMapDialog onClose={closeMap}>
+            <VendorMap vendors={sorted} origins={origins} coords={coords} selectedMarket={null} accent={null} onOpenVendor={(id) => { setMapOpen(false); setOpenID(id); }} />
+          </MasterMapDialog>
         </Overlay>
       )}
       {seasonOpen && (

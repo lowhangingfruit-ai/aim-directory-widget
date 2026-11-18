@@ -37,8 +37,11 @@ export function Tile({ vendor, categories, sizes, eager = false }: {
   const src = vendor.photo?.trim();
   const name = displayName(vendor.company);
   const site = vendor.sitePhoto;
+  // Musicians and entertainers are shown by name on their category's color,
+  // never a photo, as AIM asked.
+  const entertainer = categories?.categories.includes("entertainer") ?? false;
 
-  if (src && IMAGE_FILE.test(src) && !failed) {
+  if (src && IMAGE_FILE.test(src) && !failed && !entertainer) {
     return (
       <div className="tile">
         <Image src={src} alt="" fill sizes={sizes} loading={eager ? "eager" : "lazy"}
@@ -47,7 +50,7 @@ export function Tile({ vendor, categories, sizes, eager = false }: {
     );
   }
 
-  if (site && !siteFailed) {
+  if (site && !siteFailed && !entertainer) {
     const contain = site.fit === "contain";
     return (
       <div className={`tile from-site${contain ? " logo" : ""}${site.background === "dark" ? " dark" : ""}`}>
@@ -58,31 +61,23 @@ export function Tile({ vendor, categories, sizes, eager = false }: {
     );
   }
 
-  const first = categories?.categories[0];
+  const first = entertainer ? "entertainer" : categories?.categories[0];
   const colors = first ? categoryColors(first) : { background: "#ecebdf", art: "#55544b" };
   const size = name.length > 18 ? "clamp(16px, 2.1vw, 28px)" : "clamp(18px, 2.8vw, 38px)";
   return (
     <div className="tile sign" aria-hidden="true"
-      style={{ background: colors.background, color: readable(colors.art, colors.background, 3), fontSize: size }}>
+      style={{ background: colors.background, color: readable(colors.art, colors.background, 4.5), fontSize: size }}>
       {name}
     </div>
   );
 }
 
-// Small logos of the vendor's other markets, so a shopper can see where else to find them.
-function MarketMarks({ vendor, skip }: { vendor: Vendor; skip?: number }) {
+// Where else to find them, in words: market logos appear only in the profile.
+function MarketNames({ vendor, skip }: { vendor: Vendor; skip?: number }) {
   const ids = new Set(vendor.markets.map((m) => m.marketID));
-  const seen = new Set<string>();
-  const marks = MARKET_LIST.filter((m) => ids.has(m.id) && m.id !== skip && !seen.has(m.logo) && seen.add(m.logo));
-  if (!marks.length) return null;
-  const label = marks.map((m) => m.name).join(", ");
-  return (
-    <div className="marks" title={label}>
-      <span className="sr-only">Also at {label}</span>
-      {marks.slice(0, 5).map((m) => <img key={m.id} src={m.logo} alt="" />)}
-      {marks.length > 5 && <span aria-hidden="true">+{marks.length - 5}</span>}
-    </div>
-  );
+  const names = MARKET_LIST.filter((m) => ids.has(m.id) && m.id !== skip).map((m) => m.name);
+  if (!names.length) return null;
+  return <div className="mkts">{skip ? "Also at " : "At "}{names.join(", ")}</div>;
 }
 
 export default function ParticipantGrid({ vendors, categories, catalog, payments, marketID, onOpen }: {
@@ -117,7 +112,7 @@ export default function ParticipantGrid({ vendors, categories, catalog, payments
             )}
             <h3><button type="button" onClick={() => onOpen(v.vendorID)}>{displayName(v.company)}</button></h3>
             <div className="meta">{formatCity(v.city, v.state).replace(/, CA$/, "")}</div>
-            <MarketMarks vendor={v} skip={marketID} />
+            <MarketNames vendor={v} skip={marketID} />
             {(benefits.length > 0 || organic) && (
               <div className="badges">
                 {organic && <span className="organic">Certified organic</span>}

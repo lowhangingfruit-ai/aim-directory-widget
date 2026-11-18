@@ -4,8 +4,11 @@ import { useEffect } from "react";
 import { Art } from "./art";
 import { NewTab, OutArrow } from "./a11y";
 
-// Wording follows AIM's Farm Fresh Nutrition Access page. The WIC deadline and
-// the Senior Match note are time-sensitive; AIM confirms them each season.
+// Three separate sections, as AIM asked (Annie, Nov 2026): CalFresh with
+// Market Match, WIC, and the Senior Farmers Market Nutrition Program. The WIC
+// and Senior wording is AIM's, verbatim. The November 30 deadlines are for
+// 2026; AIM confirms them each season. There is no list of authorized
+// farmers: shoppers look for the purple signs or ask at the Information Booth.
 const AIM_ACCESS = "https://www.agriculturalinstitute.org/farm-fresh-nutrition-access";
 
 // A link to the section further down. The click scrolls there and moves
@@ -15,7 +18,7 @@ export function EbtBanner({ onJump }: { onJump: () => void }) {
   return (
     <a href="#aimdir-ebt" className="ebt-banner" onClick={(e) => { e.preventDefault(); onJump(); }}>
       <span className="coins"><Art name="coinSilver" /><Art name="coinPurple" /></span>
-      <span><b>Using CalFresh EBT?</b> Market Match doubles your fruit and vegetable dollars, up to $15.</span>
+      <span><b>Using CalFresh EBT, WIC, or senior benefits?</b> Market Match adds up to $15 per day for fruits and vegetables.</span>
       <span className="go">How it works<span aria-hidden="true"> &darr;</span></span>
     </a>
   );
@@ -23,38 +26,59 @@ export function EbtBanner({ onJump }: { onJump: () => void }) {
 
 export function EbtSection({ id }: { id: string }) {
   return (
-    <section className="ebt" id={id}>
-      <div className="intro">
-        <div className="eyebrow">Food access</div>
-        <h2 id="aimdir-ebt-title" tabIndex={-1}>Shopping with EBT, WIC, and senior benefits</h2>
-        <p>CalFresh shoppers can double their benefits for fruits and vegetables at AIM&rsquo;s farmers markets through Market Match.</p>
-        <div className="tokens">
-          <div><Art name="coinSilver" /><span><b>Silver tokens</b>Any food for human consumption except hot food.</span></div>
-          <div><Art name="coinPurple" /><span><b>Purple Market Match tokens</b>Fruits and vegetables only.</span></div>
+    <div className="benefits" id={id}>
+      <section className="ebt" aria-labelledby="aimdir-ebt-title">
+        <div className="intro">
+          <div className="eyebrow">Food access</div>
+          <h2 id="aimdir-ebt-title" tabIndex={-1}>CalFresh &amp; Market Match</h2>
+          <p>CalFresh shoppers can double their benefits for fruits and vegetables at our farmers markets through Market Match.</p>
+          <div className="tokens">
+            <div><Art name="coinSilver" /><span><b>Silver CalFresh tokens</b>Any food for human consumption except hot food.</span></div>
+            <div><Art name="coinPurple" /><span><b>Purple Market Match tokens</b>Fruits and vegetables only.</span></div>
+          </div>
         </div>
-      </div>
-      <ol>
-        <li><Art name="booth" /><span><b>Go to the Information Booth</b>Every AIM market has one. Bring your EBT card.</span></li>
-        <li><Art name="card" /><span><b>Swipe for $1 to $15</b>You get that amount in silver EBT tokens.</span></li>
-        <li><Art name="match" /><span><b>Get it matched</b>Market Match adds the same amount, up to $15, in purple tokens.</span></li>
-        <li><Art name="basket" /><span><b>Shop the booths</b>Spend tokens with farmers, ranchers, cheesemakers, and bakers.</span></li>
-      </ol>
-      <div className="programs">
+        <ol>
+          <li><Art name="card" /><span><b>Bring your CalFresh EBT Card</b></span></li>
+          <li><Art name="booth" /><span><b>Swipe your card at the Information Booth for silver CalFresh tokens</b></span></li>
+          <li><Art name="match" /><span><b>Receive an equal amount in bonus purple Market Match tokens, up to $15 per day</b></span></li>
+          <li><Art name="basket" /><span><b>Spend tokens on eligible items</b></span></li>
+        </ol>
+      </section>
+
+      <section className="program" aria-labelledby="aimdir-wic-title">
+        <div className="program-art"><Art name="wicCard" /></div>
         <div>
-          <h3>WIC</h3>
-          <p>Use the WIC card with a QR code on the front at farmers with WIC signage. They scan the code and you enter your PIN.</p>
-          <p className="notice">Spend this year&rsquo;s farmers market funds on your card by November 30.</p>
+          <h2 id="aimdir-wic-title">WIC</h2>
+          <p>
+            <b>Did you know?</b>{" "}You can spend your monthly Fruits &amp; Vegetables benefits at participating farmers
+            markets! Use your WIC card directly with farmers who have purple &ldquo;WIC &amp; Senior Benefits
+            Welcome&rdquo; signs posted. They will scan the QR code on your card to accept payment. Don&rsquo;t have a QR
+            code on your WIC card? Check in with your WIC office for a new card.
+          </p>
+          <p className="notice">If you received bonus Farmers Market Nutrition Program funds from your WIC office this year, spend them by November 30.</p>
         </div>
+      </section>
+
+      <section className="program" aria-labelledby="aimdir-senior-title">
+        <div className="program-art"><Art name="seniorCard" /></div>
         <div>
-          <h3>Seniors 60 and older</h3>
-          <p>The Senior Farmers&rsquo; Market Nutrition Program card buys fresh produce, cut herbs, and raw honey at farmers with program signage.</p>
-          <p className="notice">The 2026 WIC and Senior Match bonus has run out of funds for the year.</p>
+          <h2 id="aimdir-senior-title">Senior Farmers Market Nutrition Program</h2>
+          <p>
+            California residents age 60 or older, with a monthly income at or below 185% of the federal poverty level are
+            eligible for the Senior FMNP. To apply, contact your local Area Agency on Aging.
+          </p>
+          <p className="notice">
+            If you received a Senior Farmers Market card this year, use your card at participating farmers markets by
+            November 30! Find farmers who have purple &ldquo;WIC &amp; Senior Benefits Welcome&rdquo; signs posted. They
+            will scan the QR code on your card to accept payment.
+          </p>
         </div>
-      </div>
+      </section>
+
       <a className="outlink" href={AIM_ACCESS} target="_blank" rel="noopener noreferrer">
-        What EBT can buy, and each market&rsquo;s programs, on AIM&rsquo;s site<OutArrow /><NewTab />
+        More about food access programs at each market, on AIM&rsquo;s site<OutArrow /><NewTab />
       </a>
-    </section>
+    </div>
   );
 }
 
@@ -88,13 +112,37 @@ function useFlodeskForm(formId: string, containerEl: string) {
   }, [formId, containerEl]);
 }
 
+// The newsletter sits at the bottom of the page: AIM's Flodesk form, cut to
+// first name, email address, and the button in one row. The form's design
+// lives in Flodesk, so the heading and the Last name field Flodesk draws are
+// hidden here rather than changed there; whatever Flodesk sends on submit is
+// unchanged. Flodesk draws decoy fields for spam bots and shows the real ones
+// with inline styles, so Last name is found by its visible label text.
+function useTrimFlodesk(containerSelector: string) {
+  useEffect(() => {
+    const root = document.querySelector(containerSelector);
+    if (!root) return;
+    const trim = () => {
+      root.querySelectorAll<HTMLElement>(".fd-form-group").forEach((group) => {
+        const label = group.querySelector<HTMLElement>("label");
+        if (label && /^last\s*name$/i.test(label.innerText.trim())) group.setAttribute("data-aimdir-hidden", "");
+      });
+    };
+    trim();
+    const observer = new MutationObserver(trim);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [containerSelector]);
+}
+
 export function FollowAim() {
   useFlodeskForm(NEWSLETTER_FORM, `#fd-form-${NEWSLETTER_FORM}`);
+  useTrimFlodesk(`#fd-form-${NEWSLETTER_FORM}`);
   return (
-    <section className="follow">
+    <section className="follow" aria-labelledby="aimdir-news-title">
       <div>
-        <h2>Want to know who&rsquo;s coming to market?</h2>
-        <p>Follow AIM and subscribe to our newsletter for the latest vendor updates, seasonal offerings, and market news.</p>
+        <h2 id="aimdir-news-title">Join the newsletter</h2>
+        <p>Vendor updates, seasonal offerings, and market news from AIM.</p>
         <div className="btns">
           <a href="https://instagram.com/aginstituteofmarin" target="_blank" rel="noopener noreferrer">Follow on Instagram<NewTab /></a>
           <a className="ghost" href="https://www.facebook.com/AIMFarmersMarkets/" target="_blank" rel="noopener noreferrer">Follow on Facebook<NewTab /></a>

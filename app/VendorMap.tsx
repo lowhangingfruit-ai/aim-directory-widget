@@ -269,7 +269,8 @@ export default function VendorMap({ vendors: incoming, origins = {}, coords = {}
   // Look up only the cities the server couldn't place.
   useEffect(() => {
     let cancelled = false;
-    const missing = vendors.filter((v) => !coords[v.vendorID] && !fallback.has(v.vendorID) && (origins[v.vendorID] ?? v.city)?.trim());
+    // A city with no letters in it ("1") is a placeholder, not a place.
+    const missing = vendors.filter((v) => !coords[v.vendorID] && !fallback.has(v.vendorID) && /[a-z]{2}/i.test((origins[v.vendorID] ?? v.city) ?? ""));
     if (!missing.length) return;
     (async () => {
       const found = new Map(fallback);

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vendor } from "@/lib/types";
 import type { Market } from "@/lib/markets";
-import { directionsUrl } from "@/lib/markets";
+import { directionsUrl, fullName } from "@/lib/markets";
 import { dateFromIso, longDate, vendorDates } from "./vendorUtils";
 import { NewTab, OutArrow } from "./a11y";
 
@@ -54,7 +54,7 @@ export default function MarketView({ market, vendors, today, history, backHref, 
     return vendors.filter((v) => vendorDates(v, market.id).includes(day));
   }, [day, today, history, vendors, market.id]);
   const shown = filter(atMarket);
-  const rest = ` market participant${shown.length === 1 ? "" : "s"} ${day < today ? "were at" : "at"} ${market.name} on ${day ? longDate(day) : ""}`;
+  const rest = ` market participant${shown.length === 1 ? "" : "s"} ${day < today ? "were at" : "at"} ${fullName(market)} on ${day ? longDate(day) : ""}`;
 
   // Keep the chosen date in view in the scrolling row.
   const rowRef = useRef<HTMLDivElement>(null);
@@ -85,8 +85,7 @@ export default function MarketView({ market, vendors, today, history, backHref, 
             : <button type="button" className="back" onClick={onBack}><span aria-hidden="true">&larr; </span>All Farmers Markets</button>}
           <div className="mhead">
             <div>
-              <div className="eyebrow">AIM farmers market</div>
-              <h1 tabIndex={-1}>{market.name}</h1>
+              <h1 tabIndex={-1}>{fullName(market)}</h1>
               <dl>
                 <dt>When</dt><dd>{market.day}, {market.hours}{market.seasonal ? "" : ", rain or shine"}</dd>
                 <dt>Where</dt>
@@ -94,7 +93,6 @@ export default function MarketView({ market, vendors, today, history, backHref, 
               </dl>
               <a className="mlink" href={market.aimPage} target="_blank" rel="noopener noreferrer">Parking, market map, and details<OutArrow /><NewTab /></a>
             </div>
-            <img className="biglogo" src={market.logo} alt="" />
           </div>
           {(past.length > 0 || upcoming.length > 0) && (
             <div className="days" ref={rowRef}>
@@ -107,7 +105,7 @@ export default function MarketView({ market, vendors, today, history, backHref, 
       </div>
 
       {toolbar}
-      {beforeResults}
+      <div className="wrap">{beforeResults}</div>
 
       <div className="wrap" id="aimdir-results" tabIndex={-1}>
         {/* Always in the page, so screen readers announce each new count as the date or filters change. */}
@@ -123,7 +121,7 @@ export default function MarketView({ market, vendors, today, history, backHref, 
             {renderGrid(shown)}
           </>
         ) : (
-          <p className="empty">{market.seasonal ? `${market.name} is back next season.` : "Market dates will be posted soon."}</p>
+          <p className="empty">{market.seasonal ? `${fullName(market)} is back next season.` : "Market dates will be posted soon."}</p>
         )}
       </div>
     </>
