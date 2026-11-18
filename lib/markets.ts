@@ -9,6 +9,7 @@ export interface Market {
   id: number;
   name: string;
   day: string;
+  weekday: number; // 0 = Sunday, the day of the week the market runs
   hours: string;
   address: string;
   city: string;
@@ -30,55 +31,55 @@ const MARIN_LOGO = logo("10074cb7-fd6e-4c7c-8629-4fb8a71fa9ea/marin.logo_on_yell
 // In the order AIM's Market Directory page lists them.
 export const MARKET_LIST: Market[] = [
   {
-    id: 7784, name: "Hayward", day: "Saturdays", hours: "9am to 1pm",
+    id: 7784, name: "Hayward", day: "Saturdays", weekday: 6, hours: "9am to 1pm",
     address: "777 B Street", city: "Hayward", region: "east", seasonal: false,
     aimPage: `${AIM}/hayward`, logo: logo("9f0695f7-5bbf-497a-afec-e04e45870cda/hayward.logo_on_pink.jpg"),
     background: "#ffdcc8", art: "#73a01f", lat: 37.6712, lng: -122.0856,
   },
   {
-    id: 7785, name: "Grand Lake", day: "Saturdays", hours: "9am to 2pm",
+    id: 7785, name: "Grand Lake", day: "Saturdays", weekday: 6, hours: "9am to 2pm",
     address: "Splash Pad Park, 746 Grand Ave", city: "Oakland", region: "east", seasonal: false,
     aimPage: `${AIM}/grand-lake`, logo: logo("1607976402789-E45K4WYYS5OCMOE24XG4/grandlake.logo_on_green.jpg"),
     background: "#dcfad9", art: "#038670", lat: 37.8114, lng: -122.2488,
   },
   {
-    id: 7781, name: "Newark", day: "Sundays", hours: "9am to 1pm",
+    id: 7781, name: "Newark", day: "Sundays", weekday: 0, hours: "9am to 1pm",
     address: "2086 Newpark Mall Rd", city: "Newark", region: "east", seasonal: false,
     aimPage: `${AIM}/newark`, logo: logo("1607976531072-1VE3CAJJSAIRAFFE65Z7/newark.logo_on_peach.jpg"),
     background: "#ffcb91", art: "#533180", lat: 37.5297, lng: -122.0402,
   },
   {
-    id: 7786, name: "Thursday Marin", day: "Thursdays", hours: "8am to 1pm",
+    id: 7786, name: "Thursday Marin", day: "Thursdays", weekday: 4, hours: "8am to 1pm",
     address: "10 Ave of the Flags", city: "San Rafael", region: "north", seasonal: false,
     aimPage: `${AIM}/thursday-marin`, logo: MARIN_LOGO,
     background: "#ffec68", art: "#fa03a3", lat: 38.0036, lng: -122.5312,
   },
   {
-    id: 7776, name: "Sunday Marin", day: "Sundays", hours: "8am to 1pm",
+    id: 7776, name: "Sunday Marin", day: "Sundays", weekday: 0, hours: "8am to 1pm",
     address: "3501 Civic Center Dr.", city: "San Rafael", region: "north", seasonal: false,
     aimPage: `${AIM}/sunday-marin`, logo: MARIN_LOGO,
     background: "#ffec68", art: "#fa03a3", lat: 37.998, lng: -122.5307,
   },
   {
-    id: 7803, name: "Point Reyes", day: "Saturdays, May to September", hours: "9am to 2pm",
+    id: 7803, name: "Point Reyes", day: "Saturdays, May to September", weekday: 6, hours: "9am to 2pm",
     address: "11250 CA-1", city: "Point Reyes Station", region: "north", seasonal: true,
     aimPage: `${AIM}/point-reyes`, logo: logo("040d3d2e-68cb-4196-be5e-b06e6090b108/pointreyes.logo_on_blue.jpg"),
     background: "#c1d1eb", art: "#cb224f", lat: 38.0681, lng: -122.8053,
   },
   {
-    id: 8211, name: "San Rafael Summer", day: "One Friday a month, May to September", hours: "5pm to 9pm",
+    id: 8211, name: "San Rafael Summer", day: "One Friday a month, May to September", weekday: 5, hours: "5pm to 9pm",
     address: "Fourth Street, between A and Lootens", city: "San Rafael", region: "north", seasonal: true,
     aimPage: `${AIM}/san-rafael-summer-1`, logo: logo("1607976583988-S19RDA6H1M7KI7F2WBGB/sanrafael.logo_on_blue.jpg"),
     background: "#c2e8ef", art: "#23ae4c", lat: 37.9743, lng: -122.5397,
   },
   {
-    id: 7782, name: "Clement St", day: "Sundays", hours: "9am to 2pm",
+    id: 7782, name: "Clement St", day: "Sundays", weekday: 0, hours: "9am to 2pm",
     address: "244 Clement St.", city: "San Francisco", region: "sf", seasonal: false,
     aimPage: `${AIM}/clement-st`, logo: logo("4b2c106f-4eda-4004-b832-a213b950eccd/clement.logo_on_yellow.jpg"),
     background: "#ebf985", art: "#ec431e", lat: 37.7831, lng: -122.4617,
   },
   {
-    id: 7783, name: "Stonestown", day: "Sundays", hours: "9am to 1pm",
+    id: 7783, name: "Stonestown", day: "Sundays", weekday: 0, hours: "9am to 1pm",
     address: "501 Buckingham Way", city: "San Francisco", region: "sf", seasonal: false,
     aimPage: `${AIM}/stonestown`, logo: logo("1607976598459-TZZWCTC8QDCHJ7AS6L7T/stonestown.logo_on_green.jpg"),
     background: "#baffdc", art: "#ffba8e", lat: 37.7297, lng: -122.4791,
@@ -86,6 +87,24 @@ export const MARKET_LIST: Market[] = [
 ];
 
 export const MARKET_BY_ID: Record<number, Market> = Object.fromEntries(MARKET_LIST.map((m) => [m.id, m]));
+
+// The market's name as AIM writes it: "Hayward Farmers Market".
+export function fullName(m: Market): string {
+  return `${m.name === "Clement St" ? "Clement St." : m.name} Farmers Market`;
+}
+
+// Days of the week, in the order the directory lists markets: the week runs
+// Monday to Sunday, so Thursday Marin comes first and the Sunday markets last.
+export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const weekOrder = (weekday: number) => (weekday + 6) % 7;
+
+// Every market by day of the week, then by name.
+export const MARKETS_BY_DAY: Market[] = [...MARKET_LIST].sort(
+  (a, b) => weekOrder(a.weekday) - weekOrder(b.weekday) || a.name.localeCompare(b.name)
+);
+
+// The days at least one market runs, Monday first.
+export const MARKET_DAYS: number[] = [...new Set(MARKETS_BY_DAY.map((m) => m.weekday))];
 
 export const REGIONS: { id: RegionID; title: string; note: string }[] = [
   { id: "east", title: "East Bay", note: "Open year-round, rain or shine." },

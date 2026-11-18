@@ -34,19 +34,9 @@
 /* Headings and the results line take focus from script after a market
    change or a crop pick; they aren't controls, so no ring. */
 .aimdir [tabindex="-1"]:focus { outline: none; }
-/* Rows that scroll sideways: no scrollbar on touch screens, a thin one
-   with a mouse, which otherwise has no way to scroll them. */
-@media (pointer: coarse) {
-  .aimdir .pills, .aimdir .days, .aimdir .season-strip .crops { scrollbar-width: none; }
-  .aimdir .pills::-webkit-scrollbar, .aimdir .days::-webkit-scrollbar, .aimdir .season-strip .crops::-webkit-scrollbar { display: none; }
-}
-@media (pointer: fine) {
-  .aimdir .pills, .aimdir .days, .aimdir .season-strip .crops { scrollbar-width: thin; scrollbar-color: #c8c6b8 transparent; }
-}
-/* A scrolling row clips whatever is drawn outside it, including the 4px
-   focus ring. Pad the row by the ring's width and pull it back out with a
-   negative margin, so the ring shows and the layout doesn't move. */
-.aimdir .pills, .aimdir .season-strip .crops { padding: 4px; margin: -4px; }
+/* Rows of pills, crops and market dates wrap onto more lines rather than
+   scrolling sideways: with a mouse a sideways row can't be scrolled, which
+   left the last categories (Music and Entertainers) out of reach. */
 
 .aimdir .wrap { max-width: 1240px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
 @media (max-width: 640px) { .aimdir .wrap { padding-left: 16px; padding-right: 16px; } }
@@ -55,21 +45,31 @@
 .aimdir .empty { padding: 60px 0; text-align: center; color: var(--muted); grid-column: 1 / -1; }
 
 /* Page header, matching AIM's other pages */
-.aimdir .head { padding-block: 56px 36px; }
-.aimdir .head h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.02; margin-bottom: 22px; max-width: 760px; }
+.aimdir .head { padding-block: 48px 14px; }
+.aimdir .head h1 { font-size: clamp(40px, 5.6vw, 64px); line-height: 1.02; margin: 0; max-width: 760px; }
 .aimdir .head p { margin: 0 0 14px; max-width: 700px; font-size: 17px; line-height: 1.65; color: #2c2b26; }
 .aimdir .about { max-width: 700px; margin: -24px 0 64px; }
 .aimdir .about summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--green-text); text-decoration: underline; text-underline-offset: 3px; }
 .aimdir .about div { margin-top: 12px; padding: 16px 20px; background: var(--white); border-radius: 14px; font-size: 14px; line-height: 1.65; display: flex; flex-direction: column; gap: 10px; }
 .aimdir .about div p { margin: 0; font-size: 14px; }
-@media (max-width: 640px) { .aimdir .head { padding-block: 32px 24px; } .aimdir .head p { font-size: 16px; } }
+@media (max-width: 640px) { .aimdir .head { padding-block: 28px 10px; } .aimdir .head p { font-size: 16px; } }
 
 /* Toolbar: search and list or map, then colored categories */
-.aimdir .tools { position: sticky; top: 0; z-index: 20; background: var(--cream); border-bottom: 1px solid var(--line); }
-.aimdir.embedded .tools { position: static; }
-.aimdir .tools .wrap { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: flex-end; padding-block: 12px 14px; }
-.aimdir .search { flex: 1; min-width: 0; max-width: 560px; display: flex; flex-direction: column; gap: 4px; }
+/* Not sticky: with every category showing, a pinned toolbar covered most of
+   a phone screen and the page seemed not to scroll. */
+.aimdir .tools { background: var(--cream); border-bottom: 1px solid var(--line); }
+.aimdir .tools .wrap { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: flex-end; padding-block: 4px 16px; }
+.aimdir .search { flex: 1; min-width: 0; max-width: 760px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+.aimdir .search .fieldset { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.aimdir .search .q-field { flex: 1 1 280px; }
+.aimdir .search .day-field { flex: 0 0 180px; }
 .aimdir .search label { padding-left: 18px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.aimdir .search select { appearance: none; width: 100%; border: 2px solid var(--line); border-radius: 300px; padding: 10px 38px 10px 18px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer;
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23111' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 16px center; }
+.aimdir .search select:focus { border-color: var(--ink); }
+.aimdir .search select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.aimdir .search .all-markets { border: 2px solid var(--ink); background: var(--white); border-radius: 300px; padding: 9px 16px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.aimdir .search .all-markets:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .aimdir .search .field { position: relative; }
 .aimdir .search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .aimdir .search input { width: 100%; border: 2px solid var(--line); border-radius: 300px; padding: 10px 40px 10px 42px; font: inherit; font-size: 14px; background: var(--white); color: var(--ink); outline: none; }
@@ -78,8 +78,8 @@
 .aimdir .seg { margin-left: auto; margin-bottom: 2px; display: inline-flex; border: 2px solid var(--line); border-radius: 300px; padding: 3px; background: var(--white); flex-shrink: 0; }
 .aimdir .seg button { border: 0; background: none; border-radius: 300px; padding: 5px 14px; font-size: 13px; cursor: pointer; color: var(--muted); }
 .aimdir .seg button[aria-pressed="true"] { background: var(--ink); color: var(--white); font-weight: 600; }
-.aimdir .pills { order: 3; flex-basis: calc(100% + 8px); min-width: 0; display: flex; gap: 8px; overflow-x: auto; }
-.aimdir .pills > div { display: flex; gap: 8px; flex-shrink: 0; }
+.aimdir .pills { order: 3; flex-basis: 100%; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.aimdir .pills > div { display: flex; flex-wrap: wrap; gap: 8px; }
 .aimdir .pills button { flex-shrink: 0; border: 0; border-radius: 300px; padding: 7px 15px; font-size: 13.5px; font-weight: 600; cursor: pointer; background: var(--ct); color: var(--ci); white-space: nowrap; transition: background .12s, color .12s; }
 .aimdir .pills button[aria-pressed="true"] { background: var(--ca); color: var(--con); }
 .aimdir .pills .label { align-self: center; font-size: 13px; color: var(--muted); flex-shrink: 0; padding-left: 6px; }
@@ -89,18 +89,43 @@
   .aimdir .search { flex-basis: 100%; max-width: none; }
   .aimdir .tools .wrap { align-items: center; gap: 10px; }
   .aimdir .seg { order: 2; margin: 0; }
-  .aimdir .pills { order: 3; flex: 1 1 0; }
+  .aimdir .pills { order: 3; flex-basis: 100%; }
+  .aimdir .search .day-field { flex: 1 1 100%; }
 }
 .aimdir .pre { display: flex; flex-direction: column; gap: 14px; padding-top: 24px; }
 
+/* All markets: the list, with the market map in a column on the right */
+.aimdir .home-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0 36px; align-items: start; }
+.aimdir .home-cols > :only-child { grid-column: 1 / -1; }
+.aimdir .intro { padding-top: 22px; }
+.aimdir .intro p { margin: 0 0 10px; max-width: 700px; font-size: 16px; line-height: 1.65; color: #2c2b26; }
+@media (max-width: 980px) { .aimdir .home-cols { grid-template-columns: minmax(0, 1fr); } }
+.aimdir .master-map { position: sticky; top: 16px; margin-top: 24px; background: var(--white); border-radius: 22px; padding: 16px; }
+.aimdir.embedded .master-map { position: static; }
+@media (max-width: 980px) { .aimdir .master-map { position: static; margin-bottom: 40px; } }
+.aimdir .master-map h2 { font-size: 22px; margin: 0 0 10px; }
+.aimdir .map-open { display: block; position: relative; width: 100%; border: 0; padding: 0; background: var(--cream); border-radius: 14px; overflow: hidden; cursor: zoom-in; }
+.aimdir .map-open img { width: 100%; height: auto; aspect-ratio: 32 / 42; object-fit: cover; }
+@media (max-width: 980px) { .aimdir .map-open img { aspect-ratio: 16 / 10; } }
+.aimdir .map-fallback { display: grid; place-items: center; aspect-ratio: 32 / 42; font-family: var(--head); font-size: 28px; color: var(--muted); }
+.aimdir .map-open .enlarge { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: var(--white); border-radius: 300px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+.aimdir .map-open:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.aimdir .map-key { margin: 12px 0 0; padding-left: 22px; font-size: 13px; line-height: 1.5; color: var(--body); }
+.aimdir .map-key small { color: var(--muted); font-size: 12px; }
+.aimdir-scrim .map-dialog { background: #fff; border-radius: 26px; width: min(1180px, 100%); max-height: 100%; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.25); font-family: var(--font-body); color: #111; }
+.aimdir-scrim .map-dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px 12px 24px; }
+.aimdir-scrim .map-dialog-head h2 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; line-height: 1.15; margin: 0; }
+.aimdir-scrim .map-dialog .mapbox { flex: 1; min-height: 0; }
+@media (max-width: 760px) { .aimdir-scrim .map-dialog { border-radius: 0; height: 100%; } .aimdir-scrim .map-dialog-head h2 { font-size: 18px; } }
+
 /* Markets grouped by region */
-.aimdir .region { padding-top: 40px; }
+.aimdir .region { padding-top: 32px; }
 .aimdir .region > h2 { font-size: 32px; line-height: 1.1; }
 .aimdir .region > p { margin: 4px 0 18px; color: var(--muted); font-size: 14.5px; }
-.aimdir .mgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
-@media (max-width: 980px) { .aimdir .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.aimdir .mgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+@media (min-width: 1240px) { .aimdir .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .aimdir .mgrid { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
-.aimdir .mcard { position: relative; background: var(--white); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; transition: transform .15s, box-shadow .15s; }
+.aimdir .mcard { position: relative; background: var(--white); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; transition: transform .15s, box-shadow .15s; border-top: 8px solid var(--mtone, var(--line)); }
 .aimdir .mcard:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(40,40,20,.12); }
 /* The market name's button covers the whole card; the address link sits above it. */
 .aimdir .mcard .open { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
@@ -110,16 +135,14 @@
 .aimdir .mcard .addr { position: relative; z-index: 1; }
 /* The square logo fills the card's width, trimmed a little top and bottom, so
    no edge of the logo file shows against the card. */
-.aimdir .mcard .logo { aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; }
-.aimdir .mcard .logo img { width: 100%; height: 100%; object-fit: cover; }
 .aimdir .mcard .txt { padding: 16px 20px 0; }
-.aimdir .mcard h3 { font-size: 26px; line-height: 1.1; }
+.aimdir .mcard h3 { font-size: 24px; line-height: 1.1; }
 .aimdir .mcard .when { font-size: 14px; color: var(--body); margin-top: 4px; }
 .aimdir .mcard .addr { display: inline-block; margin: 2px 20px 12px; font-size: 13.5px; color: var(--muted); text-decoration-color: #c8c6b8; text-underline-offset: 3px; }
 .aimdir .mcard .addr:hover { color: var(--green); }
 .aimdir .mcard .next { margin: auto 20px 0; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding: 12px 0 18px; }
 .aimdir .mcard .next b { color: var(--green); }
-.aimdir .mcard.off .logo { filter: grayscale(1); opacity: .5; }
+.aimdir .mcard.off { border-top-color: var(--line); }
 .aimdir .count { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 28px 0 14px; font-size: 14px; color: var(--muted); }
 .aimdir .count b { color: var(--ink); }
 .aimdir .count button { border: 0; background: none; padding: 0; color: var(--green-text); font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
@@ -127,7 +150,7 @@
 /* One market */
 .aimdir .band { padding-top: 22px; }
 .aimdir .back { border: 0; background: none; cursor: pointer; font-weight: 700; font-size: 14.5px; padding: 0; color: #111; text-decoration: none; }
-.aimdir .mhead { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; align-items: center; padding: 16px 0 28px; }
+.aimdir .mhead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: center; padding: 16px 0 28px; }
 .aimdir .mhead h1 { font-size: clamp(44px, 6vw, 72px); line-height: 1; margin: 8px 0 18px; }
 .aimdir .mhead dl { margin: 0 0 16px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 16px; font-size: 16px; }
 .aimdir .mhead dt { font-weight: 700; }
@@ -135,7 +158,7 @@
 .aimdir .mhead dd a, .aimdir .mhead .mlink { color: #111; text-decoration-color: rgba(0,0,0,.35); text-underline-offset: 3px; }
 .aimdir .mhead .mlink { font-weight: 700; font-size: 14.5px; }
 .aimdir .mhead .biglogo { width: 100%; aspect-ratio: 1; max-width: 100%; object-fit: cover; border-radius: 28px; border: 6px solid var(--white); }
-.aimdir .days { display: flex; gap: 10px; padding: 4px 4px 26px; margin: -4px -4px 0; overflow-x: auto; }
+.aimdir .days { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 0 26px; }
 .aimdir .day { flex-shrink: 0; width: 86px; border: 0; border-radius: 16px; background: rgba(255,255,255,.65); padding: 10px 0 9px; text-align: center; cursor: pointer; transition: background .12s; }
 .aimdir .day:hover { background: var(--white); }
 .aimdir .day small { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
@@ -154,6 +177,8 @@
 
 /* Participant tiles */
 .aimdir .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 22px; padding-bottom: 48px; }
+.aimdir .home-main .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .aimdir .home-main .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .aimdir .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .aimdir .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; } }
 /* A vendor card: the name's button covers the whole card. */
@@ -175,9 +200,7 @@
 .aimdir .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .aimdir .badges span { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 300px; border: 1.5px solid var(--purple); color: var(--purple); }
 .aimdir .badges span.organic { border-color: #037a66; color: #037a66; }
-.aimdir .marks { display: flex; gap: 4px; align-items: center; }
-.aimdir .marks img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
-.aimdir .marks span { font-size: 12px; color: var(--muted); margin-left: 2px; }
+.aimdir .mkts { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 @media (max-width: 760px) { .aimdir .card h3 { font-size: 17px; } .aimdir .card .meta { font-size: 12.5px; } }
 
 /* Map */
@@ -233,7 +256,10 @@
 .aimdir-scrim .goods small { display: block; font-size: 12px; color: #6b6a60; }
 .aimdir-scrim .goods .chips span { background: #f6f5ea; color: #6b6a60; font-weight: 400; }
 .aimdir-scrim .goods .chips span.now { background: #dcfad9; color: #03604f; font-weight: 600; }
-.aimdir-scrim .goods-note { margin: 10px 0 0; font-size: 12.5px; color: #6b6a60; }
+.aimdir-scrim .goods-key { margin: -4px 0 12px; font-size: 13px; color: #4a493f; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.aimdir-scrim .goods-key .chip { font-size: 12.5px; padding: 2px 10px; border-radius: 300px; background: #f6f5ea; color: #6b6a60; }
+.aimdir-scrim .goods-key .chip.now { background: #dcfad9; color: #03604f; font-weight: 600; }
+.aimdir-scrim .goods-key .chip:not(:first-child) { margin-left: 10px; }
 .aimdir-scrim .x { width: 40px; height: 40px; border-radius: 300px; border: 1.5px solid #e6e4d6; background: #fff; cursor: pointer; font-size: 22px; line-height: 1; display: grid; place-items: center; flex-shrink: 0; color: #111; }
 .aimdir-scrim .x:hover { border-color: #111; }
 .aimdir-scrim button:focus-visible, .aimdir-scrim a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
@@ -275,7 +301,7 @@
 .aimdir .season-strip { display: flex; align-items: center; gap: 14px; padding: 8px 10px 8px 14px; border-radius: 16px; background: #fff; }
 .aimdir .season-strip .season-art { width: 64px; flex-shrink: 0; }
 .aimdir .season-strip > b { font-family: var(--head); font-weight: 700; font-size: 18px; white-space: nowrap; }
-.aimdir .season-strip .crops { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; }
+.aimdir .season-strip .crops { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .aimdir .season-strip .crop { flex-shrink: 0; border: 0; background: var(--cream); border-radius: 300px; padding: 5px 12px; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
 .aimdir .season-strip .crop:hover { box-shadow: 0 0 0 1.5px var(--green); }
 .aimdir .season-strip .see { flex-shrink: 0; border: 0; border-radius: 300px; padding: 8px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; background: var(--ink); color: var(--white); }
@@ -291,20 +317,16 @@
 .aimdir-scrim .season h2 { font-size: 26px; line-height: 1.1; margin: 0; }
 .aimdir-scrim .season .lede { font-size: 13.5px; color: #333; margin: 6px 0 10px; }
 .aimdir-scrim .season .season-art { width: 100%; max-width: 210px; margin-top: 6px; }
-.aimdir-scrim .season .groups { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 16px 24px; }
+.aimdir-scrim .season .crop-list { list-style: none; margin: 0; padding: 0; columns: 3 150px; column-gap: 24px; }
+.aimdir-scrim .season .crop-list li { break-inside: avoid; margin-bottom: 6px; }
 .aimdir-scrim .season small { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
 .aimdir-scrim .season .crops { display: flex; flex-wrap: wrap; gap: 6px; }
-.aimdir-scrim .season .crop { border: 0; background: #fff; border-radius: 300px; padding: 5px 12px 5px 10px; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.aimdir-scrim .season .crop { border: 0; background: #fff; border-radius: 300px; padding: 5px 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
 .aimdir-scrim .season .crop:hover { box-shadow: 0 0 0 1.5px var(--green); }
-.aimdir-scrim .season .bars { display: inline-flex; gap: 1.5px; }
-.aimdir-scrim .season .bars i { width: 3px; height: 10px; border-radius: 2px; background: #dddbcc; }
-.aimdir-scrim .season .bars i.on { background: var(--green); }
-.aimdir-scrim .season .bars i.now { background: #111; height: 12px; margin-top: -1px; }
 .aimdir-scrim .season .foot { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #6b6a60; }
 .aimdir-scrim .season .foot a { color: #6b6a60; }
 @media (max-width: 900px) {
   .aimdir-scrim .season { grid-template-columns: minmax(0, 1fr); padding: 18px 16px; }
-  .aimdir-scrim .season .groups { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
   .aimdir-scrim .season-box { border-radius: 0; height: 100%; padding: 0; }
@@ -312,20 +334,34 @@
   .aimdir-scrim .season-box > .x { top: 14px; right: 14px; }
 }
 
-/* Follow AIM */
-.aimdir .follow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 40px; align-items: center; background: var(--white); border-radius: 26px; padding: 30px 34px; margin: 16px 0 28px; }
+/* Newsletter, at the bottom of the page */
+.aimdir .follow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 24px 40px; align-items: center; background: var(--white); border-radius: 26px; padding: 30px 34px; margin: 0 0 64px; }
 .aimdir .follow h2 { font-size: clamp(26px, 3vw, 34px); line-height: 1.1; margin-bottom: 8px; }
 .aimdir .follow p { margin: 0 0 16px; max-width: 560px; font-size: 15.5px; color: #2c2b26; }
 .aimdir .follow .btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .aimdir .follow .btns a { background: var(--ink); color: var(--white); border-radius: 300px; padding: 9px 18px; font-size: 14px; font-weight: 700; text-decoration: none; }
 .aimdir .follow .btns a.ghost { background: var(--white); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.aimdir .follow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.aimdir .follow .newsletter { min-width: 0; min-height: 120px; }
+.aimdir .follow .newsletter { min-width: 0; min-height: 80px; }
+/* AIM's Flodesk form, trimmed to first name, email and the button on one
+   line, the button lined up with the fields. Flodesk's own heading and the
+   Last name field are hidden (Benefits.tsx marks Last name). */
+.aimdir .follow .newsletter [data-ff-el="root"] [class*="__form"] { padding: 0; text-align: left; }
+.aimdir .follow .newsletter [data-ff-el="root"] [class*="__title"],
+.aimdir .follow .newsletter [data-ff-el="root"] [class*="__subtitle"],
+.aimdir .follow .newsletter [data-aimdir-hidden] { display: none !important; }
+.aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="content"] { display: flex !important; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; gap: 10px; margin: 0; }
+.aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="fields"] { display: flex !important; flex: 1 1 320px; flex-wrap: wrap; gap: 10px; margin: 0; max-width: none; justify-content: flex-start; }
+.aimdir .follow .newsletter [data-ff-el="root"] .fd-form-group { flex: 1 1 150px; max-width: none; margin: 0; }
+.aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="footer"] { flex: 0 0 auto; margin: 0; }
+.aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="submit"] { height: 50px; padding: 0 24px; width: auto; border-radius: 300px; font-weight: 700; }
+.aimdir .follow .newsletter [data-ff-el="root"] .fd-form-control { border-radius: 300px; }
 @media (max-width: 760px) {
   .aimdir .follow { grid-template-columns: minmax(0, 1fr); padding: 24px 18px; }
+  .aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="footer"],
+  .aimdir .follow .newsletter [data-ff-el="root"] [data-ff-el="submit"] { width: 100%; }
 }
 
-/* EBT, WIC, and senior benefits */
+/* EBT, WIC, and senior benefits: three separate sections */
 .aimdir .ebt-banner { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; text-align: left; text-decoration: none; cursor: pointer; background: #efe9f6; border-radius: 16px; padding: 12px 18px; font-size: 14.5px; color: var(--ink); }
 .aimdir .ebt-banner .coins { display: flex; flex-shrink: 0; }
 .aimdir .ebt-banner .coin { width: 36px; height: 36px; }
@@ -333,8 +369,9 @@
 .aimdir .ebt-banner .go { margin-left: auto; font-weight: 700; color: var(--purple); white-space: nowrap; }
 .aimdir .coin { width: 64px; height: 64px; flex-shrink: 0; display: block; }
 .aimdir .ico { width: 60px; height: 60px; flex-shrink: 0; display: block; }
-.aimdir .ebt { background: #f4f0f8; border-radius: 26px; padding: 36px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px 48px; scroll-margin-top: 24px; margin-bottom: 64px; }
-.aimdir .ebt h2 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; margin: 8px 0 12px; }
+.aimdir .benefits { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 24px; margin: 40px 0 28px; }
+.aimdir .ebt { background: #f4f0f8; border-radius: 26px; padding: 36px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px 48px; }
+.aimdir .benefits h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.05; margin: 8px 0 12px; }
 .aimdir .ebt .eyebrow { color: var(--purple); }
 .aimdir .ebt .intro p { margin: 0 0 18px; font-size: 15.5px; color: var(--body); max-width: 420px; }
 .aimdir .ebt .tokens { display: flex; flex-direction: column; gap: 12px; }
@@ -342,17 +379,18 @@
 .aimdir .ebt .tokens b { display: block; font-size: 15px; }
 .aimdir .ebt ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; counter-reset: step; }
 .aimdir .ebt ol li { counter-increment: step; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,.08); font-size: 15px; }
-.aimdir .ebt ol li b { display: block; font-size: 16px; }
+.aimdir .ebt ol li b { display: block; font-size: 16.5px; font-weight: 700; }
 .aimdir .ebt ol li b::before { content: counter(step) ". "; color: var(--purple); }
-.aimdir .ebt .programs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.aimdir .ebt .programs > div { background: var(--white); border-radius: 18px; padding: 18px 20px; font-size: 14px; color: var(--body); }
-.aimdir .ebt .programs h3 { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
-.aimdir .ebt .programs p { margin: 0; }
-.aimdir .ebt .notice { margin-top: 8px !important; font-size: 13px; color: var(--muted); }
-.aimdir .ebt .outlink { grid-column: 1 / -1; font-weight: 600; font-size: 14.5px; color: var(--purple); }
+.aimdir .program { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px 32px; align-items: center; background: var(--white); border: 2px solid #e6dff0; border-radius: 26px; padding: 28px 32px; font-size: 15.5px; color: var(--body); }
+.aimdir .program h2 { color: var(--ink); margin-top: 0; }
+.aimdir .program p { margin: 0 0 10px; max-width: 680px; }
+.aimdir .program .notice { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: #efe9f6; color: #3d2361; font-weight: 600; font-size: 14.5px; }
+.aimdir .bcard { display: block; width: 100%; max-width: 220px; height: auto; filter: drop-shadow(0 6px 14px rgba(83,49,128,.18)); }
+.aimdir .benefits .outlink { font-weight: 600; font-size: 14.5px; color: var(--purple); }
 @media (max-width: 860px) {
   .aimdir .ebt { grid-template-columns: minmax(0, 1fr); padding: 24px 18px; border-radius: 20px; }
-  .aimdir .ebt .programs { grid-template-columns: minmax(0, 1fr); }
+  .aimdir .program { grid-template-columns: minmax(0, 1fr); padding: 22px 18px; border-radius: 20px; }
+  .aimdir .bcard { max-width: 180px; }
   .aimdir .ebt-banner { font-size: 13.5px; }
   .aimdir .ebt-banner .go { display: none; }
 }

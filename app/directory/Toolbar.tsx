@@ -4,11 +4,12 @@ import type { CategoryID, PaymentID, ProductID } from "@/lib/intake";
 import { CATEGORY_OPTIONS } from "@/lib/intake";
 import { CATEGORY_LABELS, categoryColors, productsFor } from "@/lib/categories";
 import { BENEFIT_IDS, PAYMENT_SHORT } from "@/lib/payments";
-import { readable, textOn } from "@/lib/markets";
+import { MARKET_DAYS, WEEKDAYS, readable, textOn } from "@/lib/markets";
 import type { Crop } from "@/lib/season";
 
 export interface Filters {
   q: string;
+  day: number | null; // market day of the week, 0 = Sunday (all-markets page only)
   category: CategoryID | null;
   products: Set<ProductID>;
   payments: Set<PaymentID>;
@@ -17,12 +18,14 @@ export interface Filters {
   view: "list" | "map";
 }
 
-export const EMPTY_FILTERS: Filters = { q: "", category: null, products: new Set(), payments: new Set(), organic: false, crop: null, view: "list" };
+export const EMPTY_FILTERS: Filters = { q: "", day: null, category: null, products: new Set(), payments: new Set(), organic: false, crop: null, view: "list" };
 
 interface Props {
   filters: Filters;
   onChange: (next: Filters) => void;
   placeholder: string;
+  showDay: boolean; // the all-markets page searches by market day too
+  onSearchAll?: () => void; // on a market page: the same search across every market
   categoriesShown: CategoryID[]; // only categories some vendor has answered
   showPayments: boolean;
   showOrganic: boolean;
@@ -37,7 +40,9 @@ const pillStyle = (background: string, art: string) => ({
 
 const NEUTRAL = pillStyle("#e8e6d8", "#111111");
 
-export default function Toolbar({ filters, onChange, placeholder, categoriesShown, showPayments, showOrganic }: Props) {
+// Two ways in, as on Foodwise's seller list: by market day, and by keyword or
+// product. Below them, the category pills and the List or Map switch.
+export default function Toolbar({ filters, onChange, placeholder, showDay, onSearchAll, categoriesShown, showPayments, showOrganic }: Props) {
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
   const toggle = <T,>(s: Set<T>, v: T) => { const n = new Set(s); if (n.has(v)) n.delete(v); else n.add(v); return n; };
   const products = filters.category ? productsFor(filters.category) : [];
@@ -46,19 +51,34 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
   return (
     <div className="tools">
       <div className="wrap">
-        <div className="search" role="search">
-          <label htmlFor="aimdir-q">Search market participants</label>
-          <div className="field">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          <input
-            id="aimdir-q"
-            type="search"
-            value={filters.q}
-            onChange={(e) => set({ q: e.target.value })}
-            placeholder={placeholder}
-          />
-          {filters.q && <button type="button" className="clear" onClick={() => set({ q: "" })} aria-label="Clear search"><span aria-hidden="true">&times;</span></button>}
+        <div className="search" role="search" aria-label={showDay ? "Search all markets" : "Search this market"}>
+          {showDay && (
+            <div className="fieldset day-field">
+              <label htmlFor="aimdir-day">Market day</label>
+              <select id="aimdir-day" value={filters.day ?? ""}
+                onChange={(e) => set({ day: e.target.value === "" ? null : Number(e.target.value) })}>
+                <option value="">Any day</option>
+                {MARKET_DAYS.map((d) => <option key={d} value={d}>{WEEKDAYS[d]}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="fieldset q-field">
+            <label htmlFor="aimdir-q">{showDay ? "Keyword or product" : "Search this market"}</label>
+            <div className="field">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input
+                id="aimdir-q"
+                type="search"
+                value={filters.q}
+                onChange={(e) => set({ q: e.target.value })}
+                placeholder={placeholder}
+              />
+              {filters.q && <button type="button" className="clear" onClick={() => set({ q: "" })} aria-label="Clear search"><span aria-hidden="true">&times;</span></button>}
+            </div>
           </div>
+          {onSearchAll && (
+            <button type="button" className="all-markets" onClick={onSearchAll}>Search all markets</button>
+          )}
         </div>
         <div className="seg" role="group" aria-label="View">
           <button type="button" aria-pressed={filters.view === "list"} onClick={() => set({ view: "list" })}>List</button>
@@ -68,7 +88,7 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
         {(ordered.length > 0 || showPayments || showOrganic || filters.crop) && (
           <div className="pills">
             {filters.crop && (
-              <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed onClick={() => set({ crop: null })}
+              <button type="button" style={pillStyle("#dcfad9", "#0b6b3a")} aria-pressed onClick={() => set({ crop: null })}
                 aria-label={`Remove the ${filters.crop.name} filter`}>
                 In season: {filters.crop.name} <span aria-hidden="true">&times;</span>
               </button>
@@ -76,10 +96,10 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
             {/* Each set of pills is its own labelled group, so a screen reader
                 says which set a pill belongs to. */}
             {ordered.length > 0 && (
-              <div role="group" aria-label="Food or product">
+              <div role="group" aria-label="Type of market participant">
                 <button type="button" style={NEUTRAL} aria-pressed={!filters.category}
                   onClick={() => set({ category: null, products: new Set() })}>
-                  Food or product
+                  All
                 </button>
                 {ordered.map((id) => {
                   const c = categoryColors(id);
@@ -106,7 +126,7 @@ export default function Toolbar({ filters, onChange, placeholder, categoriesShow
               </div>
             )}
             {showOrganic && (
-              <button type="button" style={pillStyle("#dcfad9", "#038670")} aria-pressed={filters.organic}
+              <button type="button" style={pillStyle("#dcfad9", "#0b6b3a")} aria-pressed={filters.organic}
                 onClick={() => set({ organic: !filters.organic })}>
                 Certified organic
               </button>

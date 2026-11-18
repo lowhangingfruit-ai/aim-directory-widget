@@ -26,9 +26,10 @@ export function SeasonStrip({ month, onPick, onOpen }: { month: number; onPick: 
   );
 }
 
+// A plain list of what's in season this month, A to Z. (AIM asked for a
+// simple list in place of the month-by-month bars and the groups.)
 export function SeasonGuide({ month, onPick, onClose }: { month: number; onPick: (crop: Crop) => void; onClose: () => void }) {
-  // Some months start nothing new (November, for one), so empty groups are left out.
-  const groups = seasonGroups(month).filter((g) => g.crops.length > 0);
+  const crops = seasonGroups(month).flatMap((g) => g.crops).sort((a, b) => a.name.localeCompare(b.name));
   return (
     <div className="season-box" role="dialog" aria-modal="true" aria-label="What's in season">
       <button type="button" className="x" onClick={onClose} aria-label="Close" autoFocus>&times;</button>
@@ -38,25 +39,13 @@ export function SeasonGuide({ month, onPick, onClose }: { month: number; onPick:
           <p className="lede">Tap a crop to find the farms bringing it this month.</p>
           <span className="season-art"><Art name="season" /></span>
         </div>
-        <div className="groups" style={{ "--cols": groups.length } as React.CSSProperties}>
-          {groups.map((g) => (
-            <div key={g.title}>
-              <small>{g.title}</small>
-              <div className="crops">
-                {g.crops.map((c) => (
-                  <button key={c.name} type="button" className="crop" onClick={() => onPick(c)}>
-                    <span className="bars" aria-hidden="true">
-                      {Array.from({ length: 12 }, (_, k) => (
-                        <i key={k} className={k === month ? "now" : c.months.includes(k) ? "on" : ""} />
-                      ))}
-                    </span>
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <ul className="crop-list">
+          {crops.map((c) => (
+            <li key={c.name}>
+              <button type="button" className="crop" onClick={() => onPick(c)}>{c.name}</button>
+            </li>
           ))}
-        </div>
+        </ul>
         <div className="foot">
           <span>From AIM&rsquo;s Northern California harvest calendar. Dates vary with the weather.</span>
           <a href={AIM_CALENDAR} target="_blank" rel="noopener noreferrer">See the full calendar<NewTab /></a>
