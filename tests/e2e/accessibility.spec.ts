@@ -23,7 +23,7 @@ test("the home page, a filtered list, a market page and a profile have no axe vi
   await page.goto("/");
   expect(await axeViolations(page)).toEqual([]);
 
-  await page.getByRole("button", { name: "Farms and produce" }).click();
+  await page.getByRole("button", { name: "Certified Producers (Farmers)" }).click();
   expect(await axeViolations(page)).toEqual([]);
 
   await page.goto("/?marketID=7776");
@@ -32,6 +32,15 @@ test("the home page, a filtered list, a market page and a profile have no axe vi
 
   await page.getByRole("button", { name: "Alder Creek Farm" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  expect(await axeViolations(page)).toEqual([]);
+
+  // The in-season list, and the list for one market day.
+  await page.goto("/");
+  await page.getByRole("button", { name: "See what’s in season" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(await axeViolations(page)).toEqual([]);
+  await page.keyboard.press("Escape");
+  await page.getByLabel("Market day").selectOption({ label: "Sunday" });
   expect(await axeViolations(page)).toEqual([]);
 
   // Pictures from vendors' websites, in the grid and in a profile.
@@ -71,8 +80,8 @@ test("a profile keeps focus inside it, and hands it back to the card on close", 
 
 test("vendor and market names are headings, and cards don't repeat them", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 3, name: "Sunday Marin" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sunday Marin", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Sunday Marin Farmers Market" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sunday Marin Farmers Market", exact: true })).toBeVisible();
 
   await page.getByRole("searchbox").fill("Alder");
   await expect(page.getByRole("heading", { level: 3, name: "Alder Creek Farm" })).toBeVisible();
@@ -81,7 +90,7 @@ test("vendor and market names are headings, and cards don't repeat them", async 
 
 test("changing market moves focus to the new heading and names the page", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Sunday Marin", exact: true }).focus();
+  await page.getByRole("button", { name: "Sunday Marin Farmers Market", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1, name: "Sunday Marin" })).toBeFocused();
   await expect(page).toHaveTitle("Sunday Marin Farmers Market | AIM Market Participant Directory");
@@ -112,7 +121,7 @@ test("the EBT link moves focus to the benefits section", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Using CalFresh EBT/ }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Shopping with EBT, WIC, and senior benefits" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "CalFresh & Market Match" })).toBeFocused();
   await expect(page).toHaveURL(/\/$/);
 });
 
@@ -128,7 +137,8 @@ test("the search field has a visible label", async ({ page }) => {
   await page.goto("/");
   const label = page.locator("label[for=aimdir-q]");
   await expect(label).toBeVisible();
-  await expect(page.getByRole("searchbox", { name: "Search market participants" })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Keyword or product" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Market day" })).toBeVisible();
 });
 
 test("map dots are named buttons that open their vendor list from the keyboard", async ({ page }) => {
