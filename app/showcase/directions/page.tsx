@@ -10,6 +10,13 @@ import "./directions.css";
 // 2026-10-29. Not linked from /showcase yet, and kept out of search.
 export const metadata: Metadata = {
   title: "Farm & Food Business Resources",
+  metadataBase: new URL("https://aim-directory-widget.vercel.app"),
+  openGraph: {
+    title: "Farm & Food Business Resources",
+    siteName: "Agricultural Institute of Marin",
+    images: [{ url: "/og-showcase.jpg", width: 1200, height: 630, alt: "Shao Shan Farm in its flower field" }],
+  },
+  twitter: { card: "summary_large_image", images: ["/og-showcase.jpg"] },
   robots: { index: false, follow: false },
 };
 
