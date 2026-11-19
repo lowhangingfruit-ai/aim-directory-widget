@@ -16,25 +16,27 @@ export function productsFor(category: CategoryID): { id: ProductID; label: strin
   return PRODUCT_OPTIONS.filter((p) => p.category === category).map((p) => ({ id: p.id, label: p.label }));
 }
 
-// Directory colors per category, picked to suggest the category (farms green,
-// fishers blue, dairy butter yellow) and drawn from the tints of AIM's market
-// logos (lib/markets.ts), softened: no bright pinks or neons. `background` is
-// the light tint for pills and name tiles; `art` is the darker shade for the
-// selected pill, map dots, and text. Every art color reads at 4.5:1 or better
-// on its tint, on the page's cream, and under white text.
+// Directory colors per category, taken from AIM's sub-brand palette in its
+// Seasonal Produce Calendar and picked to suggest the category (farms green,
+// ranchers red, dairy butter yellow, fishers blue). `background` is one of the
+// calendar's page tints (or a light tint of one of its illustration colors)
+// for pills and name tiles; `art` is the calendar's illustration color,
+// darkened only as far as contrast needs, for the selected pill (white text),
+// map dots, and text. Every art color reads at 4.8:1 or better on its tint, on
+// the page's cream, and under white text (WCAG AA is 4.5:1). No bright magenta.
 const CATEGORY_COLORS: Record<CategoryID, { background: string; art: string }> = {
-  certified: { background: "#dcfad9", art: "#0b6b3a" }, // green, Grand Lake's tint
-  livestock: { background: "#fbe1d6", art: "#9e3412" }, // rust
-  dairy: { background: "#fff3bf", art: "#735600" }, // butter yellow
-  seafood: { background: "#d6e2f5", art: "#1d4f91" }, // blue, near Point Reyes' tint
-  tff: { background: "#ffd9b0", art: "#8f3d00" }, // warm orange, Newark's tint
-  prepacked: { background: "#f2e6cf", art: "#6f4a1c" }, // wheat
-  artisan: { background: "#f7dde5", art: "#96204a" }, // muted rose
-  nonprofit: { background: "#cdecf1", art: "#0b5f6b" }, // teal, San Rafael Summer's tint
-  entertainer: { background: "#ece0f7", art: "#5e2f8a" }, // violet
-  commercial: { background: "#e8e6d8", art: "#4f4e46" }, // neutral
+  certified: { background: "#D5EED7", art: "#346F36" }, // calendar mint / leaf green #3F8641
+  livestock: { background: "#FCCFBE", art: "#A72C33" }, // calendar peach / red #BC3139
+  dairy: { background: "#FEE7BB", art: "#776325" }, // calendar butter / mustard #D1AE41
+  seafood: { background: "#C6E0FF", art: "#2F5D8C" }, // calendar sky / dark blue
+  tff: { background: "#FFDDB8", art: "#984C1C" }, // apricot / orange #ED772B
+  prepacked: { background: "#F2DFC8", art: "#80582C" }, // wheat / toasted mustard
+  artisan: { background: "#F1DDE6", art: "#854D6D" }, // beet tint / beet #854D6D
+  nonprofit: { background: "#D6EBED", art: "#476868" }, // calendar aqua / teal #73A8A7
+  entertainer: { background: "#E1D7EE", art: "#645096" }, // calendar lavender / deep lavender
+  commercial: { background: "#E2E5EB", art: "#5B626F" }, // slate tint / slate #6F7787
 };
 
 export function categoryColors(id: CategoryID): { background: string; art: string } {
-  return CATEGORY_COLORS[id] ?? { background: "#e8e6d8", art: "#55544b" };
+  return CATEGORY_COLORS[id] ?? { background: "#E2E5EB", art: "#5B626F" };
 }
