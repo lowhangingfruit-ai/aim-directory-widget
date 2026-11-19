@@ -120,10 +120,9 @@ export function profileKey(p: Profile) {
 // lettermark on the program tint at the same 4:5 shape.
 export function Portrait({ profile, className }: { profile: Profile; className?: string }) {
   const photo = bestPhoto(profile);
-  const program = PROGRAMS[profile.program];
   if (!photo) {
     return (
-      <div className={`dx-lettermark ${className ?? ""}`} style={{ backgroundColor: program.tint, color: program.color }}>
+      <div className={`dx-lettermark ${className ?? ""}`}>
         <span>{initials(profile.business)}</span>
       </div>
     );
@@ -207,7 +206,7 @@ export function ProfileSheet({ profile, allMarkets, onClose }: {
                   <div key={id} className="dx-sheet-market">
                     {MARKET_LOGOS[id]
                       ? <img src={MARKET_LOGOS[id]} alt="" />
-                      : <div style={{ width: 54, height: 54, background: program.color }} />}
+                      : <div style={{ width: 56, height: 56, borderRadius: 12, background: "var(--sg-oat-200)" }} />}
                     <span>{marketName(id, allMarkets)}</span>
                   </div>
                 ))}
@@ -221,7 +220,8 @@ export function ProfileSheet({ profile, allMarkets, onClose }: {
   );
 }
 
-// Program label in Cocogoose Narrow, the face from the program squares.
+// Program label. Was Cocogoose Narrow; the AIM style guide (2026-11-19)
+// sets headers in Lexend SemiBold, so .dx-cocogoose now renders Lexend.
 export function ProgramLabel({ children, className, style }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties;
 }) {

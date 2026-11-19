@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/lib/types";
 import IntakeForm from "./IntakeForm";
+import "../style-guide.css";
+import { showcaseFontVars } from "../fonts";
 
 export const metadata: Metadata = {
   title: "Participant Intake — AIM Farm & Food Business Programs",
@@ -9,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function IntakePage() {
-  return <IntakeForm allMarkets={MARKETS} />;
+  return (
+    <div className={`aim-sg ${showcaseFontVars}`}>
+      <IntakeForm allMarkets={MARKETS} />
+    </div>
+  );
 }

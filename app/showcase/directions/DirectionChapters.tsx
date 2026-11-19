@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PROGRAMS, ProgramID, TECHNICAL_ASSISTANCE } from "@/lib/showcase";
 import type { DirectionProps } from "./DirectionsClient";
 import {
-  ALL_PROGRAMS_COPY, CLOSING, INK, NAV, PAGE_INTRO, PAGE_TITLE, PROGRAM_ORDER, SQUARE_CREAM, STATS, STATS_NOTE,
+  ALL_PROGRAMS_COPY, CLOSING, NAV, PAGE_INTRO, PAGE_TITLE, PROGRAM_ORDER, STATS, STATS_NOTE,
   Portrait, ProgramLabel, cohortSort, profileKey,
 } from "./shared";
 
@@ -20,8 +20,8 @@ const HERO = [
   "/participants/vasquez-organic-farm.jpg",
 ];
 
-function Chapter({ id, index, current, alumni, onOpen }: {
-  id: ProgramID; index: number;
+function Chapter({ id, index, oat, current, alumni, onOpen }: {
+  id: ProgramID; index: number; oat: boolean;
   current: DirectionProps["current"]; alumni: DirectionProps["alumni"]; onOpen: DirectionProps["onOpen"];
 }) {
   const pr = PROGRAMS[id];
@@ -31,19 +31,20 @@ function Chapter({ id, index, current, alumni, onOpen }: {
   const visibleAlums = showAll ? alums : alums.slice(0, 8);
 
   return (
-    <section id={`ch-${id}`} className="dxc-chapter" style={{ backgroundColor: pr.color, color: pr.textOnColor }}>
+    <section id={`ch-${id}`} className={`dxc-chapter ${oat ? "is-oat" : ""}`}
+      style={{ "--program": pr.color } as React.CSSProperties}>
       <div className="dx-wrap dxc-chapter-inner">
         <div className="dxc-chapter-intro">
           <div className="dxc-chapter-num">Chapter {String(index).padStart(2, "0")}</div>
-          <ProgramLabel className="dxc-chapter-title" style={{ color: pr.squareText }}>{pr.name}</ProgramLabel>
+          <ProgramLabel className="dxc-chapter-title">{pr.name}</ProgramLabel>
           <p className="dxc-chapter-blurb">{pr.blurb}</p>
           <div className="dxc-chapter-apply">
             <span>Applications</span>
             {pr.applyWindow ?? "next window announced soon"}
           </div>
           <div className="dxc-chapter-links">
-            <a href={pr.url} target="_blank" rel="noopener noreferrer" style={{ color: pr.textOnColor }}>About the program</a>
-            {pr.applyUrl && <a href={pr.applyUrl} target="_blank" rel="noopener noreferrer" style={{ color: pr.textOnColor }}>Apply to the Fund</a>}
+            <a href={pr.url} target="_blank" rel="noopener noreferrer">About the program</a>
+            {pr.applyUrl && <a href={pr.applyUrl} target="_blank" rel="noopener noreferrer">Apply to the Fund</a>}
           </div>
         </div>
 
@@ -53,7 +54,7 @@ function Chapter({ id, index, current, alumni, onOpen }: {
               <div className="dxc-sub">The 2026 cohort <span>{cohort.length}</span></div>
               <div className="dxc-cohort">
                 {cohort.map((p) => (
-                  <button key={profileKey(p)} className="dxc-person" onClick={() => onOpen(p)} style={{ color: pr.textOnColor }}>
+                  <button key={profileKey(p)} className="dxc-person" onClick={() => onOpen(p)}>
                     <Portrait profile={p} />
                     <span className="dxc-person-name">{p.business}</span>
                     {p.person && <span className="dxc-person-sub">{p.person}</span>}
@@ -67,7 +68,7 @@ function Chapter({ id, index, current, alumni, onOpen }: {
               <div className="dxc-sub dxc-sub-alumni">Program alumni <span>{alums.length}</span></div>
               <div className="dxc-alumni">
                 {visibleAlums.map((p) => (
-                  <button key={profileKey(p)} className="dxc-alum" onClick={() => onOpen(p)} style={{ color: pr.textOnColor }}>
+                  <button key={profileKey(p)} className="dxc-alum" onClick={() => onOpen(p)}>
                     <Portrait profile={p} />
                     <span className="dxc-alum-name">{p.business}</span>
                     <span className="dxc-alum-year">Class of {p.cohort}</span>
@@ -75,8 +76,7 @@ function Chapter({ id, index, current, alumni, onOpen }: {
                 ))}
               </div>
               {alums.length > 8 && (
-                <button className="dxc-more" onClick={() => setShowAll(!showAll)}
-                  style={{ color: pr.textOnColor, borderColor: pr.textOnColor }}>
+                <button className="dxc-more" onClick={() => setShowAll(!showAll)}>
                   {showAll ? "Show fewer" : `See all ${alums.length} alumni`}
                 </button>
               )}
@@ -109,19 +109,21 @@ export default function DirectionChapters({ current, alumni, onOpen }: Direction
     <div className="dxc">
       <header className="dxc-hero">
         <div className="dx-wrap">
-          <ProgramLabel className="dxc-hero-eyebrow">Agricultural Institute of Marin</ProgramLabel>
+          <span className="dxc-hero-eyebrow">Agricultural Institute of Marin</span>
           <h1>{PAGE_TITLE}</h1>
           <p>{PAGE_INTRO}</p>
         </div>
       </header>
 
       <nav className="dxc-index" aria-label="Programs">
-        <div className="dxc-index-inner">
+        <div className="dx-wrap dxc-index-inner">
           {NAV.map((n, i) => {
             const key = n.key === "all" ? "all" : n.key;
             return (
               <button key={n.key} className={`dxc-index-item ${active === key ? "is-active" : ""}`}
-                style={{ backgroundColor: n.color, color: n.text }} onClick={() => go(key)}>
+                aria-current={active === key ? "true" : undefined}
+                style={{ "--program": n.color } as React.CSSProperties} onClick={() => go(key)}>
+                <span className="dxc-index-dot" aria-hidden="true" />
                 <span className="dxc-index-num">{String(i + 1).padStart(2, "0")}</span>
                 <ProgramLabel>{n.label}</ProgramLabel>
               </button>
@@ -130,7 +132,7 @@ export default function DirectionChapters({ current, alumni, onOpen }: Direction
         </div>
       </nav>
 
-      <section id="ch-all" className="dxc-chapter dxc-all" style={{ backgroundColor: SQUARE_CREAM, color: INK }}>
+      <section id="ch-all" className="dxc-chapter dxc-all is-oat">
         <div className="dx-wrap">
           <div className="dxc-chapter-num">Chapter 01</div>
           <ProgramLabel className="dxc-chapter-title">All Farm &amp; Food Programs</ProgramLabel>
@@ -155,16 +157,14 @@ export default function DirectionChapters({ current, alumni, onOpen }: Direction
       </section>
 
       {PROGRAM_ORDER.map((id, i) => (
-        <Chapter key={id} id={id} index={i + 2} current={current} alumni={alumni} onOpen={onOpen} />
+        <Chapter key={id} id={id} index={i + 2} oat={i % 2 === 1} current={current} alumni={alumni} onOpen={onOpen} />
       ))}
 
-      <section id="ch-ta" className="dxc-chapter dxc-ta" style={{ backgroundColor: TECHNICAL_ASSISTANCE.color, color: "#fff" }}>
+      <section id="ch-ta" className="dxc-chapter dxc-ta">
         <div className="dx-wrap dxc-ta-inner">
           <div>
             <div className="dxc-chapter-num">Chapter 05</div>
-            <ProgramLabel className="dxc-chapter-title" style={{ color: TECHNICAL_ASSISTANCE.squareText }}>
-              {TECHNICAL_ASSISTANCE.name}
-            </ProgramLabel>
+            <ProgramLabel className="dxc-chapter-title">{TECHNICAL_ASSISTANCE.name}</ProgramLabel>
           </div>
           <div>
             <p className="dxc-chapter-blurb">{TECHNICAL_ASSISTANCE.blurb}</p>
@@ -175,7 +175,10 @@ export default function DirectionChapters({ current, alumni, onOpen }: Direction
         </div>
       </section>
 
-      <footer className="dxc-closing dx-wrap"><p>{CLOSING}</p></footer>
+      <footer className="dxc-footer">
+        <span className="sg-stripes" aria-hidden="true" />
+        <div className="dxc-closing dx-wrap"><p>{CLOSING}</p></div>
+      </footer>
     </div>
   );
 }
