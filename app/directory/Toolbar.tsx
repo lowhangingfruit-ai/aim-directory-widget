@@ -88,7 +88,7 @@ export default function Toolbar({ filters, onChange, placeholder, showDay, onSea
         {(ordered.length > 0 || showPayments || showOrganic || filters.crop) && (
           <div className="pills">
             {filters.crop && (
-              <button type="button" style={pillStyle("#dcfad9", "#0b6b3a")} aria-pressed onClick={() => set({ crop: null })}
+              <button type="button" style={pillStyle(categoryColors("certified").background, categoryColors("certified").art)} aria-pressed onClick={() => set({ crop: null })}
                 aria-label={`Remove the ${filters.crop.name} filter`}>
                 In season: {filters.crop.name} <span aria-hidden="true">&times;</span>
               </button>
@@ -126,7 +126,7 @@ export default function Toolbar({ filters, onChange, placeholder, showDay, onSea
               </div>
             )}
             {showOrganic && (
-              <button type="button" style={pillStyle("#dcfad9", "#0b6b3a")} aria-pressed={filters.organic}
+              <button type="button" style={pillStyle(categoryColors("certified").background, categoryColors("certified").art)} aria-pressed={filters.organic}
                 onClick={() => set({ organic: !filters.organic })}>
                 Certified organic
               </button>
