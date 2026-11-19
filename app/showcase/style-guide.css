@@ -1,0 +1,62 @@
+/* AIM style guide tokens (Shayla Sosa, 2026-11-19).
+   Scoped to .aim-sg, which wraps only the /showcase pages, so the Market
+   Participant Directory (/) is untouched. Redefining --font-heading and
+   --font-body here also restyles the inline styles that read them. */
+
+.aim-sg {
+  /* colour */
+  --sg-surface: #ffffff;
+  --sg-green-700: #0d8240;   /* lead: primary buttons, the one colour band, active nav */
+  --sg-green-500: #4db547;   /* decoration only, never text */
+  --sg-lime-400: #96de00;    /* decoration only, never text */
+  --sg-forest-900: #24382a;  /* footer and dark bands */
+  --sg-bark-600: #6b4a2f;    /* eyebrows, small links, stat numbers */
+  --sg-oat-100: #f3eee4;     /* alternating section background */
+  --sg-oat-200: #efeadf;     /* card fills, photo placeholders */
+  --sg-ink: #1d2420;
+  --sg-ink-muted: #46504a;
+  --sg-line: #e3dccf;
+
+  /* type */
+  --font-heading: var(--font-lexend), 'Lexend', sans-serif;
+  --font-body: var(--font-asap), 'Asap', sans-serif;
+  --sg-display: 64px;
+  --sg-h1: 60px;
+  --sg-h2: 44px;
+  --sg-h3: 28px;
+  --sg-h4: 22px;
+  --sg-body: 18px;
+  --sg-lead: 21px;
+  --sg-eyebrow: 14px;
+  --sg-measure: 680px;
+
+  /* layout */
+  --sg-column: 1280px;
+  --sg-gutter: 40px;
+  --sg-section-y: 72px;
+  --sg-gap: 20px;
+  --sg-radius: 24px;
+  --sg-pill: 999px;
+  --sg-tap: 44px;
+
+  background: var(--sg-surface);
+  color: var(--sg-ink);
+  font-family: var(--font-body);
+  font-size: var(--sg-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+@media (max-width: 640px) {
+  .aim-sg {
+    --sg-display: 40px;
+    --sg-h1: 36px;
+    --sg-h2: 30px;
+    --sg-h3: 24px;
+    --sg-h4: 20px;
+    --sg-gutter: 20px;
+  }
+}
+.aim-sg h1, .aim-sg h2, .aim-sg h3, .aim-sg h4 { font-family: var(--font-heading); font-weight: 600; }
+
+/* Three-stripe divider from the logo (decoration only). */
+.aim-sg .sg-stripes { display: block; height: 12px; background: linear-gradient(to bottom, var(--sg-green-700) 0 4px, var(--sg-green-500) 4px 8px, var(--sg-lime-400) 8px 12px); }

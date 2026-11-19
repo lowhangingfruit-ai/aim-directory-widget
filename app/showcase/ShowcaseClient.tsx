@@ -12,9 +12,20 @@ interface Props {
   embedded?: boolean;
 }
 
-const AIM_GREEN = "#0d8240";
-const AIM_BRIGHT = "#4db547";
-const CREAM = "#f6f5ea";
+// AIM style guide tokens (Shayla, 2026-11-19), defined on .aim-sg in
+// style-guide.css, which wraps this page.
+const AIM_GREEN = "var(--sg-green-700)";
+const OAT = "var(--sg-oat-100)";
+const OAT_CARD = "var(--sg-oat-200)";
+const BARK = "var(--sg-bark-600)";
+const SG_INK = "var(--sg-ink)";
+const MUTED = "var(--sg-ink-muted)";
+const LINE = "var(--sg-line)";
+const RADIUS = 24;
+const EYEBROW: React.CSSProperties = {
+  fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 14,
+  letterSpacing: "0.06em", textTransform: "uppercase", color: BARK,
+};
 
 const LOGO_BASE = "https://images.squarespace-cdn.com/content/v1/5fd7b5e8b59b81291926f482";
 const MARKET_LOGOS: Record<number, string> = {
@@ -34,9 +45,6 @@ const PROGRAM_ORDER: ProgramID[] = ["maf", "farmer", "foodmaker"];
 type Tab = ProgramID | "all";
 
 // Program-square design from Shayla's reference (screenshot 1.19.36).
-const INK = "#17261b";
-const SQUARE_CREAM = "#f1efe5";
-const SQUARE_FONT = "'Cocogoose Narrow', var(--font-heading)";
 
 // Shown under the squares when "All Farm & Food Programs" is selected.
 const ALL_PROGRAMS_COPY =
@@ -200,16 +208,16 @@ function PillButton({ label, active, color, textOnColor, onClick }: {
   return (
     <button onClick={onClick} style={{
       flexShrink: 0,
+      minHeight: 44,
       padding: "8px 20px",
-      borderRadius: 300,
-      fontFamily: "var(--font-heading)",
-      fontWeight: 600,
-      fontSize: 14,
-      letterSpacing: "0.02em",
+      borderRadius: 999,
+      fontFamily: "var(--font-body)",
+      fontWeight: 700,
+      fontSize: 16,
       cursor: "pointer",
-      border: `1.5px solid ${active ? color : "#c9c7b8"}`,
+      border: `1.5px solid ${active ? color : LINE}`,
       backgroundColor: active ? color : "#fff",
-      color: active ? textOnColor : "#333",
+      color: active ? textOnColor : SG_INK,
       whiteSpace: "nowrap",
       transition: "all 0.12s ease",
     }}>
@@ -235,8 +243,8 @@ function SocialLinks({ profile, centered }: { profile: Profile; centered?: boole
       {links.map((l) => (
         <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          style={{ fontSize: 14, color: AIM_GREEN, textDecoration: "underline", textUnderlineOffset: 3, fontWeight: 500 }}>
-          {l.label}
+          style={{ display: "inline-flex", alignItems: "center", minHeight: 44, fontSize: 16, color: BARK, textDecoration: "none", fontWeight: 700 }}>
+          {l.label} →
         </a>
       ))}
     </div>
@@ -246,8 +254,8 @@ function SocialLinks({ profile, centered }: { profile: Profile; centered?: boole
 // Large program square: title bottom-left in heavy uppercase, as in Shayla's
 // reference. The selected square gets a dark frame. With `href` it is a link
 // out (Technical Assistance), not a filter.
-function ProgramSquare({ label, active, color, text, narrow, mid, wide, onClick, href }: {
-  label: string; active: boolean; color: string; text: string;
+function ProgramSquare({ label, active, color, narrow, mid, wide, onClick, href }: {
+  label: string; active: boolean; color: string; text?: string;
   narrow: boolean; mid: boolean; wide?: boolean;
   onClick?: () => void; href?: string;
 }) {
@@ -257,32 +265,40 @@ function ProgramSquare({ label, active, color, text, narrow, mid, wide, onClick,
     display: "flex", alignItems: "flex-end",
     gridColumn: wide ? "1 / -1" : undefined,
     aspectRatio: wide ? undefined : "3 / 2",
-    minHeight: wide ? 84 : undefined,
-    padding: narrow ? "12px 12px 12px" : mid ? "14px 14px" : "18px 20px",
-    backgroundColor: color,
-    color: text,
-    border: `${narrow ? 3 : 4}px solid ${active ? INK : "transparent"}`,
+    minHeight: wide ? 72 : 88,
+    padding: narrow ? "14px 14px 14px" : mid ? "16px 16px" : "20px 22px",
+    // Style guide: cards on oat-200, the active nav item in green-700 with
+    // white text. The program colour stays as a stripe along the top.
+    backgroundColor: active ? AIM_GREEN : OAT_CARD,
+    color: active ? "#fff" : SG_INK,
+    border: 0,
+    borderRadius: RADIUS,
     boxSizing: "border-box",
     cursor: "pointer",
     textAlign: "left",
     textDecoration: "none",
-    fontFamily: SQUARE_FONT,
-    fontWeight: 400,
-    textTransform: "uppercase",
-    fontSize: narrow ? 15 : mid ? 14.5 : 19,
-    lineHeight: 1.08,
-    letterSpacing: "0.01em",
+    fontFamily: "var(--font-heading)",
+    fontWeight: 600,
+    fontSize: narrow ? 16 : mid ? 16 : 20,
+    lineHeight: 1.15,
     transform: hovered && !active ? "translateY(-2px)" : "none",
-    boxShadow: hovered ? "0 8px 18px rgba(23,38,27,0.18)" : "none",
-    transition: "transform 0.12s ease, box-shadow 0.12s ease",
+    transition: "transform 0.12s ease, background-color 0.12s ease",
     overflowWrap: "break-word",
     hyphens: "manual",
   };
   const hover = { onMouseEnter: () => setHovered(true), onMouseLeave: () => setHovered(false) };
+  const stripe = (
+    <span aria-hidden="true" style={{
+      position: "absolute", top: narrow ? 14 : 18, left: narrow ? 14 : 22,
+      width: 32, height: 6, borderRadius: 3, backgroundColor: color,
+      boxShadow: active ? "0 0 0 2px #fff" : undefined,
+    }} />
+  );
   if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" style={style} {...hover}
         aria-label={`${label} (opens AIM's program page)`}>
+        {stripe}
         <span aria-hidden="true" style={{ position: "absolute", top: narrow ? 8 : 12, right: narrow ? 10 : 14, fontSize: narrow ? 14 : 18, fontWeight: 700, lineHeight: 1 }}>↗</span>
         <span>{label}</span>
       </a>
@@ -290,6 +306,7 @@ function ProgramSquare({ label, active, color, text, narrow, mid, wide, onClick,
   }
   return (
     <button type="button" role="tab" aria-selected={active} onClick={onClick} style={style} {...hover}>
+      {stripe}
       <span>{label}</span>
     </button>
   );
@@ -353,7 +370,6 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
   compact?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const program = PROGRAMS[profile.program];
   const photo = bestPhoto(profile);
   const markets = knownMarkets(profile, allMarkets);
 
@@ -368,12 +384,13 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
         position: "relative",
         aspectRatio: "1 / 1",
         overflow: "hidden",
-        backgroundColor: program.tint,
+        borderRadius: RADIUS,
+        backgroundColor: OAT_CARD,
         marginBottom: compact ? 9 : 12,
       }}>
         {photo ? (
           <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
-            tint={program.tint} detect={!profile.aimPhoto}
+            tint={OAT_CARD} detect={!profile.aimPhoto}
             style={{
               transform: hovered ? "scale(1.04)" : "scale(1)",
               transition: "transform 0.25s ease",
@@ -384,8 +401,8 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
             display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 4,
           }}>
             <span style={{
-              fontFamily: "var(--font-heading)", fontWeight: 500,
-              fontSize: compact ? 30 : 44, color: program.color, opacity: 0.55, lineHeight: 1,
+              fontFamily: "var(--font-heading)", fontWeight: 600,
+              fontSize: compact ? 30 : 44, color: MUTED, lineHeight: 1,
             }}>
               {initials(profile.business)}
             </span>
@@ -393,21 +410,21 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
         )}
       </div>
       <div style={{
-        fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: compact ? 15.5 : 19,
-        color: "#000", lineHeight: 1.3, marginBottom: 2,
+        fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: compact ? 17 : "var(--sg-h4)",
+        color: SG_INK, lineHeight: 1.2, marginBottom: 4,
       }}>
         {profile.business}
       </div>
       {compact && (
-        <div style={{ fontSize: 12.5, color: "#8a8878" }}>{cohortLabel(profile.cohort)}</div>
+        <div style={{ fontSize: 15, color: MUTED }}>{cohortLabel(profile.cohort)}</div>
       )}
       {markets.length > 0 && (
         compact ? (
-          <div style={{ fontSize: 12, color: AIM_GREEN, marginTop: 2 }}>Still at the markets</div>
+          <div style={{ fontSize: 15, color: BARK, fontWeight: 700, marginTop: 2 }}>Still at the markets</div>
         ) : (
           <div style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 11.5, color: "#8a8878", marginBottom: 1 }}>Meet them at:</div>
-            <div style={{ fontSize: 13, color: AIM_GREEN, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 15, color: MUTED, marginBottom: 2 }}>Meet them at:</div>
+            <div style={{ fontSize: 16, color: SG_INK, lineHeight: 1.45 }}>
               {markets.map((m) => FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]).join(" · ")}
             </div>
           </div>
@@ -415,8 +432,8 @@ function ParticipantTile({ profile, allMarkets, onOpen, compact }: {
       )}
       {!compact && (
         <span style={{
-          fontSize: 13.5, color: AIM_GREEN, fontWeight: 600,
-          borderBottom: hovered ? `1.5px solid ${AIM_GREEN}` : "1.5px solid transparent",
+          fontSize: 16, color: BARK, fontWeight: 700,
+          borderBottom: hovered ? `1.5px solid ${BARK}` : "1.5px solid transparent",
           paddingBottom: 1, transition: "border-color 0.12s ease",
         }}>
           Story →
@@ -460,7 +477,7 @@ function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }:
         ? { position: "absolute", left: 0, right: 0, top: frame?.top ?? 0, height: frame?.height ?? 760 }
         : { position: "fixed", inset: 0 }),
       zIndex: 100,
-      backgroundColor: "rgba(20,30,20,0.5)",
+      backgroundColor: "rgba(29,36,32,0.6)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: narrow ? 12 : 32,
     }}>
@@ -468,19 +485,19 @@ function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }:
         backgroundColor: "#fff",
         width: "100%", maxWidth: 760, maxHeight: embedded ? "100%" : "90vh", overflowY: "auto",
         display: "flex", flexDirection: narrow ? "column" : "row",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.28)",
+        borderRadius: RADIUS,
         position: "relative",
       }}>
         <button onClick={onClose} aria-label="Close" style={{
           position: "absolute", top: 12, right: 14, zIndex: 2,
-          background: "#fff", border: "1px solid #ddd", borderRadius: 300,
-          width: 32, height: 32, cursor: "pointer", fontSize: 16, lineHeight: 1, color: "#333",
+          background: "#fff", border: `1px solid ${LINE}`, borderRadius: 999,
+          width: 44, height: 44, cursor: "pointer", fontSize: 22, lineHeight: 1, color: SG_INK,
         }}>×</button>
 
         {/* Photo side */}
         <div style={{
           flex: narrow ? undefined : "0 0 42%",
-          backgroundColor: program.tint,
+          backgroundColor: OAT_CARD,
           minHeight: narrow ? 320 : 380,
           position: "relative",
           overflow: "hidden",
@@ -490,14 +507,14 @@ function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }:
             // 2026-10-28). Only an off-shape logo from the vendor feed,
             // with no AIM portrait, is still fitted inside the frame.
             <SmartImg src={photo} alt={`${profile.person}, ${profile.business}`}
-              tint={program.tint} detect={!profile.photo && !profile.aimPhoto}
+              tint={OAT_CARD} detect={!profile.photo && !profile.aimPhoto}
               style={{ position: "absolute", inset: 0, height: "100%", objectPosition: "center 30%" }} />
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex",
               alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8,
             }}>
-              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 64, color: program.color, opacity: 0.5, lineHeight: 1 }}>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 64, color: MUTED, lineHeight: 1 }}>
                 {initials(profile.business)}
               </span>
             </div>
@@ -509,61 +526,53 @@ function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }:
           <div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               <span style={{
-                display: "inline-block", padding: "4px 14px", borderRadius: 300,
+                display: "inline-block", padding: "5px 14px", borderRadius: 999,
                 backgroundColor: program.color, color: program.textOnColor,
-                fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12,
-                letterSpacing: "0.03em", lineHeight: 1.5,
+                fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 14, lineHeight: 1.4,
               }}>
                 {program.shortName} {profile.cohort}
               </span>
               {profile.alsoTags?.map((t) => (
                 <span key={t} style={{
-                  display: "inline-block", padding: "4px 14px", borderRadius: 300,
-                  border: `1.5px solid ${AIM_BRIGHT}`, color: "#1d4d1d", backgroundColor: "#fff",
-                  fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 12,
-                  letterSpacing: "0.03em", lineHeight: 1.5,
+                  display: "inline-block", padding: "5px 14px", borderRadius: 999,
+                  border: `1.5px solid ${LINE}`, color: SG_INK, backgroundColor: "#fff",
+                  fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 14, lineHeight: 1.4,
                 }}>
                   {t}
                 </span>
               ))}
             </div>
             <h2 style={{
-              fontFamily: "var(--font-heading)", fontWeight: 500,
-              fontSize: narrow ? 26 : 30, color: "#000", lineHeight: 1.2, margin: "14px 0 2px",
+              fontFamily: "var(--font-heading)", fontWeight: 600,
+              fontSize: "var(--sg-h3)", color: SG_INK, lineHeight: 1.12, margin: "14px 0 4px",
             }}>
               {profile.business}
             </h2>
-            <span style={{ fontSize: 15, color: "#494949" }}>
+            <span style={{ fontSize: 18, color: MUTED }}>
               {profile.person}
             </span>
           </div>
 
           {story ? (
-            <p style={{ margin: 0, fontSize: 14.5, color: "#222", lineHeight: 1.75, whiteSpace: "pre-line" }}>{story}</p>
+            <p style={{ margin: 0, fontSize: 18, color: SG_INK, lineHeight: 1.5, whiteSpace: "pre-line" }}>{story}</p>
           ) : (
-            <p style={{ margin: 0, fontSize: 14.5, color: "#8a8878", lineHeight: 1.75, fontStyle: "italic" }}>
+            <p style={{ margin: 0, fontSize: 18, color: MUTED, lineHeight: 1.5, fontStyle: "italic" }}>
               Their full profile is coming soon.
             </p>
           )}
 
           {sells && (
             <div>
-              <div style={{
-                fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 17,
-                color: AIM_BRIGHT, marginBottom: 4,
-              }}>
+              <div style={{ ...EYEBROW, marginBottom: 6 }}>
                 What they sell
               </div>
-              <p style={{ margin: 0, fontSize: 14, color: "#333", lineHeight: 1.6 }}>{sells}</p>
+              <p style={{ margin: 0, fontSize: 18, color: SG_INK, lineHeight: 1.5 }}>{sells}</p>
             </div>
           )}
 
           {markets.length > 0 && (
             <div>
-              <div style={{
-                fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 17,
-                color: AIM_BRIGHT, marginBottom: 8,
-              }}>
+              <div style={{ ...EYEBROW, marginBottom: 10 }}>
                 Meet them at AIM&rsquo;s farmers markets
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -571,11 +580,11 @@ function ProfileModal({ profile, allMarkets, narrow, onClose, embedded, frame }:
                   <div key={m.marketID} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                     {MARKET_LOGOS[m.marketID] ? (
                       <img src={MARKET_LOGOS[m.marketID]} alt={FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]}
-                        style={{ width: 54, height: 54, objectFit: "cover", display: "block" }} />
+                        style={{ width: 56, height: 56, objectFit: "cover", display: "block", borderRadius: 12 }} />
                     ) : (
-                      <div style={{ width: 54, height: 54, background: program.color }} />
+                      <div style={{ width: 56, height: 56, borderRadius: 12, background: OAT_CARD }} />
                     )}
-                    <span style={{ fontSize: 11, color: "#494949", textAlign: "center", maxWidth: 84, lineHeight: 1.3 }}>
+                    <span style={{ fontSize: 13, color: MUTED, textAlign: "center", maxWidth: 92, lineHeight: 1.3 }}>
                       {FULL_MARKETS[m.marketID] ?? allMarkets[m.marketID]}
                     </span>
                   </div>
@@ -603,28 +612,43 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
   const frame = useEmbedFrame(embedded);
   // Shayla asked for slightly larger participant photos: 3-up on desktop
   const cols = narrow ? 2 : 3;
-  const px = narrow ? 20 : 40;
+  const px = narrow ? 20 : 40; // style guide side margins
+  const sectionY = 72; // style guide: 72px top and bottom on every section
 
   const visiblePrograms = PROGRAM_ORDER.filter((id) => tab === "all" || tab === id);
 
-  const sectionInner: React.CSSProperties = { maxWidth: 1060, margin: "0 auto", padding: `0 ${px}px` };
+  const sectionInner: React.CSSProperties = { maxWidth: 1280 + 2 * px, margin: "0 auto", padding: `0 ${px}px`, boxSizing: "border-box" };
+  const sectionBand = (bg: string): React.CSSProperties => ({ backgroundColor: bg, padding: `${sectionY}px 0` });
+  const h2Style: React.CSSProperties = {
+    fontFamily: "var(--font-heading)", fontWeight: 600,
+    fontSize: "var(--sg-h2)", color: SG_INK, lineHeight: 1.1, marginBottom: 14,
+  };
+  const h3Style: React.CSSProperties = {
+    fontFamily: "var(--font-heading)", fontWeight: 600,
+    fontSize: "var(--sg-h3)", color: SG_INK, lineHeight: 1.15,
+  };
+  const smallLink: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", minHeight: 44,
+    fontSize: 16, color: BARK, fontWeight: 700, textDecoration: "none",
+  };
 
   return (
-    <div style={{ minHeight: embedded ? undefined : "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000", position: "relative" }}>
+    <div style={{ minHeight: embedded ? undefined : "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: SG_INK, position: "relative" }}>
 
       {/* ── Title block (white, centered, like AIM program pages) ── */}
-      <div style={{ backgroundColor: "#fff", padding: `${narrow ? 44 : 64}px 0 ${narrow ? 30 : 40}px` }}>
+      <div style={sectionBand("#fff")}>
         <div style={{ ...sectionInner, textAlign: "center" }}>
+          <div style={{ ...EYEBROW, marginBottom: 16 }}>Agricultural Institute of Marin</div>
           <h1 style={{
-            fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 32 : 45, lineHeight: 1.15, color: AIM_GREEN,
-            margin: "0 auto 16px", maxWidth: 760,
+            fontFamily: "var(--font-heading)", fontWeight: 600,
+            fontSize: "var(--sg-h1)", lineHeight: 1.05, letterSpacing: "-0.01em", color: SG_INK,
+            margin: "0 auto 20px", maxWidth: 900,
           }}>
             Farm &amp; Food Business Resources
           </h1>
           <p style={{
-            margin: "0 auto 14px", fontSize: narrow ? 15 : 16.5, color: "#000",
-            maxWidth: 640, lineHeight: 1.65,
+            margin: "0 auto 14px", fontSize: 21, color: MUTED,
+            maxWidth: 680, lineHeight: 1.45,
           }}>
             AIM&rsquo;s Farm &amp; Food Business Resources support food and agricultural
             business growth to strengthen California&rsquo;s regional food system.
@@ -634,7 +658,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
               person and what they're holding stays in view (Meg, 2026-10-29) */}
           <div style={{
             display: "flex", justifyContent: "center", alignItems: "flex-end",
-            gap: narrow ? 6 : 10, flexWrap: "nowrap",
+            gap: narrow ? 8 : 20, flexWrap: "nowrap",
             marginTop: narrow ? 30 : 42, padding: "6px 0",
           }}>
             {(() => {
@@ -646,7 +670,7 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
                 <img key={src} src={src} alt={profile ? `${profile.person}, ${profile.business}` : ""} style={{
                   height: narrow ? "auto" : 210, width: narrow ? "22vw" : "auto",
                   maxWidth: narrow ? "22vw" : 200, minWidth: 0, flexShrink: 1,
-                  objectFit: "contain", display: "block", borderRadius: 4,
+                  objectFit: "contain", display: "block", borderRadius: narrow ? 12 : RADIUS,
                 }} />
               ));
             })()}
@@ -655,21 +679,20 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
           {/* Stats: flat, centered, green Ek Mukta numbers */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(4, 1fr)",
-            gap: narrow ? "22px 12px" : 24,
-            marginTop: narrow ? 32 : 44,
-            maxWidth: 920, marginLeft: "auto", marginRight: "auto",
+            gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: narrow ? 14 : 20,
+            marginTop: narrow ? 36 : 48,
           }}>
             {STATS.map((s) => (
-              <div key={s.value}>
-                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: narrow ? 32 : 40, color: AIM_GREEN, lineHeight: 1.1 }}>
+              <div key={s.value} style={{ backgroundColor: OAT, borderRadius: RADIUS, padding: narrow ? "18px 12px" : "24px 20px" }}>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: narrow ? 34 : 44, color: BARK, lineHeight: 1.05 }}>
                   <RollingStat value={s.value} />
                 </div>
-                <div style={{ fontSize: 13.5, color: "#000", lineHeight: 1.45, marginTop: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 16, color: MUTED, lineHeight: 1.45, marginTop: 8 }}>{s.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 12, color: "#8a8878", marginTop: 12 }}>
+          <div style={{ fontSize: 14, color: MUTED, marginTop: 14 }}>
             Figures from AIM, September 2026.
           </div>
         </div>
@@ -677,40 +700,39 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
 
       {/* ── Program squares (Shayla's design, 2026-10-28) ── */}
       <div id="aim-programs" style={{
-        backgroundColor: "#eaece6", borderTop: "1px solid #e1e3db",
-        padding: `${narrow ? 20 : 28}px 0`,
+        backgroundColor: OAT,
+        padding: `${narrow ? 24 : 40}px 0`,
       }}>
         <div role="tablist" aria-label="Farm & Food programs" style={{
-          maxWidth: 1180, margin: "0 auto", padding: `0 ${narrow ? 16 : 32}px`,
+          maxWidth: 1280 + 2 * px, margin: "0 auto", padding: `0 ${px}px`, boxSizing: "border-box",
           display: "grid",
           gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(5, 1fr)",
-          gap: narrow ? 10 : mid ? 12 : 18,
+          gap: narrow ? 10 : mid ? 14 : 20,
         }}>
           <ProgramSquare label="All Farm & Food Programs" active={tab === "all"}
-            color={SQUARE_CREAM} text={INK} narrow={narrow} mid={mid} wide={narrow}
+            color={LINE} narrow={narrow} mid={mid} wide={narrow}
             onClick={() => setTab("all")} />
           {PROGRAM_ORDER.map((id) => {
             const p = PROGRAMS[id];
             return (
               <ProgramSquare key={id} label={p.name} active={tab === id}
-                color={p.color} text={p.squareText} narrow={narrow} mid={mid}
+                color={p.color} narrow={narrow} mid={mid}
                 onClick={() => setTab(tab === id ? "all" : id)} />
             );
           })}
           <ProgramSquare label={TECHNICAL_ASSISTANCE.name} active={false}
-            color={TECHNICAL_ASSISTANCE.color} text={TECHNICAL_ASSISTANCE.squareText}
+            color={TECHNICAL_ASSISTANCE.color}
             narrow={narrow} mid={mid} href={TECHNICAL_ASSISTANCE.url} />
         </div>
       </div>
 
       {/* "All" selected: Shayla's program overview copy */}
       {tab === "all" && (
-        <div style={{ backgroundColor: "#fff", padding: `${narrow ? 30 : 44}px 0 ${narrow ? 34 : 48}px` }}>
+        <div style={sectionBand("#fff")}>
           <div style={{ ...sectionInner, textAlign: "center" }}>
             <p style={{
-              margin: "0 auto", maxWidth: 720,
-              fontFamily: "var(--font-heading)", fontWeight: 500,
-              fontSize: narrow ? 18 : 21, lineHeight: 1.55, color: "#000",
+              margin: "0 auto", maxWidth: 680,
+              fontSize: 21, lineHeight: 1.45, color: MUTED,
             }}>
               {ALL_PROGRAMS_COPY}
             </p>
@@ -722,44 +744,37 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
       {visiblePrograms.map((id, idx) => {
         const program = PROGRAMS[id];
         const sectionProfiles = profiles.filter((p) => p.program === id);
-        const bg = idx % 2 === 0 ? CREAM : "#fff";
+        // Alternate oat-100 / surface, starting opposite whatever sits above.
+        const bg = (idx + (tab === "all" ? 0 : 1)) % 2 === 0 ? OAT : "#fff";
         return (
-          <section key={id} style={{ backgroundColor: bg, padding: `${narrow ? 40 : 56}px 0 ${narrow ? 48 : 64}px` }}>
+          <section key={id} style={sectionBand(bg)}>
             <div style={{ ...sectionInner, textAlign: "center" }}>
-              <h2 style={{
-                fontFamily: "var(--font-heading)", fontWeight: 500,
-                fontSize: narrow ? 28 : 36, color: "#000", lineHeight: 1.2, marginBottom: 10,
-              }}>
+              <div aria-hidden="true" style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: program.color, margin: "0 auto 18px" }} />
+              <h2 style={h2Style}>
                 {program.name}
               </h2>
-              <p style={{ margin: "0 auto 10px", fontSize: 14.5, color: "#333", maxWidth: 600, lineHeight: 1.65 }}>
+              <p style={{ margin: "0 auto 8px", fontSize: 18, color: SG_INK, maxWidth: 680, lineHeight: 1.5 }}>
                 {program.blurb}
               </p>
               <div style={{ display: "flex", gap: 22, justifyContent: "center", flexWrap: "wrap" }}>
-                <a href={program.url} target="_blank" rel="noopener noreferrer" style={{
-                  fontSize: 14, color: AIM_GREEN, fontWeight: 600,
-                  textDecoration: "underline", textUnderlineOffset: 3,
-                }}>
-                  About the program
+                <a href={program.url} target="_blank" rel="noopener noreferrer" style={smallLink}>
+                  About the program →
                 </a>
                 {program.applyUrl && (
-                  <a href={program.applyUrl} target="_blank" rel="noopener noreferrer" style={{
-                    fontSize: 14, color: AIM_GREEN, fontWeight: 600,
-                    textDecoration: "underline", textUnderlineOffset: 3,
-                  }}>
-                    Apply to the Fund
+                  <a href={program.applyUrl} target="_blank" rel="noopener noreferrer" style={smallLink}>
+                    Apply to the Fund →
                   </a>
                 )}
               </div>
 
               {/* Application window: placeholder until Jack confirms each timeline */}
               <div style={{
-                display: "inline-block", marginTop: 14,
-                padding: "5px 16px", borderRadius: 300,
-                border: `1.5px solid ${program.color}`, backgroundColor: "#fff",
-                fontSize: 13, color: "#333",
+                display: "inline-block", marginTop: 10,
+                padding: "10px 20px", borderRadius: 999,
+                border: `1.5px solid ${LINE}`, backgroundColor: bg === OAT ? "#fff" : OAT_CARD,
+                fontSize: 16, color: SG_INK,
               }}>
-                <span style={{ fontWeight: 600 }}>Applications:</span>{" "}
+                <span style={{ fontWeight: 700 }}>Applications:</span>{" "}
                 {program.applyWindow ?? "next window announced soon"}
               </div>
 
@@ -769,24 +784,21 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                     marginTop: narrow ? 26 : 36,
                   }}>
-                    <h3 style={{
-                      fontFamily: "var(--font-heading)", fontWeight: 500,
-                      fontSize: narrow ? 21 : 25, color: AIM_BRIGHT, lineHeight: 1.2,
-                    }}>
+                    <h3 style={h3Style}>
                       Meet the 2026 Cohort
                     </h3>
                     <span style={{
-                      padding: "3px 12px", borderRadius: 300,
-                      backgroundColor: AIM_BRIGHT, color: "#0b3d1e",
-                      fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 11.5,
+                      padding: "4px 12px", borderRadius: 999,
+                      backgroundColor: AIM_GREEN, color: "#fff",
+                      fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 14,
                     }}>
                       Current
                     </span>
                   </div>
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                    gap: narrow ? "28px 14px" : "36px 26px",
+                    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                    gap: narrow ? "28px 14px" : "36px 20px",
                     marginTop: narrow ? 22 : 28,
                   }}>
                     {sectionProfiles.map((p) => (
@@ -817,13 +829,10 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
                   setAlumYearByProgram((prev) => ({ ...prev, [id]: v }));
                 return (
                   <div style={{ marginTop: narrow ? 44 : 60 }}>
-                    <h3 style={{
-                      fontFamily: "var(--font-heading)", fontWeight: 500,
-                      fontSize: narrow ? 21 : 25, color: AIM_BRIGHT, marginBottom: 6,
-                    }}>
+                    <h3 style={{ ...h3Style, marginBottom: 8 }}>
                       Program Alumni
                     </h3>
-                    <p style={{ margin: "0 auto 18px", fontSize: 14, color: "#333", maxWidth: 560, lineHeight: 1.6 }}>
+                    <p style={{ margin: "0 auto 20px", fontSize: 18, color: SG_INK, maxWidth: 680, lineHeight: 1.5 }}>
                       {intro}
                     </p>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: narrow ? 22 : 30 }}>
@@ -840,9 +849,10 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
                     {withPhoto.length > 0 && (
                       <div style={{
                         display: "grid",
-                        gridTemplateColumns: `repeat(${narrow ? 3 : mid ? 4 : 5}, 1fr)`,
-                        gap: narrow ? "22px 12px" : "28px 20px",
-                        maxWidth: 900, margin: "0 auto",
+                        gridTemplateColumns: narrow ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, 180px)",
+                        justifyContent: "center",
+                        gap: narrow ? "22px 14px" : "28px 20px",
+                        maxWidth: 1080, margin: "0 auto",
                       }}>
                         {withPhoto.map((p) => (
                           <ParticipantTile key={p.business} profile={p} allMarkets={allMarkets} compact onOpen={() => setOpenProfile(p)} />
@@ -856,13 +866,13 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
                       }}>
                         {withoutPhoto.map((p) => (
                           <button key={p.business} onClick={() => setOpenProfile(p)} style={{
-                            padding: "6px 16px", borderRadius: 300, cursor: "pointer",
-                            border: "1.5px solid #b9b6a4", backgroundColor: "#fff",
-                            color: "#333", fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 13.5,
+                            minHeight: 44, padding: "8px 18px", borderRadius: 999, cursor: "pointer",
+                            border: `1.5px solid ${LINE}`, backgroundColor: OAT_CARD,
+                            color: SG_INK, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 16,
                             whiteSpace: "nowrap",
                           }}>
                             {p.business}
-                            {!selected && <span style={{ marginLeft: 6, fontSize: 11.5, color: "#8a8878" }}>{p.cohort}</span>}
+                            {!selected && <span style={{ marginLeft: 6, fontSize: 14, fontWeight: 400, color: MUTED }}>{p.cohort}</span>}
                           </button>
                         ))}
                       </div>
@@ -877,23 +887,19 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
 
       {/* ── Technical Assistance and Education (no cohort; links to AIM's page) ── */}
       {tab === "all" && (
-        <section style={{
-          backgroundColor: visiblePrograms.length % 2 === 0 ? CREAM : "#fff",
-          padding: `${narrow ? 40 : 56}px 0 ${narrow ? 44 : 60}px`,
-        }}>
-          <div style={{ ...sectionInner, textAlign: "center" }}>
-            <h2 style={{
-              fontFamily: "var(--font-heading)", fontWeight: 500,
-              fontSize: narrow ? 28 : 36, color: "#000", lineHeight: 1.2, marginBottom: 10,
-            }}>
+        // The page's one green-700 band (style guide), white text on it.
+        <section style={sectionBand(AIM_GREEN)}>
+          <div style={{ ...sectionInner, textAlign: "center", color: "#fff" }}>
+            <h2 style={{ ...h2Style, color: "#fff" }}>
               {TECHNICAL_ASSISTANCE.name}
             </h2>
-            <p style={{ margin: "0 auto 10px", fontSize: 14.5, color: "#333", maxWidth: 600, lineHeight: 1.65 }}>
+            <p style={{ margin: "0 auto 24px", fontSize: 18, color: "#fff", maxWidth: 680, lineHeight: 1.5 }}>
               {TECHNICAL_ASSISTANCE.blurb}
             </p>
             <a href={TECHNICAL_ASSISTANCE.url} target="_blank" rel="noopener noreferrer" style={{
-              fontSize: 14, color: AIM_GREEN, fontWeight: 600,
-              textDecoration: "underline", textUnderlineOffset: 3,
+              display: "inline-flex", alignItems: "center", minHeight: 44, padding: "10px 26px",
+              borderRadius: 999, backgroundColor: "#fff", color: AIM_GREEN,
+              fontSize: 17, fontWeight: 700, textDecoration: "none",
             }}>
               About the program
             </a>
@@ -902,46 +908,44 @@ export default function ShowcaseClient({ profiles, alumni, allMarkets, embedded 
       )}
 
       {/* ── Testimonial (white) ── */}
-      <div style={{ backgroundColor: "#fff", padding: `${narrow ? 44 : 64}px 0` }}>
+      <div style={sectionBand("#fff")}>
         <div style={{ ...sectionInner, textAlign: "center" }}>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: 52, color: AIM_BRIGHT, lineHeight: 0.5, marginBottom: 18 }}>&ldquo;</div>
+          <div aria-hidden="true" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 64, color: AIM_GREEN, lineHeight: 0.5, marginBottom: 20 }}>&ldquo;</div>
           <blockquote style={{
-            margin: "0 auto", maxWidth: 620,
-            fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 20 : 26, lineHeight: 1.4, color: "#000",
+            margin: "0 auto", maxWidth: 760,
+            fontFamily: "var(--font-heading)", fontWeight: 600,
+            fontSize: "var(--sg-h3)", lineHeight: 1.25, color: SG_INK,
           }}>
             I loved the part where I did not have to pay the money back — a grant and not a loan.
           </blockquote>
-          <div style={{ marginTop: 14, fontSize: 14, color: "#494949" }}>
+          <div style={{ marginTop: 18, fontSize: 16, color: MUTED }}>
             Tatiana Thomas · Josephine&rsquo;s Southern Cuisine · Market Access Fund, 2023
           </div>
         </div>
       </div>
 
       {/* ── Closing statement (Shayla's copy) ── */}
-      <div style={{ backgroundColor: "#fff", padding: `${narrow ? 40 : 56}px 0` }}>
-        <div style={{ ...sectionInner, textAlign: "center" }}>
+      {/* Forest-900 footer under the logo's three stripes (style guide) */}
+      <footer style={{ backgroundColor: "var(--sg-forest-900)", color: "#fff" }}>
+        <span className="sg-stripes" aria-hidden="true" />
+        <div style={{ ...sectionInner, textAlign: "center", padding: `${sectionY}px ${px}px 0` }}>
           <p style={{
-            margin: "0 auto", maxWidth: 620,
-            fontFamily: "var(--font-heading)", fontWeight: 500,
-            fontSize: narrow ? 19 : 24, lineHeight: 1.45, color: AIM_GREEN,
+            margin: "0 auto", maxWidth: 760,
+            fontFamily: "var(--font-heading)", fontWeight: 600,
+            fontSize: "var(--sg-h3)", lineHeight: 1.25, color: "#fff",
           }}>
             Farmers markets are both a sales outlet and an opportunity for expansion
             and success. Our programs help our market participants thrive.
           </p>
         </div>
-      </div>
-
-      {/* ── Footer note ── */}
-      <div style={{ backgroundColor: "#fff", borderTop: "1px solid #e4e2d4", padding: "20px 16px 28px" }}>
         <p style={{
-          margin: "0 auto", maxWidth: 720, fontSize: 12.5, color: "#8a8878",
-          lineHeight: 1.6, textAlign: "center",
+          margin: "0 auto", maxWidth: 720, fontSize: 14, color: "rgba(255,255,255,0.82)",
+          lineHeight: 1.6, textAlign: "center", padding: `32px ${px}px ${sectionY}px`,
         }}>
           Participant details come from AIM&rsquo;s public program pages and the Manage My Market
           directory, and only include vendors who have opted in to information sharing.
         </p>
-      </div>
+      </footer>
 
       {openProfile && (
         <ProfileModal

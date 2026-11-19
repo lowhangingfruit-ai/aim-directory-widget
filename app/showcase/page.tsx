@@ -4,7 +4,9 @@ import { parseVendorFeed } from "@/lib/vendors";
 import { buildProfiles, ROSTER_2026, FOODMAKERS_CURRENT, ALUMNI, FARMER_ALUMNI, FOODMAKER_ALUMNI } from "@/lib/showcase";
 import ShowcaseClient from "./ShowcaseClient";
 import DirectionsClient from "./directions/DirectionsClient";
+import "./style-guide.css";
 import "./directions/directions.css";
+import { showcaseFontVars } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Farm & Food Business Resources — Agricultural Institute of Marin",
@@ -55,8 +57,18 @@ export default async function ShowcasePage({
   // AIM chose the Program Chapters layout (Meg, 2026-11-19); it replaces the
   // old /showcase layout. The Squarespace embed (?embed=1) keeps the old
   // layout until Program Chapters gets its own embed mode.
+  // .aim-sg scopes AIM's style guide tokens (Shayla, 2026-11-19) to the
+  // showcase so the directory keeps its look.
   if (embedded) {
-    return <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} embedded={embedded} />;
+    return (
+      <div className={`aim-sg ${showcaseFontVars}`}>
+        <ShowcaseClient profiles={profiles} alumni={alumni} allMarkets={MARKETS} embedded={embedded} />
+      </div>
+    );
   }
-  return <DirectionsClient current={profiles} alumni={alumni} allMarkets={MARKETS} />;
+  return (
+    <div className={`aim-sg ${showcaseFontVars}`}>
+      <DirectionsClient current={profiles} alumni={alumni} allMarkets={MARKETS} />
+    </div>
+  );
 }

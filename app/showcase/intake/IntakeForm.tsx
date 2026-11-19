@@ -7,38 +7,43 @@ interface Props {
   allMarkets: Record<number, string>;
 }
 
-const AIM_GREEN = "#0d8240";
-const AIM_BRIGHT = "#4db547";
-const CREAM = "#f6f5ea";
-const BORDER = "#c9c7b8";
+// AIM style guide tokens (Shayla, 2026-11-19), defined on .aim-sg in
+// ../style-guide.css, which wraps this page.
+const AIM_GREEN = "var(--sg-green-700)";
+const CREAM = "var(--sg-oat-100)";
+const BORDER = "var(--sg-line)";
+const INK = "var(--sg-ink)";
+const MUTED = "var(--sg-ink-muted)";
+const BARK = "var(--sg-bark-600)";
 
 const PROGRAM_ORDER: ProgramID[] = ["maf", "farmer", "foodmaker"];
 
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontFamily: "var(--font-heading)",
-  fontWeight: 500,
-  fontSize: 17,
-  color: "#000",
+  fontWeight: 600,
+  fontSize: 20,
+  color: INK,
   marginBottom: 4,
 };
 
 const helperStyle: React.CSSProperties = {
-  fontSize: 13,
-  color: "#6f6d5f",
+  fontSize: 16,
+  color: MUTED,
   lineHeight: 1.5,
   margin: "0 0 8px",
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "11px 12px",
+  minHeight: 48,
+  padding: "11px 16px",
   fontFamily: "var(--font-body)",
-  fontSize: 15,
-  color: "#000",
+  fontSize: 18,
+  color: INK,
   backgroundColor: "#fff",
   border: `1px solid ${BORDER}`,
-  borderRadius: 0,
+  borderRadius: 16,
   outline: "none",
   boxSizing: "border-box",
 };
@@ -85,30 +90,30 @@ export default function IntakeForm({ allMarkets }: Props) {
 
   if (submitted) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000" }}>
+      <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: INK }}>
         <MockupBar />
         <div style={{ maxWidth: 560, margin: "0 auto", padding: "72px 20px", textAlign: "center" }}>
           <div style={{
             width: 64, height: 64, borderRadius: 300, margin: "0 auto 20px",
-            backgroundColor: AIM_BRIGHT, color: "#fff",
+            backgroundColor: AIM_GREEN, color: "#fff",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30,
           }}>
             ✓
           </div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 34, color: AIM_GREEN, marginBottom: 14 }}>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "var(--sg-h2)", lineHeight: 1.1, color: INK, marginBottom: 14 }}>
             Thank you{person ? `, ${person.trim().split(" ")[0]}` : ""}!
           </h1>
-          <p style={{ fontSize: 15.5, lineHeight: 1.7, margin: "0 0 22px" }}>
+          <p style={{ fontSize: 18, lineHeight: 1.5, margin: "0 0 22px" }}>
             AIM staff will review your submission, and your profile will appear on the
             participant showcase once it&rsquo;s approved.
           </p>
-          <p style={{ fontSize: 13, color: "#8a8878", margin: "0 0 30px" }}>
+          <p style={{ fontSize: 16, color: MUTED, margin: "0 0 30px" }}>
             This is a design mockup — nothing was actually sent.
           </p>
           <a href="/showcase" style={{
-            display: "inline-block", padding: "11px 28px", borderRadius: 300,
+            display: "inline-block", padding: "12px 28px", borderRadius: 999,
             backgroundColor: AIM_GREEN, color: "#fff", textDecoration: "none",
-            fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 14.5,
+            fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 17,
           }}>
             Back to the showcase
           </a>
@@ -118,21 +123,21 @@ export default function IntakeForm({ allMarkets }: Props) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: "#000" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "var(--font-body)", color: INK }}>
       <MockupBar />
 
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "52px 20px 80px" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 38, lineHeight: 1.15, color: AIM_GREEN, marginBottom: 14 }}>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: "var(--sg-h1)", lineHeight: 1.05, color: INK, marginBottom: 16 }}>
             Tell Us About Your Business
           </h1>
-          <p style={{ fontSize: 15.5, lineHeight: 1.65, margin: "0 auto", maxWidth: 520 }}>
+          <p style={{ fontSize: 21, lineHeight: 1.45, color: MUTED, margin: "0 auto", maxWidth: 680 }}>
             You&rsquo;re part of an AIM Farm &amp; Food Business program — congratulations!
             This form builds your profile on the participant showcase. It takes about
             five minutes, and AIM reviews everything before it publishes.
           </p>
-          <a href="/showcase" style={{ display: "inline-block", marginTop: 12, fontSize: 14, color: AIM_GREEN, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
-            See the showcase
+          <a href="/showcase" style={{ display: "inline-block", marginTop: 12, lineHeight: "44px", fontSize: 16, color: BARK, fontWeight: 700, textDecoration: "none" }}>
+            See the showcase →
           </a>
         </div>
 
@@ -145,11 +150,11 @@ export default function IntakeForm({ allMarkets }: Props) {
                 const active = program === id;
                 return (
                   <button key={id} type="button" onClick={() => setProgram(id)} style={{
-                    padding: "8px 18px", borderRadius: 300, cursor: "pointer",
-                    fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 13.5,
-                    border: `1.5px solid ${active ? p.color : BORDER}`,
-                    backgroundColor: active ? p.color : "#fff",
-                    color: active ? p.textOnColor : "#333",
+                    minHeight: 44, padding: "8px 20px", borderRadius: 999, cursor: "pointer",
+                    fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 16,
+                    border: `1.5px solid ${active ? AIM_GREEN : BORDER}`,
+                    backgroundColor: active ? AIM_GREEN : "#fff",
+                    color: active ? "#fff" : INK,
                     transition: "all 0.12s ease",
                   }}>
                     {p.shortName}
@@ -177,7 +182,7 @@ export default function IntakeForm({ allMarkets }: Props) {
             </p>
             <textarea id="story" rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
               value={story} onChange={(e) => setStory(e.target.value)} />
-            <div style={{ fontSize: 12, color: story.length > 0 && story.length < 80 ? "#b3641f" : "#8a8878", marginTop: 4 }}>
+            <div style={{ fontSize: 14, color: story.length > 0 && story.length < 80 ? "#b3641f" : MUTED, marginTop: 4 }}>
               {story.length === 0 ? "" : story.length < 80 ? "A little more detail helps your profile shine." : `${story.length} characters — looking good.`}
             </div>
           </Field>
@@ -195,12 +200,12 @@ export default function IntakeForm({ allMarkets }: Props) {
                 const active = markets.has(Number(id));
                 return (
                   <button key={id} type="button" onClick={() => toggleMarket(Number(id))} style={{
-                    padding: "7px 16px", borderRadius: 300, cursor: "pointer",
-                    fontFamily: "var(--font-body)", fontSize: 13.5,
+                    minHeight: 44, padding: "8px 18px", borderRadius: 999, cursor: "pointer",
+                    fontFamily: "var(--font-body)", fontSize: 16,
                     border: `1.5px solid ${active ? AIM_GREEN : BORDER}`,
                     backgroundColor: active ? AIM_GREEN : "#fff",
-                    color: active ? "#fff" : "#333",
-                    fontWeight: active ? 600 : 400,
+                    color: active ? "#fff" : INK,
+                    fontWeight: active ? 700 : 400,
                     transition: "all 0.12s ease",
                   }}>
                     {name}
@@ -214,17 +219,17 @@ export default function IntakeForm({ allMarkets }: Props) {
             <label style={labelStyle}>Your photo</label>
             <p style={helperStyle}>A photo of you at your booth works best — it&rsquo;s what customers connect with.</p>
             <div style={{
-              backgroundColor: CREAM, border: `1px solid ${BORDER}`,
+              backgroundColor: CREAM, border: `1px solid ${BORDER}`, borderRadius: 24,
               padding: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
             }}>
               {photoPreview && (
                 <img src={photoPreview} alt="Your photo preview"
-                  style={{ width: 72, height: 72, objectFit: "cover", display: "block" }} />
+                  style={{ width: 72, height: 72, objectFit: "cover", display: "block", borderRadius: 16 }} />
               )}
               <label style={{
-                display: "inline-block", padding: "9px 22px", borderRadius: 300, cursor: "pointer",
+                display: "inline-flex", alignItems: "center", minHeight: 44, padding: "8px 22px", borderRadius: 999, cursor: "pointer",
                 backgroundColor: AIM_GREEN, color: "#fff",
-                fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 13.5,
+                fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 16,
               }}>
                 {photoName ? "Choose a different photo" : "Choose a photo"}
                 <input type="file" accept="image/*" style={{ display: "none" }}
@@ -236,7 +241,7 @@ export default function IntakeForm({ allMarkets }: Props) {
                     }
                   }} />
               </label>
-              <span style={{ fontSize: 13, color: "#6f6d5f" }}>{photoName ?? "No photo chosen yet"}</span>
+              <span style={{ fontSize: 16, color: MUTED }}>{photoName ?? "No photo chosen yet"}</span>
             </div>
           </Field>
 
@@ -252,12 +257,12 @@ export default function IntakeForm({ allMarkets }: Props) {
 
           <Field>
             <div style={{
-              backgroundColor: CREAM, border: `1px solid ${BORDER}`, padding: "16px 18px",
+              backgroundColor: CREAM, border: `1px solid ${BORDER}`, borderRadius: 24, padding: "18px 20px",
               display: "flex", gap: 12, alignItems: "flex-start",
             }}>
               <input id="consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
                 style={{ width: 18, height: 18, marginTop: 2, accentColor: AIM_GREEN, flexShrink: 0 }} />
-              <label htmlFor="consent" style={{ fontSize: 13.5, lineHeight: 1.6, color: "#333", cursor: "pointer" }}>
+              <label htmlFor="consent" style={{ fontSize: 16, lineHeight: 1.5, color: INK, cursor: "pointer" }}>
                 I give AIM permission to share my name, photo, story, and business details
                 on its website and in program marketing. I can update or remove my profile
                 at any time by contacting AIM.
@@ -266,17 +271,17 @@ export default function IntakeForm({ allMarkets }: Props) {
           </Field>
 
           {error && (
-            <p style={{ margin: "0 0 16px", fontSize: 14, color: "#b3372a", fontWeight: 600 }}>{error}</p>
+            <p style={{ margin: "0 0 16px", fontSize: 16, color: "#b3372a", fontWeight: 700 }}>{error}</p>
           )}
 
           <button type="submit" style={{
-            padding: "13px 34px", borderRadius: 300, cursor: "pointer",
+            padding: "12px 34px", borderRadius: 999, cursor: "pointer",
             backgroundColor: AIM_GREEN, color: "#fff", border: "none",
-            fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 15.5, letterSpacing: "0.02em",
+            fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 17, minHeight: 48,
           }}>
             Submit my profile
           </button>
-          <p style={{ margin: "14px 0 0", fontSize: 12.5, color: "#8a8878" }}>
+          <p style={{ margin: "14px 0 0", fontSize: 16, color: MUTED }}>
             AIM staff review every submission before it appears on the showcase.
           </p>
         </form>
@@ -288,7 +293,7 @@ export default function IntakeForm({ allMarkets }: Props) {
 function MockupBar() {
   return (
     <div style={{
-      backgroundColor: AIM_BRIGHT, color: "#000",
+      backgroundColor: "var(--sg-forest-900)", color: "#fff",
       padding: "9px 16px", fontSize: 14, textAlign: "center", lineHeight: 1.4,
     }}>
       Design mockup for AIM review — submissions on this page don&rsquo;t go anywhere yet
