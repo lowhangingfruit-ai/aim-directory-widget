@@ -83,10 +83,11 @@ Participants and bios live in code, not a Sheet:
 
 `/showcase/intake` is still a design mockup: it doesn't save submissions.
 
-`/showcase/directions` holds four alternative layouts of the showcase for review with AIM (Field
-Journal, Class Portraits, Program Chapters, Market Day), switched from the green bar at the bottom
-(`#a`–`#d` in the URL opens one directly). It reads the same data as `/showcase`, isn't linked from
-it, and is marked noindex.
+`/showcase/directions` is the Program Chapters layout of the showcase (direction C), which AIM chose
+in November 2026 out of four directions (Field Journal, Class Portraits, Program Chapters, Market
+Day). Only C is shown; the other three components stay in `app/showcase/directions/` unused. Old
+`#a`–`#d` links still open the page. It reads the same data as `/showcase`, isn't linked from it, and
+is marked noindex. `/showcase` itself is unchanged.
 
 ## Categories, products and organic status (Manage My Market reports)
 

@@ -5,10 +5,11 @@ import { buildProfiles, ROSTER_2026, FOODMAKERS_CURRENT, ALUMNI, FARMER_ALUMNI, 
 import DirectionsClient from "./DirectionsClient";
 import "./directions.css";
 
-// Layout directions for the Farm & Food Program Showcase, for review with
-// AIM (Meg, 2026-10-29). Not linked from /showcase, and kept out of search.
+// The Program Chapters layout of the Farm & Food Program Showcase, chosen by
+// AIM (Meg, 2026-11-19) out of the four directions first shown here on
+// 2026-10-29. Not linked from /showcase yet, and kept out of search.
 export const metadata: Metadata = {
-  title: "Showcase directions — Farm & Food Business Resources",
+  title: "Farm & Food Business Resources",
   robots: { index: false, follow: false },
 };
 

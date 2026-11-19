@@ -17,7 +17,6 @@
   color: var(--ink);
   font-family: var(--body);
   min-height: 100vh;
-  padding-bottom: 76px;
   -webkit-font-smoothing: antialiased;
 }
 .dx-root button { cursor: pointer; text-align: left; }
@@ -31,7 +30,7 @@
 .dx-lettermark span { opacity: 0.6; }
 .dx-muted { color: var(--muted); }
 
-/* ── Direction switcher (review only) ─────────────────────────────── */
+/* ── Direction switcher (review only; no longer rendered) ──────────── */
 .dx-switcher {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
   background: var(--bright); color: #000;
